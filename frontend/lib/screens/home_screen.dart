@@ -77,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isAddingSubject = false;
   bool _showAddSubjectForm = false;
   final Set<int> _expandedSubjectIndices = {};
+  String _subjectsFilter = "All";
+  String _subjectsSort = "Recent";
 
   // Study Room state variables
   String _studyRoomSelectedSubject = "General Study";
@@ -1988,6 +1990,612 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+    List<String> _getDefaultTopics(String subjectName) {
+    final query = subjectName.toLowerCase();
+    if (query.contains("data structure") || query.contains("algorithm") || query.contains("dsa")) {
+      return ["Arrays", "Linked Lists", "Stacks", "Queues", "Trees", "Graphs"];
+    } else if (query.contains("physics")) {
+      return ["Mechanics", "Thermodynamics", "Electromagnetism", "Optics", "Modern Physics"];
+    } else if (query.contains("chemistry")) {
+      return ["Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Biochemistry"];
+    } else if (query.contains("math") || query.contains("calculus") || query.contains("algebra")) {
+      return ["Algebra", "Calculus", "Probability", "Linear Algebra", "Geometry"];
+    } else if (query.contains("database") || query.contains("dbms") || query.contains("sql")) {
+      return ["Introduction to DBMS", "Entity-Relationship Model", "Relational Database Design", "SQL Queries", "Indexing & Hashing", "Transactions"];
+    } else if (query.contains("network")) {
+      return ["Physical Layer", "Data Link Layer", "Network Layer", "Transport Layer", "Application Layer"];
+    } else {
+      return ["Introduction", "Fundamentals", "Core Concepts", "Advanced Topics", "Practical Applications", "Revision"];
+    }
+  }
+
+  void _showAddSubjectModal(BuildContext context) {
+    String localSubjectName = "";
+    String localDifficulty = "Medium";
+    bool aiGenerateSyllabus = true;
+    final localController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              margin: EdgeInsets.only(bottom: keyboardHeight),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF9F9FC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Add New Subject",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1A1C1E),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF8D7072)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "SUBJECT NAME",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8D7072),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: TextField(
+                        controller: localController,
+                        onChanged: (val) {
+                          setModalState(() {
+                            localSubjectName = val;
+                          });
+                        },
+                        style: GoogleFonts.plusJakartaSans(fontSize: 15, color: const Color(0xFF1A1C1E)),
+                        decoration: InputDecoration(
+                          hintText: "e.g., Data Structures & Algorithms",
+                          hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "DIFFICULTY LEVEL",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8D7072),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: ["Easy", "Medium", "Hard"].map((diff) {
+                        final bool isSel = localDifficulty == diff;
+                        Color badgeColor;
+                        Color activeBg;
+                        switch (diff) {
+                          case "Easy":
+                            badgeColor = const Color(0xFF10B981);
+                            activeBg = const Color(0xFFE8F5E9);
+                            break;
+                          case "Medium":
+                            badgeColor = const Color(0xFFD97706);
+                            activeBg = const Color(0xFFFFF8E1);
+                            break;
+                          default:
+                            badgeColor = const Color(0xFFEF4444);
+                            activeBg = const Color(0xFFFFEBEE);
+                        }
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: InkWell(
+                              onTap: () {
+                                setModalState(() {
+                                  localDifficulty = diff;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isSel ? activeBg : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSel ? badgeColor : const Color(0xFFE2E8F0),
+                                    width: isSel ? 1.5 : 1.0,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    diff,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSel ? badgeColor : const Color(0xFF594042),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 28),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDFA),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFCCFBF1)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0D9488), size: 22),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                  Text(
+                                    "AI Syllabus Generator",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF0F766E),
+                                    ),
+                                  ),
+                                  Text(
+                                    "Automatically populate with standard core chapters",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 10,
+                                      color: const Color(0xFF0D9488),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: aiGenerateSyllabus,
+                            activeColor: const Color(0xFF0D9488),
+                            onChanged: (val) {
+                              setModalState(() {
+                                aiGenerateSyllabus = val;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: localSubjectName.trim().isEmpty
+                            ? null
+                            : () async {
+                                final name = localSubjectName.trim();
+                                if (subjects.any((s) => s.name.toLowerCase() == name.toLowerCase())) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("Subject already exists!")),
+                                  );
+                                  return;
+                                }
+                                
+                                Navigator.pop(context);
+                                
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                                
+                                await Future.delayed(const Duration(milliseconds: 650));
+                                
+                                final List<Topic> generatedTopics = [];
+                                if (aiGenerateSyllabus) {
+                                  final defaultNames = _getDefaultTopics(name);
+                                  for (final topicName in defaultNames) {
+                                    generatedTopics.add(Topic(name: topicName, difficulty: localDifficulty, isCompleted: false));
+                                  }
+                                }
+                                
+                                setState(() {
+                                  subjects.add(Subject(
+                                    name: name,
+                                    difficulty: localDifficulty,
+                                    topics: generatedTopics,
+                                  ));
+                                  _isLoading = false;
+                                });
+                                await saveData();
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF006A63),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Text(
+                          "Create Subject",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showImportSyllabusModal(BuildContext context) {
+    String localSubjectName = "";
+    String syllabusText = "";
+    final nameController = TextEditingController();
+    final textController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              margin: EdgeInsets.only(bottom: keyboardHeight),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF9F9FC),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Import Syllabus",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1A1C1E),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded, color: Color(0xFF8D7072)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "SUBJECT NAME",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8D7072),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: TextField(
+                        controller: nameController,
+                        onChanged: (val) {
+                          setModalState(() {
+                            localSubjectName = val;
+                          });
+                        },
+                        style: GoogleFonts.plusJakartaSans(fontSize: 15, color: const Color(0xFF1A1C1E)),
+                        decoration: InputDecoration(
+                          hintText: "e.g., Relational Database Management System",
+                          hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      "PASTE SYLLABUS TOPICS",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8D7072),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: TextField(
+                          controller: textController,
+                          maxLines: null,
+                          expands: true,
+                          onChanged: (val) {
+                            setModalState(() {
+                              syllabusText = val;
+                            });
+                          },
+                          style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
+                          decoration: InputDecoration(
+                            hintText: "Paste chapters here, one per line:\n- Chapter 1: Introduction to DBMS\n- Chapter 2: Relational Model\n- Chapter 3: SQL Queries",
+                            hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
+                            contentPadding: const EdgeInsets.all(16),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: localSubjectName.trim().isEmpty || syllabusText.trim().isEmpty
+                            ? null
+                            : () async {
+                                final name = localSubjectName.trim();
+                                if (subjects.any((s) => s.name.toLowerCase() == name.toLowerCase())) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text("Subject already exists!")),
+                                  );
+                                  return;
+                                }
+
+                                Navigator.pop(context);
+
+                                setState(() {
+                                  _isLoading = true;
+                                });
+
+                                await Future.delayed(const Duration(milliseconds: 800));
+
+                                final List<Topic> importedTopics = [];
+                                final lines = syllabusText.split('\n');
+                                for (var line in lines) {
+                                  var cleanLine = line.trim();
+                                  if (cleanLine.startsWith('-') || cleanLine.startsWith('*') || cleanLine.startsWith('•')) {
+                                    cleanLine = cleanLine.substring(1).trim();
+                                  }
+                                  if (cleanLine.isNotEmpty) {
+                                    importedTopics.add(Topic(name: cleanLine, difficulty: "Medium", isCompleted: false));
+                                  }
+                                }
+
+                                setState(() {
+                                  subjects.add(Subject(
+                                    name: name,
+                                    difficulty: "Medium",
+                                    topics: importedTopics,
+                                  ));
+                                  _isLoading = false;
+                                });
+                                await saveData();
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF006A63),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Text(
+                          "Import & Parse Syllabus",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddTopicDialog(BuildContext context, int actualIndex) {
+    String newTopicName = "";
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text("Add Chapter", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+          content: TextField(
+            onChanged: (val) => newTopicName = val,
+            decoration: const InputDecoration(hintText: "Enter chapter name"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (newTopicName.trim().isNotEmpty) {
+                  setState(() {
+                    subjects[actualIndex].topics.add(Topic(name: newTopicName.trim(), difficulty: subjects[actualIndex].difficulty, isCompleted: false));
+                  });
+                  await saveData();
+                }
+                Navigator.pop(context);
+              },
+              child: const Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditSubjectDialog(BuildContext context, int actualIndex) {
+    String newName = subjects[actualIndex].name;
+    final controller = TextEditingController(text: newName);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text("Edit Subject Name", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: controller,
+            onChanged: (val) => newName = val,
+            decoration: const InputDecoration(hintText: "Enter new subject name"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (newName.trim().isNotEmpty) {
+                  setState(() {
+                    subjects[actualIndex].name = newName.trim();
+                  });
+                  await saveData();
+                }
+                Navigator.pop(context);
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAiSummaryDialog(BuildContext context, Subject subject) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF006A63)),
+              const SizedBox(width: 8),
+              Text("AI Syllabus Summary", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Text(
+            "Based on the chapters listed, this subject covers the core fundamentals of ${subject.name}. It is categorized as a ${subject.difficulty}-level challenge. We recommend dedicating study sessions focusing on topics with pending status first to maintain optimal recall.",
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Awesome"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAnalyticsCol(String iconEmoji, String value, String topLabel, String bottomLabel) {
+    return Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5F1).withOpacity(0.6),
+              shape: BoxShape.circle,
+            ),
+            child: Text(iconEmoji, style: const TextStyle(fontSize: 16)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1A1C1E),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            topLabel,
+            style: GoogleFonts.plusJakartaSans(fontSize: 9, color: const Color(0xFF8D7072), fontWeight: FontWeight.bold),
+          ),
+          Text(
+            bottomLabel,
+            style: GoogleFonts.plusJakartaSans(fontSize: 8, color: Colors.grey.shade400),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsDivider() {
+    return Container(
+      height: 48,
+      width: 1,
+      color: Colors.white.withOpacity(0.3),
+    );
+  }
+
   Widget _buildSubjectsTab() {
     final List<Color> bgColors = [
       const Color(0xFFFFEDD5), // Peach
@@ -2002,19 +2610,89 @@ class _HomeScreenState extends State<HomeScreen> {
       const Color(0xFF7C3AED),
     ];
 
-    // Filter subjects based on query
-    final filteredSubjects = subjects.where((s) {
-      return s.name.toLowerCase().contains(_subjectSearchQuery.toLowerCase());
+    // 1. Filter by search query
+    var filtered = subjects.where((s) {
+      final matchesSearch = s.name.toLowerCase().contains(_subjectSearchQuery.toLowerCase()) ||
+                            s.topics.any((t) => t.name.toLowerCase().contains(_subjectSearchQuery.toLowerCase()));
+      return matchesSearch;
     }).toList();
 
-    // Stats calculations
-    int totalTopics = 0;
-    int completedTopics = 0;
-    for (final s in subjects) {
-      totalTopics += s.topics.length;
-      completedTopics += s.topics.where((t) => t.isCompleted).length;
+    // 2. Filter by status / difficulty tab
+    if (_subjectsFilter != "All") {
+      if (_subjectsFilter == "In Progress") {
+        filtered = filtered.where((s) {
+          if (s.topics.isEmpty) return true;
+          final done = s.topics.where((t) => t.isCompleted).length;
+          return done > 0 && done < s.topics.length;
+        }).toList();
+      } else if (_subjectsFilter == "Completed") {
+        filtered = filtered.where((s) {
+          if (s.topics.isEmpty) return false;
+          final done = s.topics.where((t) => t.isCompleted).length;
+          return done == s.topics.length;
+        }).toList();
+      } else {
+        // Difficulty filter ("Easy", "Medium", "Hard")
+        filtered = filtered.where((s) => s.difficulty == _subjectsFilter).toList();
+      }
     }
-    final double completionRate = totalTopics == 0 ? 0.0 : (completedTopics / totalTopics);
+
+    // 3. Sort
+    if (_subjectsSort == "Alphabetical") {
+      filtered.sort((a, b) => a.name.compareTo(b.name));
+    } else if (_subjectsSort == "Chapters") {
+      filtered.sort((a, b) => b.topics.length.compareTo(a.topics.length));
+    } else if (_subjectsSort == "Progress") {
+      filtered.sort((a, b) {
+        final double progressA = a.topics.isEmpty ? 0.0 : (a.topics.where((t) => t.isCompleted).length / a.topics.length);
+        final double progressB = b.topics.isEmpty ? 0.0 : (b.topics.where((t) => t.isCompleted).length / b.topics.length);
+        return progressB.compareTo(progressA);
+      });
+    } else {
+      // "Recent" -> Maintain original list order (reversed to show newest first)
+      filtered = filtered.reversed.toList();
+    }
+
+    // Stats calculations
+    final int totalSubjectsCount = subjects.length;
+    int totalChaptersCount = 0;
+    int completedChaptersCount = 0;
+    for (final s in subjects) {
+      totalChaptersCount += s.topics.length;
+      completedChaptersCount += s.topics.where((t) => t.isCompleted).length;
+    }
+    final int overallProgressPercent = totalChaptersCount == 0
+        ? 0
+        : ((completedChaptersCount / totalChaptersCount) * 100).round();
+
+    // AI Insight text generation
+    String aiInsightText = "Add subjects to receive personalized study insights.";
+    if (subjects.isNotEmpty) {
+      Subject? strongest;
+      Subject? weakest;
+      double maxProg = -1.0;
+      double minProg = 2.0;
+
+      for (final s in subjects) {
+        final double prog = s.topics.isEmpty ? 0.0 : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
+        if (prog > maxProg) {
+          maxProg = prog;
+          strongest = s;
+        }
+        if (prog < minProg) {
+          minProg = prog;
+          weakest = s;
+        }
+      }
+
+      if (strongest != null && weakest != null) {
+        if (maxProg == minProg) {
+          aiInsightText = "You are currently making progress in ${strongest.name}. Keep expanding your syllabus to see deeper suggestions.";
+        } else {
+          aiInsightText = "You are strongest in ${strongest.name}. Focus more on ${weakest.name} to balance your progress.";
+        }
+      }
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -2022,7 +2700,7 @@ class _HomeScreenState extends State<HomeScreen> {
           image: AssetImage(_getDashboardBackdrop()),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.white.withOpacity(0.9),
+            Colors.white.withOpacity(0.92),
             BlendMode.lighten,
           ),
         ),
@@ -2034,268 +2712,276 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 20),
-              // 1. Header Title & Subtitle (Clean greeting styled like dashboard)
+              const SizedBox(height: 24),
+              // 1. Header Title & Subtitle
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Good Morning,",
+                    "Subjects & Syllabus",
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 26,
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF1A1C1E),
                       letterSpacing: -0.5,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
-                    "${userName.toLowerCase().contains('prajwal') ? 'Prajwal' : (userName.isNotEmpty ? userName : 'Alex')}! \u{1F4DA}",
+                    "Manage your subjects and track progress",
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF006A63),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "Continue building your learning journey.",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: const Color(0xFF8D7072),
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // 2. Search Bar directly below the title
-              _buildGlassCard(
-                borderRadius: 20,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: TextField(
-                  onChanged: (val) {
-                    setState(() {
-                      _subjectSearchQuery = val;
-                    });
-                  },
-                  style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
-                  decoration: InputDecoration(
-                    hintText: "Search your syllabus...",
-                    hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF006A63)),
-                    border: InputBorder.none,
+              // 2. Large Floating Glass Search Bar + Filter Button
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGlassCard(
+                      borderRadius: 20,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      child: TextField(
+                        onChanged: (val) {
+                          setState(() {
+                            _subjectSearchQuery = val;
+                          });
+                        },
+                        style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
+                        decoration: InputDecoration(
+                          hintText: "Search subjects, chapters...",
+                          hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
+                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF006A63)),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 12),
+                  _buildGlassCard(
+                    borderRadius: 20,
+                    padding: const EdgeInsets.all(12),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (_subjectsSort == "Recent") {
+                            _subjectsSort = "Alphabetical";
+                          } else if (_subjectsSort == "Alphabetical") {
+                            _subjectsSort = "Progress";
+                          } else {
+                            _subjectsSort = "Recent";
+                          }
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Sorted by: $_subjectsSort"),
+                            duration: const Duration(seconds: 1),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: const Icon(Icons.tune_rounded, color: Color(0xFF006A63), size: 22),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 3. Horizontal Filter Chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: ["All", "In Progress", "Completed", "Easy", "Medium", "Hard"].map((filter) {
+                    final bool isSelected = _subjectsFilter == filter;
+                    
+                    Widget dotIndicator = Container();
+                    if (filter == "Easy") {
+                      dotIndicator = Container(
+                        margin: const EdgeInsets.only(right: 6),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
+                      );
+                    } else if (filter == "Medium") {
+                      dotIndicator = Container(
+                        margin: const EdgeInsets.only(right: 6),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Color(0xFFF59E0B), shape: BoxShape.circle),
+                      );
+                    } else if (filter == "Hard") {
+                      dotIndicator = Container(
+                        margin: const EdgeInsets.only(right: 6),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                      );
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _subjectsFilter = filter;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF006A63) : Colors.white.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF006A63) : Colors.white.withOpacity(0.3),
+                              width: 1.0,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              dotIndicator,
+                              Text(
+                                filter,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? Colors.white : const Color(0xFF594042),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // 3. Add Subject Card (Always visible Hero Component)
+              // 4. Floating Analytics Card
               _buildGlassCard(
-                borderRadius: 28,
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                borderRadius: 24,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text(
-                      "Add New Subject",
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF1A1C1E),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: subjectController,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 14),
-                      onChanged: (val) {
-                        setState(() {});
-                      },
-                      decoration: InputDecoration(
-                        hintText: "Enter subject name...",
-                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400),
-                        prefixIcon: const Icon(Icons.book_rounded, color: Color(0xFF006A63)),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.4),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: const BorderSide(color: Color(0xFF006A63), width: 1.5),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                    _buildSuggestionsList(),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Difficulty Level",
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8D7072),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    // Apple-style difficulty selector capsules
-                    Row(
-                      children: ["Easy", "Medium", "Hard"].map((difficulty) {
-                        final bool isSelected = selectedDifficulty == difficulty;
-                        Color color;
-                        Color bgColor;
-                        switch (difficulty) {
-                          case "Easy":
-                            color = const Color(0xFF2563EB); // Soft blue glass
-                            bgColor = const Color(0xFFE0E7FF);
-                            break;
-                          case "Medium":
-                            color = const Color(0xFFD97706); // Warm amber glass
-                            bgColor = const Color(0xFFFFEDD5);
-                            break;
-                          default:
-                            color = const Color(0xFFDC2626); // Subtle red glass
-                            bgColor = const Color(0xFFFEE2E2);
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: AnimatedScale(
-                            scale: isSelected ? 1.06 : 1.0,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutBack,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedDifficulty = difficulty;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? bgColor : Colors.white.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isSelected ? color : Colors.white.withOpacity(0.3),
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: isSelected ? [
-                                    BoxShadow(
-                                      color: color.withOpacity(0.2),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ] : [],
-                                ),
-                                child: Text(
-                                  difficulty,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    color: isSelected ? color : const Color(0xFF594042),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 20),
-                    // Morphing CTA Load button
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isAddingSubject ? null : addSubject,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF006A63),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(_isAddingSubject ? 25 : 20),
-                          ),
-                        ),
-                        child: _isAddingSubject
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.add_rounded, size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    "Add Subject",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
+                    _buildAnalyticsCol("📚", "$totalSubjectsCount", "Subjects", "Total"),
+                    _buildAnalyticsDivider(),
+                    _buildAnalyticsCol("📖", "$totalChaptersCount", "Chapters", "Total"),
+                    _buildAnalyticsDivider(),
+                    _buildAnalyticsCol("✅", "$completedChaptersCount", "Completed", "Chapters"),
+                    _buildAnalyticsDivider(),
+                    _buildAnalyticsCol("🎯", "$overallProgressPercent%", "Overall", "Progress"),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // 4. Subject List Section
+              // 5. Subject Library Section Header & Sort Dropdown
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Your Syllabus Tracker",
+                    "My Subjects (${filtered.length})",
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF1A1C1E),
                     ),
                   ),
-                  Text(
-                    "${filteredSubjects.length} subjects",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: const Color(0xFF8D7072),
-                      fontWeight: FontWeight.bold,
+                  PopupMenuButton<String>(
+                    onSelected: (val) {
+                      setState(() {
+                        _subjectsSort = val;
+                      });
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _subjectsSort,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: const Color(0xFF006A63),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF006A63), size: 16),
+                      ],
                     ),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: "Recent", child: Text("Recent")),
+                      const PopupMenuItem(value: "Alphabetical", child: Text("Alphabetical")),
+                      const PopupMenuItem(value: "Chapters", child: Text("Chapters")),
+                      const PopupMenuItem(value: "Progress", child: Text("Progress")),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              filteredSubjects.isEmpty
+              // 6. Subject Cards Library
+              filtered.isEmpty
                   ? Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 30),
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                       child: _buildGlassCard(
                         borderRadius: 24,
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(32),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.book_outlined, size: 48, color: Color(0xFF006A63)),
-                            const SizedBox(height: 12),
+                            const Text("📚", style: TextStyle(fontSize: 48)),
+                            const SizedBox(height: 16),
                             Text(
-                              "Your learning journey starts here.",
+                              "No subjects added yet.",
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1A1C1E),
                               ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Start by creating your first subject or import a syllabus.",
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () => _showAddSubjectModal(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF006A63),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  child: const Text("Add Subject"),
+                                ),
+                                const SizedBox(width: 12),
+                                OutlinedButton(
+                                  onPressed: () => _showImportSyllabusModal(context),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF006A63),
+                                    side: const BorderSide(color: Color(0xFF006A63)),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  child: const Text("Import PDF"),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -2305,9 +2991,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.zero,
-                      itemCount: filteredSubjects.length,
+                      itemCount: filtered.length,
                       itemBuilder: (context, index) {
-                        final subject = filteredSubjects[index];
+                        final subject = filtered[index];
                         final int actualIndex = subjects.indexOf(subject);
                         final colorIndex = actualIndex % bgColors.length;
                         final textColor = textColors[colorIndex];
@@ -2321,414 +3007,415 @@ class _HomeScreenState extends State<HomeScreen> {
                         Color diffBg;
                         switch (subject.difficulty) {
                           case "Easy":
-                            diffColor = const Color(0xFF2563EB);
-                            diffBg = const Color(0xFFE0E7FF);
+                            diffColor = const Color(0xFF10B981);
+                            diffBg = const Color(0xFFD1FAE5);
                             break;
                           case "Medium":
                             diffColor = const Color(0xFFD97706);
                             diffBg = const Color(0xFFFFEDD5);
                             break;
                           default:
-                            diffColor = const Color(0xFFDC2626);
+                            diffColor = const Color(0xFFEF4444);
                             diffBg = const Color(0xFFFEE2E2);
                         }
 
-                        return Dismissible(
-                          key: Key(subject.name + actualIndex.toString()),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 24),
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFBA1A1A).withOpacity(0.85),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: const Icon(Icons.delete_rounded, color: Colors.white, size: 28),
-                          ),
-                          onDismissed: (direction) => _deleteSubject(actualIndex),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: AnimatedScale(
-                              scale: isExpanded ? 1.02 : 1.0,
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.easeOutBack,
-                              child: _buildGlassCard(
-                                borderRadius: 24,
-                                padding: EdgeInsets.zero,
-                                child: Column(
-                                  children: [
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(24),
-                                      onTap: () {
-                                        setState(() {
-                                          if (isExpanded) {
-                                            _expandedSubjectIndices.remove(actualIndex);
-                                          } else {
-                                            _expandedSubjectIndices.add(actualIndex);
-                                          }
-                                        });
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(10),
-                                                  decoration: BoxDecoration(
-                                                    color: diffBg,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(Icons.bookmark_rounded, color: diffColor, size: 20),
-                                                ),
-                                                const SizedBox(width: 14),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        subject.name,
-                                                        style: GoogleFonts.plusJakartaSans(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: const Color(0xFF1A1C1E),
-                                                          fontSize: 15,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 6),
-                                                      Text(
-                                                        "Keep going! \u{1F4AA}",
-                                                        style: GoogleFonts.plusJakartaSans(
-                                                          fontSize: 10,
-                                                          color: textColor,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 6),
-                                                      Row(
-                                                        children: [
-                                                          Container(
-                                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                            decoration: BoxDecoration(
-                                                              color: diffBg,
-                                                              borderRadius: BorderRadius.circular(8),
-                                                            ),
-                                                            child: Text(
-                                                              subject.difficulty,
-                                                              style: GoogleFonts.plusJakartaSans(
-                                                                color: diffColor,
-                                                                fontSize: 9,
-                                                                fontWeight: FontWeight.bold,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          const SizedBox(width: 8),
-                                                          Text(
-                                                            "${subject.topics.length} Chapters",
-                                                            style: GoogleFonts.plusJakartaSans(
-                                                              fontSize: 11,
-                                                              fontWeight: FontWeight.bold,
-                                                              color: const Color(0xFF8D7072),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                PopupMenuButton<String>(
-                                                  icon: const Icon(Icons.more_horiz_rounded, color: Color(0xFF006A63)),
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                                  onSelected: (val) {
-                                                    if (val == 'delete') {
-                                                      _deleteSubject(actualIndex);
-                                                    } else if (val == 'manage') {
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) => SubjectDetailScreen(
-                                                            subject: subject,
-                                                            onSubjectChanged: (updatedSubject) async {
-                                                              setState(() {
-                                                                subjects[actualIndex] = updatedSubject;
-                                                              });
-                                                              await saveData();
-                                                            },
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  },
-                                                  itemBuilder: (context) => [
-                                                    const PopupMenuItem(
-                                                      value: 'manage',
-                                                      child: Text("Manage Syllabus"),
-                                                    ),
-                                                    const PopupMenuItem(
-                                                      value: 'delete',
-                                                      child: Text("Delete Subject", style: TextStyle(color: Colors.red)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: ClipRRect(
-                                                    borderRadius: BorderRadius.circular(4),
-                                                    child: LinearProgressIndicator(
-                                                      value: progressPercent,
-                                                      minHeight: 6,
-                                                      backgroundColor: Colors.white.withOpacity(0.4),
-                                                      valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 12),
-                                                Text(
-                                                  "${(progressPercent * 100).round()}%",
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: const Color(0xFF1A1C1E),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              "Next session: Tomorrow Ã¢â‚¬Â¢ 9:00 AM",
-                                              style: GoogleFonts.plusJakartaSans(
-                                                fontSize: 10,
-                                                color: Colors.grey.shade400,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: _buildGlassCard(
+                            borderRadius: 24,
+                            padding: EdgeInsets.zero,
+                            child: Column(
+                              children: [
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(24),
+                                  onTap: () {
+                                    setState(() {
+                                      if (isExpanded) {
+                                        _expandedSubjectIndices.remove(actualIndex);
+                                      } else {
+                                        _expandedSubjectIndices.add(actualIndex);
+                                      }
+                                    });
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        // Subject Icon with beautiful soft pastel color
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: diffBg,
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Text(
+                                            subject.name.toLowerCase().contains("physic")
+                                                ? "⚛️"
+                                                : subject.name.toLowerCase().contains("chem")
+                                                    ? "🧪"
+                                                    : subject.name.toLowerCase().contains("math")
+                                                        ? "🧮"
+                                                        : subject.name.toLowerCase().contains("database")
+                                                            ? "🗄️"
+                                                            : "📘",
+                                            style: const TextStyle(fontSize: 22),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                    AnimatedCrossFade(
-                                      firstChild: Container(),
-                                      secondChild: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                                        children: [
-                                          const Divider(height: 1, color: Colors.white24),
-                                          Padding(
-                                            padding: const EdgeInsets.all(16),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                if (subject.topics.isEmpty) ...[
-                                                  Padding(
-                                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                subject.name,
+                                                style: GoogleFonts.plusJakartaSans(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFF1A1C1E),
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: diffBg,
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
                                                     child: Text(
-                                                      "No topics added. Tap below to manage syllabus!",
+                                                      subject.difficulty,
                                                       style: GoogleFonts.plusJakartaSans(
-                                                        fontSize: 12,
-                                                        color: const Color(0xFF8D7072),
-                                                        fontStyle: FontStyle.italic,
+                                                        color: diffColor,
+                                                        fontSize: 9,
+                                                        fontWeight: FontWeight.bold,
                                                       ),
                                                     ),
                                                   ),
-                                                ] else ...[
+                                                  const SizedBox(width: 8),
                                                   Text(
-                                                    "Syllabus Topics",
+                                                    "${subject.topics.length} Chapters",
                                                     style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 11,
+                                                      fontSize: 10,
                                                       fontWeight: FontWeight.bold,
                                                       color: const Color(0xFF8D7072),
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 8),
-                                                  ...List.generate(subject.topics.length, (topicIdx) {
-                                                    final topic = subject.topics[topicIdx];
-                                                    return Padding(
-                                                      padding: const EdgeInsets.symmetric(vertical: 2),
-                                                      child: Row(
-                                                        children: [
-                                                          Checkbox(
-                                                            value: topic.isCompleted,
-                                                            activeColor: const Color(0xFF006A63),
-                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                                            onChanged: (val) async {
-                                                              setState(() {
-                                                                topic.isCompleted = val ?? false;
-                                                              });
-                                                              await saveData();
-                                                            },
-                                                          ),
-                                                          Expanded(
-                                                            child: Text(
-                                                              topic.name,
-                                                              style: GoogleFonts.plusJakartaSans(
-                                                                fontSize: 13,
-                                                                color: const Color(0xFF1A1C1E),
-                                                                decoration: topic.isCompleted
-                                                                    ? TextDecoration.lineThrough
-                                                                    : null,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  }),
                                                 ],
-                                                const SizedBox(height: 16),
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    OutlinedButton.icon(
-                                                      onPressed: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) => SubjectDetailScreen(
-                                                              subject: subject,
-                                                              onSubjectChanged: (updatedSubject) async {
-                                                                setState(() {
-                                                                  subjects[actualIndex] = updatedSubject;
-                                                                });
-                                                                await saveData();
-                                                              },
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                      icon: const Icon(Icons.edit_road_rounded, size: 16),
-                                                      label: Text("Manage Syllabus", style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold)),
-                                                      style: OutlinedButton.styleFrom(
-                                                        foregroundColor: const Color(0xFF006A63),
-                                                        side: const BorderSide(color: Color(0xFF006A63)),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              // Animated Progress bar
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: ClipRRect(
+                                                      borderRadius: BorderRadius.circular(4),
+                                                      child: LinearProgressIndicator(
+                                                        value: progressPercent,
+                                                        minHeight: 6,
+                                                        backgroundColor: Colors.white.withOpacity(0.4),
+                                                        valueColor: AlwaysStoppedAnimation<Color>(textColor),
                                                       ),
                                                     ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    "${(progressPercent * 100).round()}%",
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: const Color(0xFF1A1C1E),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        // Chevron Indicator
+                                        Icon(
+                                          isExpanded
+                                              ? Icons.keyboard_arrow_up_rounded
+                                              : Icons.keyboard_arrow_down_rounded,
+                                          color: const Color(0xFF006A63),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                AnimatedCrossFade(
+                                  firstChild: Container(),
+                                  secondChild: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      const Divider(height: 1, color: Colors.white24),
+                                      Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (subject.topics.isEmpty) ...[
+                                              Text(
+                                                "No chapters added yet.",
+                                                style: GoogleFonts.plusJakartaSans(
+                                                  fontSize: 11,
+                                                  color: const Color(0xFF8D7072),
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                              ),
+                                            ] else ...[
+                                              Text(
+                                                "Syllabus Topics",
+                                                style: GoogleFonts.plusJakartaSans(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFF8D7072),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              ...List.generate(subject.topics.length, (topicIdx) {
+                                                final topic = subject.topics[topicIdx];
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                                  child: Row(
+                                                    children: [
+                                                      Checkbox(
+                                                        value: topic.isCompleted,
+                                                        activeColor: const Color(0xFF006A63),
+                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                                        onChanged: (val) async {
+                                                          setState(() {
+                                                            topic.isCompleted = val ?? false;
+                                                          });
+                                                          await saveData();
+                                                        },
+                                                      ),
+                                                      Expanded(
+                                                        child: Text(
+                                                          topic.name,
+                                                          style: GoogleFonts.plusJakartaSans(
+                                                            fontSize: 13,
+                                                            color: const Color(0xFF1A1C1E),
+                                                            decoration: topic.isCompleted
+                                                                ? TextDecoration.lineThrough
+                                                                : null,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              }),
+                                            ],
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
                                                     IconButton(
-                                                      onPressed: () => _deleteSubject(actualIndex),
-                                                      icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFBA1A1A)),
+                                                      onPressed: () => _showEditSubjectDialog(context, actualIndex),
+                                                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF006A63), size: 20),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () => _showAddTopicDialog(context, actualIndex),
+                                                      icon: const Icon(Icons.add_task_rounded, color: Color(0xFF006A63), size: 20),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () => _showAiSummaryDialog(context, subject),
+                                                      icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 20),
                                                     ),
                                                   ],
                                                 ),
+                                                IconButton(
+                                                  onPressed: () => _deleteSubject(actualIndex),
+                                                  icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFBA1A1A)),
+                                                ),
                                               ],
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                      crossFadeState: isExpanded
-                                          ? CrossFadeState.showSecond
-                                          : CrossFadeState.showFirst,
-                                      duration: const Duration(milliseconds: 250),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                  crossFadeState: isExpanded
+                                      ? CrossFadeState.showSecond
+                                      : CrossFadeState.showFirst,
+                                  duration: const Duration(milliseconds: 250),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         );
                       },
                     ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // 5. Two Compact Statistics Cards at the bottom
+              // 7. Quick Actions Row
               Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      height: 100,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5F1).withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFFE8F5F1)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "${subjects.length}",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1A1C1E),
-                                ),
+                    child: InkWell(
+                      onTap: () => _showAddSubjectModal(context),
+                      borderRadius: BorderRadius.circular(24),
+                      child: _buildGlassCard(
+                        borderRadius: 24,
+                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE6F4EA),
+                                shape: BoxShape.circle,
                               ),
-                              const Icon(Icons.collections_bookmark_outlined, color: Color(0xFF006A63), size: 18),
-                            ],
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Total Subjects",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF594042),
-                                ),
+                              child: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF137333), size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Add Subject",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF137333),
+                                    ),
+                                  ),
+                                  Text(
+                                    "Create new subject",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                "Registered this term",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 8,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
-                    child: Container(
-                      height: 100,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF064E3B), Color(0xFF022C22)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    child: InkWell(
+                      onTap: () => _showImportSyllabusModal(context),
+                      borderRadius: BorderRadius.circular(24),
+                      child: _buildGlassCard(
+                        borderRadius: 24,
+                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF3E8FF),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.file_upload_outlined, color: Color(0xFF7C3AED), size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Import Syllabus",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF7C3AED),
+                                    ),
+                                  ),
+                                  Text(
+                                    "From PDF or file",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(24),
                       ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // 8. Bottom AI Insight Card
+              _buildGlassCard(
+                borderRadius: 28,
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.star_rounded, color: Color(0xFF34D399), size: 18),
-                          const SizedBox(height: 4),
-                          Text(
-                            "${(completionRate * 100).round()}% Completion",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF006A63), size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                "AI Insight",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1A1C1E),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE0F2FE),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  "Beta",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF0369A1),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 12),
                           Text(
-                            "Total course syllabus covered",
+                            aiInsightText,
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 8,
-                              color: Colors.white70,
+                              fontSize: 12,
+                              color: const Color(0xFF594042),
+                              height: 1.4,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: Image.asset(
+                        "assets/images/eggy_coder.jpg",
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.android_rounded, size: 48, color: Color(0xFF006A63));
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -2736,7 +3423,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  Widget _buildSettingsTab() {
+Widget _buildSettingsTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
