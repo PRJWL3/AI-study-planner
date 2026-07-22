@@ -1598,13 +1598,13 @@ class StudyRoomStreamsPainter extends CustomPainter {
 
     // Stream line
     final paintTrack = Paint()
-      ..color = color.withOpacity(isActiveTarget ? 0.20 : 0.06)
+      ..color = color.withOpacity(isActiveTarget ? 0.35 : 0.15)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = isActiveTarget ? 2.0 : 1.0;
+      ..strokeWidth = isActiveTarget ? 2.5 : 1.2;
     canvas.drawPath(path, paintTrack);
 
-    // Continuous flow particles travel down the track only if this is the active target
-    if (isTimerActive && isActiveTarget) {
+    // Continuous flow particles travel down the track for all crystals when timer is active
+    if (isTimerActive) {
       final pathMetrics = path.computeMetrics().toList();
       if (pathMetrics.isNotEmpty) {
         final metric = pathMetrics.first;
@@ -1618,13 +1618,13 @@ class StudyRoomStreamsPainter extends CustomPainter {
           final paintDot = Paint()
             ..color = color.withOpacity(0.9)
             ..style = PaintingStyle.fill;
-          canvas.drawCircle(dotPos, 2.5, paintDot);
+          canvas.drawCircle(dotPos, isActiveTarget ? 3.0 : 2.0, paintDot);
 
           final paintGlow = Paint()
             ..color = color.withOpacity(0.35)
             ..style = PaintingStyle.fill
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-          canvas.drawCircle(dotPos, 5, paintGlow);
+          canvas.drawCircle(dotPos, isActiveTarget ? 6.0 : 4.0, paintGlow);
         }
       }
     }
