@@ -1276,7 +1276,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      "Keep going! ðŸ’ª",
+                                      "Keep going! \u{1F4AA}",
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 9,
                                         fontWeight: FontWeight.bold,
@@ -1522,7 +1522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
-                                                "Due today Ã¢â‚¬Â¢ 2:00 PM",
+                                                "Due today \u{2022} 2:00 PM",
                                                 style: GoogleFonts.plusJakartaSans(
                                                   fontSize: 10,
                                                   color: Colors.grey.shade400,
@@ -1577,7 +1577,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    "28Â°C",
+                                    "28\u{00B0}C",
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
@@ -1716,7 +1716,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("Ã°Å¸Å½â€° Focus session completed: $_studyRoomDurationMinutes mins of $_studyRoomSelectedSubject!"),
+                content: Text("\u{1F389} Focus session completed: $_studyRoomDurationMinutes mins of $_studyRoomSelectedSubject!"),
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -1897,7 +1897,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Text(
-            "${userName.toLowerCase().contains('prajwal') ? 'Prajwal' : (userName.isNotEmpty ? userName : 'Alex')}! ðŸ‘‹",
+            "${userName.toLowerCase().contains('prajwal') ? 'Prajwal' : (userName.isNotEmpty ? userName : 'Alex')}! \u{1F44B}",
             style: GoogleFonts.plusJakartaSans(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -2049,7 +2049,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Text(
-                    "${userName.toLowerCase().contains('prajwal') ? 'Prajwal' : (userName.isNotEmpty ? userName : 'Alex')}! Ã°Å¸â€œÅ¡",
+                    "${userName.toLowerCase().contains('prajwal') ? 'Prajwal' : (userName.isNotEmpty ? userName : 'Alex')}! \u{1F4DA}",
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
@@ -2395,6 +2395,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           fontWeight: FontWeight.bold,
                                                           color: const Color(0xFF1A1C1E),
                                                           fontSize: 15,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      Text(
+                                                        "Keep going! \u{1F4AA}",
+                                                        style: GoogleFonts.plusJakartaSans(
+                                                          fontSize: 10,
+                                                          color: textColor,
+                                                          fontWeight: FontWeight.bold,
                                                         ),
                                                       ),
                                                       const SizedBox(height: 6),
