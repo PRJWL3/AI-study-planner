@@ -79,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Set<int> _expandedSubjectIndices = {};
   String _subjectsFilter = "All";
   String _subjectsSort = "Recent";
+  bool _isSearchFocused = false;
 
   // Study Room state variables
   String _studyRoomSelectedSubject = "General Study";
@@ -2665,134 +2666,313 @@ class _HomeScreenState extends State<HomeScreen> {
         ? 0
         : ((completedChaptersCount / totalChaptersCount) * 100).round();
 
-    // AI Insight text generation
-    String aiInsightText = "Add subjects to receive personalized study insights.";
-    if (subjects.isNotEmpty) {
-      Subject? strongest;
-      Subject? weakest;
-      double maxProg = -1.0;
-      double minProg = 2.0;
-
-      for (final s in subjects) {
-        final double prog = s.topics.isEmpty ? 0.0 : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
-        if (prog > maxProg) {
-          maxProg = prog;
-          strongest = s;
-        }
-        if (prog < minProg) {
-          minProg = prog;
-          weakest = s;
-        }
-      }
-
-      if (strongest != null && weakest != null) {
-        if (maxProg == minProg) {
-          aiInsightText = "You are currently making progress in ${strongest.name}. Keep expanding your syllabus to see deeper suggestions.";
-        } else {
-          aiInsightText = "You are strongest in ${strongest.name}. Focus more on ${weakest.name} to balance your progress.";
-        }
-      }
-    }
-
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(_getDashboardBackdrop()),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.white.withOpacity(0.92),
+            Colors.white.withOpacity(0.94),
             BlendMode.lighten,
           ),
         ),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 120),
+        padding: const EdgeInsets.only(bottom: 140),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
-              // 1. Header Title & Subtitle
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 32), // More whitespace around title as requested
+              
+              // 1. Header Row (Title & Notification capsule)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Subjects & Syllabus",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1A1C1E),
-                      letterSpacing: -0.5,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Subjects & Syllabus",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1A1C1E),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Manage your subjects and track progress",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          color: const Color(0xFF8D7072).withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Manage your subjects and track progress",
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13,
-                      color: const Color(0xFF8D7072),
-                      fontWeight: FontWeight.w500,
+                  // Premium notification bell button capsule
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.6),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
                     ),
+                    child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF006A63), size: 20),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+
+              // 2. Translucent Liquid Glass Hero Card
+              _buildGlassCard(
+                borderRadius: 28,
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Keep going, ${userName.isNotEmpty ? userName : 'Prajwal'}! 👋",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF1A1C1E),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                "You're doing great. Stay consistent and achieve more every day.",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12,
+                                  color: const Color(0xFF594042).withOpacity(0.8),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // 3D Books Illustration
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: Image.asset(
+                            "assets/images/books_3d.png",
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 48, color: Color(0xFF6366F1)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(height: 1, color: Colors.white30),
+                    const SizedBox(height: 16),
+                    // Bottom Stats Row matching mockup perfectly
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Subjects Stat
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$totalSubjectsCount",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1A1C1E),
+                                  ),
+                                ),
+                                Text(
+                                  "Subjects",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3E8FF),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.book_rounded, color: Color(0xFF7C3AED), size: 12),
+                            ),
+                          ],
+                        ),
+                        // Chapters Stat
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$totalChaptersCount",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1A1C1E),
+                                  ),
+                                ),
+                                Text(
+                                  "Chapters",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE0E7FF),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.collections_bookmark_rounded, color: Color(0xFF4F46E5), size: 12),
+                            ),
+                          ],
+                        ),
+                        // Completed Stat
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$completedChaptersCount",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1A1C1E),
+                                  ),
+                                ),
+                                Text(
+                                  "Completed",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD1FAE5),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.check_box_rounded, color: Color(0xFF059669), size: 12),
+                            ),
+                          ],
+                        ),
+                        // Progress ring with percentage text
+                        Row(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$overallProgressPercent%",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1A1C1E),
+                                  ),
+                                ),
+                                Text(
+                                  "Overall",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 9,
+                                    color: Colors.grey.shade500,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                value: overallProgressPercent / 100.0,
+                                strokeWidth: 3.0,
+                                backgroundColor: const Color(0xFFE2E8F0),
+                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
-              // 2. Large Floating Glass Search Bar + Filter Button
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildGlassCard(
-                      borderRadius: 20,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      child: TextField(
-                        onChanged: (val) {
-                          setState(() {
-                            _subjectSearchQuery = val;
-                          });
-                        },
-                        style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
-                        decoration: InputDecoration(
-                          hintText: "Search subjects, chapters...",
-                          hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
-                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF006A63)),
-                          border: InputBorder.none,
+              // 3. Taller Search Bar with Animated focus glow
+              Focus(
+                onFocusChange: (hasFocus) {
+                  setState(() {
+                    _isSearchFocused = hasFocus;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      if (_isSearchFocused)
+                        BoxShadow(
+                          color: const Color(0xFF006A63).withOpacity(0.15),
+                          blurRadius: 12,
+                          spreadRadius: 2,
                         ),
+                    ],
+                  ),
+                  child: _buildGlassCard(
+                    borderRadius: 20,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // taller
+                    child: TextField(
+                      onChanged: (val) {
+                        setState(() {
+                          _subjectSearchQuery = val;
+                        });
+                      },
+                      style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
+                      decoration: InputDecoration(
+                        hintText: "Search subjects, chapters or topics...",
+                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
+                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF006A63)),
+                        border: InputBorder.none,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _buildGlassCard(
-                    borderRadius: 20,
-                    padding: const EdgeInsets.all(12),
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          if (_subjectsSort == "Recent") {
-                            _subjectsSort = "Alphabetical";
-                          } else if (_subjectsSort == "Alphabetical") {
-                            _subjectsSort = "Progress";
-                          } else {
-                            _subjectsSort = "Recent";
-                          }
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Sorted by: $_subjectsSort"),
-                            duration: const Duration(seconds: 1),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      },
-                      child: const Icon(Icons.tune_rounded, color: Color(0xFF006A63), size: 22),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 16),
 
-              // 3. Horizontal Filter Chips
+              // 4. Horizontal Filter Chips (Rounded glass pills with color dots)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -2866,26 +3046,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 20),
 
-              // 4. Floating Analytics Card
-              _buildGlassCard(
-                borderRadius: 24,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildAnalyticsCol("📚", "$totalSubjectsCount", "Subjects", "Total"),
-                    _buildAnalyticsDivider(),
-                    _buildAnalyticsCol("📖", "$totalChaptersCount", "Chapters", "Total"),
-                    _buildAnalyticsDivider(),
-                    _buildAnalyticsCol("✅", "$completedChaptersCount", "Completed", "Chapters"),
-                    _buildAnalyticsDivider(),
-                    _buildAnalyticsCol("🎯", "$overallProgressPercent%", "Overall", "Progress"),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 5. Subject Library Section Header & Sort Dropdown
+              // 5. Subject Library Section Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -2939,26 +3100,47 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("📚", style: TextStyle(fontSize: 48)),
-                            const SizedBox(height: 16),
+                            // Gentle floating 3D book animation
+                            TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              duration: const Duration(seconds: 4),
+                              curve: Curves.easeInOut,
+                              builder: (context, val, child) {
+                                return Transform.translate(
+                                  offset: Offset(0, 10 * math.sin(val * 2.0 * math.pi)),
+                                  child: child,
+                                );
+                              },
+                              child: SizedBox(
+                                width: 120,
+                                height: 120,
+                                child: Image.asset(
+                                  "assets/images/open_book_3d.png",
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => const Text("📚", style: TextStyle(fontSize: 48)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                             Text(
-                              "No subjects added yet.",
+                              "Your learning journey starts here.",
+                              textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
-                                fontSize: 15,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1A1C1E),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 8),
                             Text(
-                              "Start by creating your first subject or import a syllabus.",
+                              "Add your first subject or import your syllabus to begin.",
                               textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 12,
                                 color: Colors.grey.shade500,
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -2967,7 +3149,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF006A63),
                                     foregroundColor: Colors.white,
+                                    elevation: 0,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                   ),
                                   child: const Text("Add Subject"),
                                 ),
@@ -2978,6 +3162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     foregroundColor: const Color(0xFF006A63),
                                     side: const BorderSide(color: Color(0xFF006A63)),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                   ),
                                   child: const Text("Import PDF"),
                                 ),
@@ -3003,6 +3188,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? 0.0
                             : (subject.topics.where((t) => t.isCompleted).length / subject.topics.length);
 
+                        // Find the first pending chapter dynamically!
+                        final firstPending = subject.topics.firstWhere(
+                          (t) => !t.isCompleted,
+                          orElse: () => Topic(name: "", difficulty: "Medium", isCompleted: true),
+                        );
+                        final String nextTopicText = firstPending.name.isNotEmpty 
+                            ? "Next: ${firstPending.name}" 
+                            : "All chapters completed! 🎉";
+
                         Color diffColor;
                         Color diffBg;
                         switch (subject.difficulty) {
@@ -3017,6 +3211,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           default:
                             diffColor = const Color(0xFFEF4444);
                             diffBg = const Color(0xFFFEE2E2);
+                        }
+
+                        // Dynamic Apple-style icons inside glass capsule
+                        Widget getSubjectIconWidget() {
+                          final nameLower = subject.name.toLowerCase();
+                          IconData ic = Icons.book_rounded;
+                          if (nameLower.contains("physic")) {
+                            ic = Icons.blur_on_rounded;
+                          } else if (nameLower.contains("chem")) {
+                            ic = Icons.science_rounded;
+                          } else if (nameLower.contains("math") || nameLower.contains("discret")) {
+                            ic = Icons.functions_rounded;
+                          } else if (nameLower.contains("database") || nameLower.contains("dbms")) {
+                            ic = Icons.storage_rounded;
+                          } else if (nameLower.contains("algorithm") || nameLower.contains("structure") || nameLower.contains("dsa")) {
+                            ic = Icons.code_rounded;
+                          } else if (nameLower.contains("operating") || nameLower.contains("system")) {
+                            ic = Icons.terminal_rounded;
+                          }
+                          return Icon(ic, color: textColor, size: 24);
                         }
 
                         return Padding(
@@ -3038,30 +3252,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                     });
                                   },
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(18),
                                     child: Row(
                                       children: [
-                                        // Subject Icon with beautiful soft pastel color
+                                        // Left: Subject icon glass container matching mockup
                                         Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: diffBg,
+                                            color: textColor.withOpacity(0.08),
                                             borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(color: textColor.withOpacity(0.15)),
                                           ),
-                                          child: Text(
-                                            subject.name.toLowerCase().contains("physic")
-                                                ? "⚛️"
-                                                : subject.name.toLowerCase().contains("chem")
-                                                    ? "🧪"
-                                                    : subject.name.toLowerCase().contains("math")
-                                                        ? "🧮"
-                                                        : subject.name.toLowerCase().contains("database")
-                                                            ? "🗄️"
-                                                            : "📘",
-                                            style: const TextStyle(fontSize: 22),
-                                          ),
+                                          child: getSubjectIconWidget(),
                                         ),
                                         const SizedBox(width: 14),
+                                        // Middle: Subject details
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -3074,71 +3279,102 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   fontSize: 15,
                                                 ),
                                               ),
-                                              const SizedBox(height: 6),
+                                              const SizedBox(height: 4),
                                               Row(
                                                 children: [
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                    decoration: BoxDecoration(
-                                                      color: diffBg,
-                                                      borderRadius: BorderRadius.circular(8),
-                                                    ),
-                                                    child: Text(
-                                                      subject.difficulty,
-                                                      style: GoogleFonts.plusJakartaSans(
-                                                        color: diffColor,
-                                                        fontSize: 9,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
                                                   Text(
                                                     "${subject.topics.length} Chapters",
                                                     style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 10,
+                                                      fontSize: 11,
+                                                      color: Colors.grey.shade500,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    "•",
+                                                    style: TextStyle(color: Colors.grey.shade400),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    progressPercent == 1.0 ? "Completed" : "In Progress",
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 11,
+                                                      color: progressPercent == 1.0 ? const Color(0xFF10B981) : const Color(0xFF4F46E5),
                                                       fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF8D7072),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                               const SizedBox(height: 8),
-                                              // Animated Progress bar
-                                              Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: ClipRRect(
-                                                      borderRadius: BorderRadius.circular(4),
-                                                      child: LinearProgressIndicator(
-                                                        value: progressPercent,
-                                                        minHeight: 6,
-                                                        backgroundColor: Colors.white.withOpacity(0.4),
-                                                        valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    "${(progressPercent * 100).round()}%",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF1A1C1E),
-                                                    ),
-                                                  ),
-                                                ],
+                                              // Linear progress bar
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(4),
+                                                child: LinearProgressIndicator(
+                                                  value: progressPercent,
+                                                  minHeight: 6,
+                                                  backgroundColor: Colors.white.withOpacity(0.35),
+                                                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              // Next topic text
+                                              Text(
+                                                nextTopicText,
+                                                style: GoogleFonts.plusJakartaSans(
+                                                  fontSize: 11,
+                                                  color: Colors.grey.shade500,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        // Chevron Indicator
-                                        Icon(
-                                          isExpanded
-                                              ? Icons.keyboard_arrow_up_rounded
-                                              : Icons.keyboard_arrow_down_rounded,
-                                          color: const Color(0xFF006A63),
+                                        const SizedBox(width: 12),
+                                        // Right: Circular progress ring + menu
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  width: 46,
+                                                  height: 46,
+                                                  child: CircularProgressIndicator(
+                                                    value: progressPercent,
+                                                    strokeWidth: 3.5,
+                                                    backgroundColor: Colors.white.withOpacity(0.3),
+                                                    valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "${(progressPercent * 100).round()}%",
+                                                  style: GoogleFonts.plusJakartaSans(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: const Color(0xFF1A1C1E),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(width: 8),
+                                            PopupMenuButton<String>(
+                                              icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF006A63)),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                              onSelected: (val) {
+                                                if (val == 'delete') {
+                                                  _deleteSubject(actualIndex);
+                                                } else if (val == 'edit') {
+                                                  _showEditSubjectDialog(context, actualIndex);
+                                                }
+                                              },
+                                              itemBuilder: (context) => [
+                                                const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
+                                                const PopupMenuItem(value: 'delete', child: Text("Delete Subject", style: TextStyle(color: Colors.red))),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -3252,171 +3488,100 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
               const SizedBox(height: 24),
 
-              // 7. Quick Actions Row
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _showAddSubjectModal(context),
-                      borderRadius: BorderRadius.circular(24),
-                      child: _buildGlassCard(
-                        borderRadius: 24,
-                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                        child: Row(
+              // 7. Quick Actions Card Banner matching mockup exactly
+              if (subjects.isNotEmpty)
+                _buildGlassCard(
+                  borderRadius: 24,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: Row(
+                    children: [
+                      // 3D open book illustration on left
+                      SizedBox(
+                        width: 56,
+                        height: 56,
+                        child: Image.asset(
+                          "assets/images/open_book_3d.png",
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 40, color: Color(0xFF6366F1)),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFE6F4EA),
-                                shape: BoxShape.circle,
+                            Text(
+                              "Want to add a new subject?",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1A1C1E),
                               ),
-                              child: const Icon(Icons.add_circle_outline_rounded, color: Color(0xFF137333), size: 20),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Add Subject",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF137333),
-                                    ),
-                                  ),
-                                  Text(
-                                    "Create new subject",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 10,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
+                            const SizedBox(height: 4),
+                            Text(
+                              "Add your subject manually or import your syllabus from a PDF",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10,
+                                color: Colors.grey.shade500,
+                                height: 1.3,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _showImportSyllabusModal(context),
-                      borderRadius: BorderRadius.circular(24),
-                      child: _buildGlassCard(
-                        borderRadius: 24,
-                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF3E8FF),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.file_upload_outlined, color: Color(0xFF7C3AED), size: 20),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Import Syllabus",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF7C3AED),
-                                    ),
-                                  ),
-                                  Text(
-                                    "From PDF or file",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 10,
-                                      color: Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // 8. Bottom AI Insight Card
-              _buildGlassCard(
-                borderRadius: 28,
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 12),
+                      // Buttons stacked on the right
+                      Column(
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.auto_awesome_rounded, color: Color(0xFF006A63), size: 18),
-                              const SizedBox(width: 8),
-                              Text(
-                                "AI Insight",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1A1C1E),
+                          ElevatedButton(
+                            onPressed: () => _showAddSubjectModal(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF006A63),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.add_rounded, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Add Subject",
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE0F2FE),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  "Beta",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0369A1),
-                                  ),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            aiInsightText,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              color: const Color(0xFF594042),
-                              height: 1.4,
+                          const SizedBox(height: 6),
+                          OutlinedButton(
+                            onPressed: () => _showImportSyllabusModal(context),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF006A63),
+                              side: const BorderSide(color: Color(0xFF006A63)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.file_upload_outlined, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Import PDF",
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: Image.asset(
-                        "assets/images/eggy_coder.jpg",
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.android_rounded, size: 48, color: Color(0xFF006A63));
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -3654,7 +3819,20 @@ Widget _buildSettingsTab() {
     }
 
     return Scaffold(
-      appBar: (_currentTab == 0 || _currentTab == 1)
+      floatingActionButton: _currentTab == 2
+          ? Container(
+              margin: const EdgeInsets.only(bottom: 74),
+              child: FloatingActionButton(
+                onPressed: () => _showAddSubjectModal(context),
+                backgroundColor: const Color(0xFF6366F1),
+                shape: const CircleBorder(),
+                elevation: 6,
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              ),
+            )
+          : null,
+
+      appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2)
           ? null
           : AppBar(
               title: Text(tabTitle, style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
