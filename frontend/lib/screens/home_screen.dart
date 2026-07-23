@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
@@ -45,6 +45,12 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? selectedDate;
   int _currentTab = 0;
   bool _isLoading = false;
+
+  // Planner Setup - local UI state only (not sent to backend yet)
+  String _plannerStudyStyle = "Balanced";
+  int _plannerBreakDuration = 10;
+  String _plannerDifficultyPref = "Moderate";
+  String _plannerPreferredTime = "Morning";
 
   String userCourse = "";
   String userYear = "";
@@ -3414,106 +3420,541 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 Widget _buildSettingsTab() {
+    // â”€â”€ computed summary values â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    final int daysLeft = getDaysLeft() > 0 ? getDaysLeft() : 0;
+    final int hoursPerDay = int.tryParse(hoursController.text.trim()) ?? 0;
+    final int totalHours = daysLeft * hoursPerDay;
+    final int subjectsCount = subjects.length;
+
+    // â”€â”€ option lists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const studyStyles = ["Balanced", "Intensive", "Revision Focused"];
+    const breakOptions = [5, 10, 15, 20, 30];
+    const difficultyOptions = ["Easy", "Moderate", "Hard"];
+    const timeOptions = ["Morning", "Afternoon", "Evening", "Night"];
+
+    final bool canGenerate = hoursController.text.trim().isNotEmpty && selectedDate != null && subjects.isNotEmpty;
+
+    // â”€â”€ helper: builds a single glass field row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    Widget fieldRow({
+      required IconData icon,
+      required Color iconColor,
+      required Color iconBg,
+      required String label,
+      required Widget field,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF8D7072),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  field,
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // â”€â”€ helper: pill chip selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    Widget chipSelector<T>({
+      required List<T> options,
+      required T selected,
+      required ValueChanged<T> onSelect,
+      required Color activeColor,
+    }) {
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: options.map((opt) {
+          final bool active = opt == selected;
+          return GestureDetector(
+            onTap: () => onSelect(opt),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: active ? activeColor.withOpacity(0.12) : Colors.white.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: active ? activeColor : const Color(0xFFE2E8F0),
+                  width: active ? 1.5 : 1,
+                ),
+              ),
+              child: Text(
+                opt.toString(),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active ? activeColor : const Color(0xFF594042),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    // â”€â”€ summary stat tile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    Widget summaryTile({
+      required String emoji,
+      required String value,
+      required String label,
+      required Color bg,
+    }) {
+      return Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 18)),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1A1C1E),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF8D7072),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+
+          // â”€â”€ Hero card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _buildGlassCard(
+            borderRadius: 28,
+            padding: const EdgeInsets.all(22),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.settings_suggest_rounded, color: Color(0xFF3B887C), size: 24),
-                      const SizedBox(width: 12),
                       Text(
-                        "Plan Preferences",
-                        style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF2D3142)),
+                        "AI Study Planner",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1A1C1E),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Create your personalized study schedule powered by intelligent planning.",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: const Color(0xFF594042).withOpacity(0.85),
+                          height: 1.45,
+                        ),
                       ),
                     ],
                   ),
-                  const Divider(height: 32),
-                  Text(
-                    "Study Target per Day",
-                    style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF2D3142)),
+                ),
+                const SizedBox(width: 16),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF5C77).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const SizedBox(height: 6),
-                  TextField(
+                  child: const Center(
+                    child: Text("ðŸ¤–", style: TextStyle(fontSize: 36)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // â”€â”€ Form card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _buildGlassCard(
+            borderRadius: 24,
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Plan Preferences",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1A1C1E),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Study Hours per Day
+                fieldRow(
+                  icon: Icons.access_time_rounded,
+                  iconColor: const Color(0xFF006A63),
+                  iconBg: const Color(0xFFE8F5F1),
+                  label: "STUDY HOURS PER DAY",
+                  field: TextField(
                     controller: hoursController,
                     keyboardType: TextInputType.number,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1A1C1E),
+                    ),
                     decoration: InputDecoration(
                       hintText: "e.g. 4",
-                      suffixText: "hours/day",
-                      prefixIcon: const Icon(Icons.timer),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      hintStyle: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: Colors.grey.shade400,
+                      ),
+                      suffixText: "hrs / day",
+                      suffixStyle: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: const Color(0xFF8D7072),
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF006A63), width: 1.5),
+                      ),
                     ),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "Select Exam/Deadline Date",
-                    style: GoogleFonts.fredoka(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF2D3142)),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
+                ),
+
+                // Exam / Deadline Date
+                fieldRow(
+                  icon: Icons.calendar_today_rounded,
+                  iconColor: const Color(0xFF7C3AED),
+                  iconBg: const Color(0xFFF3E8FF),
+                  label: "EXAM / DEADLINE DATE",
+                  field: GestureDetector(
                     onTap: () => _selectDate(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        color: Colors.white.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: selectedDate != null
+                              ? const Color(0xFF7C3AED)
+                              : const Color(0xFFE2E8F0),
+                          width: selectedDate != null ? 1.5 : 1,
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_month, color: Color(0xFF3B887C)),
-                              const SizedBox(width: 12),
-                              Text(
-                                selectedDate == null ? "Select Date" : _formatDate(selectedDate!),
-                                style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: const Color(0xFF2D3142)),
-                              ),
-                            ],
+                          Text(
+                            selectedDate == null
+                                ? "Select date"
+                                : _formatDate(selectedDate!),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: selectedDate == null
+                                  ? Colors.grey.shade400
+                                  : const Color(0xFF1A1C1E),
+                            ),
                           ),
-                          const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B)),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: Colors.grey.shade400,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: const LinearGradient(colors: [Color(0xFF3B887C), Color(0xFFE65C73)]),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF3B887C).withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+
+                // Study Style
+                fieldRow(
+                  icon: Icons.auto_awesome_rounded,
+                  iconColor: const Color(0xFFFF5C77),
+                  iconBg: const Color(0xFFFFE4E8),
+                  label: "STUDY STYLE",
+                  field: chipSelector<String>(
+                    options: studyStyles,
+                    selected: _plannerStudyStyle,
+                    activeColor: const Color(0xFFFF5C77),
+                    onSelect: (v) => setState(() => _plannerStudyStyle = v),
+                  ),
+                ),
+
+                // Break Duration
+                fieldRow(
+                  icon: Icons.coffee_rounded,
+                  iconColor: const Color(0xFFEA580C),
+                  iconBg: const Color(0xFFFFEDD5),
+                  label: "BREAK DURATION",
+                  field: chipSelector<int>(
+                    options: breakOptions,
+                    selected: _plannerBreakDuration,
+                    activeColor: const Color(0xFFEA580C),
+                    onSelect: (v) => setState(() => _plannerBreakDuration = v),
+                  ),
+                ),
+
+                // Difficulty Preference
+                fieldRow(
+                  icon: Icons.bar_chart_rounded,
+                  iconColor: const Color(0xFF4F46E5),
+                  iconBg: const Color(0xFFE0E7FF),
+                  label: "DIFFICULTY PREFERENCE",
+                  field: chipSelector<String>(
+                    options: difficultyOptions,
+                    selected: _plannerDifficultyPref,
+                    activeColor: const Color(0xFF4F46E5),
+                    onSelect: (v) => setState(() => _plannerDifficultyPref = v),
+                  ),
+                ),
+
+                // Preferred Study Time
+                fieldRow(
+                  icon: Icons.wb_sunny_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  iconBg: const Color(0xFFFEF3C7),
+                  label: "PREFERRED STUDY TIME",
+                  field: chipSelector<String>(
+                    options: timeOptions,
+                    selected: _plannerPreferredTime,
+                    activeColor: const Color(0xFFF59E0B),
+                    onSelect: (v) => setState(() => _plannerPreferredTime = v),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // â”€â”€ AI Plan Summary card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          _buildGlassCard(
+            borderRadius: 24,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF5C77).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      onPressed: generateStudyPlan,
-                      child: Text(
-                        "Generate AI Study Plan",
-                        style: GoogleFonts.fredoka(fontWeight: FontWeight.bold, color: Colors.white),
+                      child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFFF5C77), size: 16),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "AI Plan Summary",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1A1C1E),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    summaryTile(
+                      emoji: "ðŸ“…",
+                      value: daysLeft > 0 ? "" : "â€”",
+                      label: "Days Left",
+                      bg: const Color(0xFFF3E8FF).withOpacity(0.5),
+                    ),
+                    const SizedBox(width: 8),
+                    summaryTile(
+                      emoji: "â±ï¸",
+                      value: hoursPerDay > 0 ? " hrs" : "â€”",
+                      label: "Hours / Day",
+                      bg: const Color(0xFFE8F5F1).withOpacity(0.5),
+                    ),
+                    const SizedBox(width: 8),
+                    summaryTile(
+                      emoji: "ðŸ”¥",
+                      value: totalHours > 0 ? "" : "â€”",
+                      label: "Total Hrs",
+                      bg: const Color(0xFFFFEDD5).withOpacity(0.5),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    summaryTile(
+                      emoji: "ðŸ“š",
+                      value: subjectsCount > 0 ? "" : "â€”",
+                      label: "Subjects",
+                      bg: const Color(0xFFE0E7FF).withOpacity(0.5),
+                    ),
+                    const SizedBox(width: 8),
+                    summaryTile(
+                      emoji: "ðŸŽ¯",
+                      value: _plannerDifficultyPref,
+                      label: "Difficulty",
+                      bg: const Color(0xFFFFE4E8).withOpacity(0.5),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // â”€â”€ Generate button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 1.0, end: 1.0),
+            duration: const Duration(milliseconds: 120),
+            builder: (context, scale, child) {
+              return Transform.scale(scale: scale, child: child);
+            },
+            child: GestureDetector(
+              onTapDown: (_) => setState(() {}),
+              onTapUp: (_) {
+                if (canGenerate && !_isLoading) generateStudyPlan();
+              },
+              onTapCancel: () => setState(() {}),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: canGenerate ? 1.0 : 0.45,
+                child: Container(
+                  height: 58,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    gradient: canGenerate
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFF5C77), Color(0xFF006A63)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                        : LinearGradient(
+                            colors: [Colors.grey.shade300, Colors.grey.shade300],
+                          ),
+                    boxShadow: canGenerate
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFF5C77).withOpacity(0.25),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(32),
+                      onTap: canGenerate && !_isLoading ? generateStudyPlan : null,
+                      child: Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text("âœ¨", style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    "Generate My AI Study Plan",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
+
+          // Hint when button is disabled
+          if (!canGenerate) ...[
+            const SizedBox(height: 10),
+            Text(
+              subjects.isEmpty
+                  ? "Add subjects in the Subjects tab first."
+                  : hoursController.text.trim().isEmpty
+                      ? "Enter your daily study hours above."
+                      : "Select an exam date to enable generation.",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11,
+                color: const Color(0xFF8D7072),
+              ),
+            ),
+          ],
         ],
       ),
     );
