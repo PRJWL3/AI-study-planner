@@ -2553,47 +2553,56 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAnalyticsCol(String iconEmoji, String value, String topLabel, String bottomLabel) {
-    return Expanded(
+  Widget _buildStatCard({
+    required String iconEmoji,
+    required int value,
+    required String label,
+    required Color accentColor,
+    required Color bgColor,
+    bool isPercentage = false,
+  }) {
+    return _buildGlassCard(
+      borderRadius: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5F1).withOpacity(0.6),
+              color: bgColor,
               shape: BoxShape.circle,
             ),
             child: Text(iconEmoji, style: const TextStyle(fontSize: 16)),
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1A1C1E),
-            ),
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: value.toDouble()),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.easeOutCubic,
+            builder: (context, val, child) {
+              return Text(
+                "${val.round()}${isPercentage ? '%' : ''}",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1A1C1E),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 2),
           Text(
-            topLabel,
-            style: GoogleFonts.plusJakartaSans(fontSize: 9, color: const Color(0xFF8D7072), fontWeight: FontWeight.bold),
-          ),
-          Text(
-            bottomLabel,
-            style: GoogleFonts.plusJakartaSans(fontSize: 8, color: Colors.grey.shade400),
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF8D7072),
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildAnalyticsDivider() {
-    return Container(
-      height: 48,
-      width: 1,
-      color: Colors.white.withOpacity(0.3),
     );
   }
 
@@ -2684,7 +2693,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32), // More whitespace around title as requested
+              const SizedBox(height: 36), // Increased whitespace
               
               // 1. Header Row (Title & Notification capsule)
               Row(
@@ -2728,209 +2737,59 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              // 2. Translucent Liquid Glass Hero Card
-              _buildGlassCard(
-                borderRadius: 28,
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Keep going, ${userName.isNotEmpty ? userName : 'Prajwal'}! 👋",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF1A1C1E),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "You're doing great. Stay consistent and achieve more every day.",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  color: const Color(0xFF594042).withOpacity(0.8),
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // 3D Books Illustration
-                        SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: Image.asset(
-                            "assets/images/books_3d.png",
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 48, color: Color(0xFF6366F1)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(height: 1, color: Colors.white30),
-                    const SizedBox(height: 16),
-                    // Bottom Stats Row matching mockup perfectly
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Subjects Stat
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "$totalSubjectsCount",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1A1C1E),
-                                  ),
-                                ),
-                                Text(
-                                  "Subjects",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 9,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3E8FF),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.book_rounded, color: Color(0xFF7C3AED), size: 12),
-                            ),
-                          ],
-                        ),
-                        // Chapters Stat
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "$totalChaptersCount",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1A1C1E),
-                                  ),
-                                ),
-                                Text(
-                                  "Chapters",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 9,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0E7FF),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.collections_bookmark_rounded, color: Color(0xFF4F46E5), size: 12),
-                            ),
-                          ],
-                        ),
-                        // Completed Stat
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "$completedChaptersCount",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1A1C1E),
-                                  ),
-                                ),
-                                Text(
-                                  "Completed",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 9,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFD1FAE5),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.check_box_rounded, color: Color(0xFF059669), size: 12),
-                            ),
-                          ],
-                        ),
-                        // Progress ring with percentage text
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "$overallProgressPercent%",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1A1C1E),
-                                  ),
-                                ),
-                                Text(
-                                  "Overall",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 9,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                value: overallProgressPercent / 100.0,
-                                strokeWidth: 3.0,
-                                backgroundColor: const Color(0xFFE2E8F0),
-                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              // 2. Translucent Liquid Glass Hero Card (28-32px rounded corners, layered shadows)
+              SubjectHeroCard(
+                userName: userName,
+                totalSubjects: totalSubjectsCount,
+                totalChapters: totalChaptersCount,
+                completedChapters: completedChaptersCount,
+                overallProgress: overallProgressPercent,
               ),
               const SizedBox(height: 20),
 
-              // 3. Taller Search Bar with Animated focus glow
+              // 3. Four Rounded Glass Statistic Cards in a Grid/Wrap layout with count animation
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.6,
+                children: [
+                  _buildStatCard(
+                    iconEmoji: "📚",
+                    value: totalSubjectsCount,
+                    label: "Subjects",
+                    accentColor: const Color(0xFF7C3AED),
+                    bgColor: const Color(0xFFF3E8FF).withOpacity(0.4),
+                  ),
+                  _buildStatCard(
+                    iconEmoji: "📖",
+                    value: totalChaptersCount,
+                    label: "Chapters",
+                    accentColor: const Color(0xFF4F46E5),
+                    bgColor: const Color(0xFFE0E7FF).withOpacity(0.4),
+                  ),
+                  _buildStatCard(
+                    iconEmoji: "✅",
+                    value: completedChaptersCount,
+                    label: "Completed",
+                    accentColor: const Color(0xFF059669),
+                    bgColor: const Color(0xFFD1FAE5).withOpacity(0.4),
+                  ),
+                  _buildStatCard(
+                    iconEmoji: "🎯",
+                    value: overallProgressPercent,
+                    label: "Overall Progress",
+                    accentColor: const Color(0xFF6366F1),
+                    bgColor: const Color(0xFFE2E8F0).withOpacity(0.4),
+                    isPercentage: true,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // 4. Taller Search Bar with Animated focus glow
               Focus(
                 onFocusChange: (hasFocus) {
                   setState(() {
@@ -2952,7 +2811,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: _buildGlassCard(
                     borderRadius: 20,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // taller
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), // taller
                     child: TextField(
                       onChanged: (val) {
                         setState(() {
@@ -2970,9 +2829,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20), // Increased spacing
 
-              // 4. Horizontal Filter Chips (Rounded glass pills with color dots)
+              // 5. Horizontal Filter Chips (Rounded glass pills with color dots)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -3005,7 +2864,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     return Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.only(right: 12), // Increased spacing
                       child: InkWell(
                         onTap: () {
                           setState(() {
@@ -3044,9 +2903,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24), // Increased spacing
 
-              // 5. Subject Library Section Header
+              // 6. Subject Library Section Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -3090,7 +2949,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 6. Subject Cards Library
+              // 7. Subject Cards Library (With entry fade-in scale animation)
               filtered.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -3100,26 +2959,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Gentle floating 3D book animation
-                            TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.0, end: 1.0),
-                              duration: const Duration(seconds: 4),
-                              curve: Curves.easeInOut,
-                              builder: (context, val, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, 10 * math.sin(val * 2.0 * math.pi)),
-                                  child: child,
-                                );
-                              },
-                              child: SizedBox(
-                                width: 120,
-                                height: 120,
-                                child: Image.asset(
-                                  "assets/images/open_book_3d.png",
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) => const Text("📚", style: TextStyle(fontSize: 48)),
-                                ),
-                              ),
+                            // Gentle floating 3D book animation (Solid white blends seamlessly)
+                            const FloatingAsset(
+                              assetPath: "assets/images/open_book_3d.png",
+                              width: 120,
+                              height: 120,
                             ),
                             const SizedBox(height: 20),
                             Text(
@@ -3233,127 +3077,140 @@ class _HomeScreenState extends State<HomeScreen> {
                           return Icon(ic, color: textColor, size: 24);
                         }
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: _buildGlassCard(
-                            borderRadius: 24,
-                            padding: EdgeInsets.zero,
-                            child: Column(
-                              children: [
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(24),
-                                  onTap: () {
-                                    setState(() {
-                                      if (isExpanded) {
-                                        _expandedSubjectIndices.remove(actualIndex);
-                                      } else {
-                                        _expandedSubjectIndices.add(actualIndex);
-                                      }
-                                    });
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(18),
-                                    child: Row(
-                                      children: [
-                                        // Left: Subject icon glass container matching mockup
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: textColor.withOpacity(0.08),
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: textColor.withOpacity(0.15)),
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: Duration(milliseconds: 300 + (index * 80)),
+                          curve: Curves.easeOutBack,
+                          builder: (context, val, child) {
+                            return Opacity(
+                              opacity: val,
+                              child: Transform.scale(
+                                scale: 0.95 + (0.05 * val),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: _buildGlassCard(
+                              borderRadius: 24,
+                              padding: EdgeInsets.zero,
+                              child: Column(
+                                children: [
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(24),
+                                    onTap: () {
+                                      setState(() {
+                                        if (isExpanded) {
+                                          _expandedSubjectIndices.remove(actualIndex);
+                                        } else {
+                                          _expandedSubjectIndices.add(actualIndex);
+                                        }
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Row(
+                                        children: [
+                                          // Left: Subject icon glass container matching mockup
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: textColor.withOpacity(0.08),
+                                              borderRadius: BorderRadius.circular(16),
+                                              border: Border.all(color: textColor.withOpacity(0.15)),
+                                            ),
+                                            child: getSubjectIconWidget(),
                                           ),
-                                          child: getSubjectIconWidget(),
-                                        ),
-                                        const SizedBox(width: 14),
-                                        // Middle: Subject details
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                subject.name,
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF1A1C1E),
-                                                  fontSize: 15,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    "${subject.topics.length} Chapters",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 11,
-                                                      color: Colors.grey.shade500,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    "•",
-                                                    style: TextStyle(color: Colors.grey.shade400),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    progressPercent == 1.0 ? "Completed" : "In Progress",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 11,
-                                                      color: progressPercent == 1.0 ? const Color(0xFF10B981) : const Color(0xFF4F46E5),
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 8),
-                                              // Linear progress bar
-                                              ClipRRect(
-                                                borderRadius: BorderRadius.circular(4),
-                                                child: LinearProgressIndicator(
-                                                  value: progressPercent,
-                                                  minHeight: 6,
-                                                  backgroundColor: Colors.white.withOpacity(0.35),
-                                                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              // Next topic text
-                                              Text(
-                                                nextTopicText,
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontSize: 11,
-                                                  color: Colors.grey.shade500,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        // Right: Circular progress ring + menu
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Stack(
-                                              alignment: Alignment.center,
+                                          const SizedBox(width: 14),
+                                          // Middle: Subject details
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                SizedBox(
-                                                  width: 46,
-                                                  height: 46,
-                                                  child: CircularProgressIndicator(
+                                                Text(
+                                                  subject.name,
+                                                  style: GoogleFonts.plusJakartaSans(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: const Color(0xFF1A1C1E),
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      "${subject.topics.length} Chapters",
+                                                      style: GoogleFonts.plusJakartaSans(
+                                                        fontSize: 11,
+                                                        color: Colors.grey.shade500,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      "•",
+                                                      style: TextStyle(color: Colors.grey.shade400),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      progressPercent == 1.0 ? "Completed" : "In Progress",
+                                                      style: GoogleFonts.plusJakartaSans(
+                                                        fontSize: 11,
+                                                        color: progressPercent == 1.0 ? const Color(0xFF10B981) : const Color(0xFF4F46E5),
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                // Linear progress bar
+                                                ClipRRect(
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  child: LinearProgressIndicator(
                                                     value: progressPercent,
-                                                    strokeWidth: 3.5,
-                                                    backgroundColor: Colors.white.withOpacity(0.3),
+                                                    minHeight: 6,
+                                                    backgroundColor: Colors.white.withOpacity(0.35),
                                                     valueColor: AlwaysStoppedAnimation<Color>(textColor),
                                                   ),
                                                 ),
+                                                const SizedBox(height: 8),
+                                                // Next topic text
                                                 Text(
-                                                  "${(progressPercent * 100).round()}%",
+                                                  nextTopicText,
                                                   style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w800,
-                                                    color: const Color(0xFF1A1C1E),
+                                                    fontSize: 11,
+                                                    color: Colors.grey.shade500,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          // Right: Circular progress ring + menu
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Stack(
+                                                alignment: Alignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 46,
+                                                    height: 46,
+                                                    child: CircularProgressIndicator(
+                                                      value: progressPercent,
+                                                      strokeWidth: 3.5,
+                                                      backgroundColor: Colors.white.withOpacity(0.3),
+                                                      valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "${(progressPercent * 100).round()}%",
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: const Color(0xFF1A1C1E),
                                                   ),
                                                 ),
                                               ],
@@ -3478,17 +3335,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   crossFadeState: isExpanded
                                       ? CrossFadeState.showSecond
                                       : CrossFadeState.showFirst,
-                                  duration: const Duration(milliseconds: 250),
+                                      duration: const Duration(milliseconds: 250),
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      );
+                    },
                     ),
               const SizedBox(height: 24),
 
-              // 7. Quick Actions Card Banner matching mockup exactly
+              // 8. Quick Actions Card Banner matching mockup exactly
               if (subjects.isNotEmpty)
                 _buildGlassCard(
                   borderRadius: 24,
@@ -3496,14 +3354,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     children: [
                       // 3D open book illustration on left
-                      SizedBox(
+                      const FloatingAsset(
+                        assetPath: "assets/images/open_book_3d.png",
                         width: 56,
                         height: 56,
-                        child: Image.asset(
-                          "assets/images/open_book_3d.png",
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 40, color: Color(0xFF6366F1)),
-                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -3534,47 +3388,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Buttons stacked on the right
                       Column(
                         children: [
-                          ElevatedButton(
+                          AnimatedGlassButton(
+                            text: "Add Subject",
+                            icon: Icons.add_rounded,
+                            isPrimary: true,
                             onPressed: () => _showAddSubjectModal(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF006A63),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.add_rounded, size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "Add Subject",
-                                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
                           ),
-                          const SizedBox(height: 6),
-                          OutlinedButton(
+                          const SizedBox(height: 8),
+                          AnimatedGlassButton(
+                            text: "Import PDF",
+                            icon: Icons.file_upload_outlined,
+                            isPrimary: false,
                             onPressed: () => _showImportSyllabusModal(context),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF006A63),
-                              side: const BorderSide(color: Color(0xFF006A63)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.file_upload_outlined, size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  "Import PDF",
-                                  style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
                           ),
                         ],
                       ),
@@ -3822,15 +3647,38 @@ Widget _buildSettingsTab() {
       floatingActionButton: _currentTab == 2
           ? Container(
               margin: const EdgeInsets.only(bottom: 74),
-              child: FloatingActionButton(
-                onPressed: () => _showAddSubjectModal(context),
-                backgroundColor: const Color(0xFF6366F1),
-                shape: const CircleBorder(),
-                elevation: 6,
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              width: 56,
+              height: 56,
+              child: ClipOval(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF006A63).withOpacity(0.85),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF006A63).withOpacity(0.35),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showAddSubjectModal(context),
+                        child: const Center(
+                          child: Icon(Icons.add_rounded, color: Colors.white, size: 28),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            )
-          : null,
+            ) : null,
 
       appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2)
           ? null
@@ -4140,3 +3988,294 @@ class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with Single
     );
   }
 }
+class SubjectHeroCard extends StatefulWidget {
+  final String userName;
+  final int totalSubjects;
+  final int totalChapters;
+  final int completedChapters;
+  final int overallProgress;
+  const SubjectHeroCard({
+    super.key,
+    required this.userName,
+    required this.totalSubjects,
+    required this.totalChapters,
+    required this.completedChapters,
+    required this.overallProgress,
+  });
+
+  @override
+  State<SubjectHeroCard> createState() => _SubjectHeroCardState();
+}
+
+class _SubjectHeroCardState extends State<SubjectHeroCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            spreadRadius: 4,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: const Color(0xFF006A63).withOpacity(0.02),
+            blurRadius: 16,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.65),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.45),
+              width: 1.5,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    final double offset = -2.0 + (_controller.value * 4.0);
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.white.withOpacity(0.18),
+                            Colors.transparent,
+                          ],
+                          begin: Alignment(offset, -1.0),
+                          end: Alignment(offset + 0.5, 1.0),
+                          stops: const [0.3, 0.5, 0.7],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Keep going, ${widget.userName.isNotEmpty ? widget.userName : 'Prajwal'}! 👋",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF1A1C1E),
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "You're doing great. Stay consistent and achieve more every day.",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: const Color(0xFF594042).withOpacity(0.8),
+                            height: 1.45,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Image.asset(
+                      "assets/images/books_3d.png",
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 48, color: Color(0xFF6366F1)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FloatingAsset extends StatefulWidget {
+  final String assetPath;
+  final double width;
+  final double height;
+  const FloatingAsset({
+    super.key,
+    required this.assetPath,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  State<FloatingAsset> createState() => _FloatingAssetState();
+}
+
+class _FloatingAssetState extends State<FloatingAsset> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double offset = 10 * Curves.easeInOut.transform(_controller.value);
+        return Transform.translate(
+          offset: Offset(0, -5 + offset),
+          child: child,
+        );
+      },
+      child: SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: Image.asset(
+          widget.assetPath,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 48, color: Color(0xFF6366F1)),
+        ),
+      ),
+    );
+  }
+}
+
+class AnimatedGlassButton extends StatefulWidget {
+  final String text;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+  const AnimatedGlassButton({
+    super.key,
+    required this.text,
+    required this.icon,
+    required this.onPressed,
+    required this.isPrimary,
+  });
+
+  @override
+  State<AnimatedGlassButton> createState() => _AnimatedGlassButtonState();
+}
+
+class _AnimatedGlassButtonState extends State<AnimatedGlassButton> with SingleTickerProviderStateMixin {
+  double _scale = 1.0;
+
+  void _onTapDown(TapDownDetails details) {
+    setState(() {
+      _scale = 0.94;
+    });
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    setState(() {
+      _scale = 1.0;
+    });
+  }
+
+  void _onTapCancel() {
+    setState(() {
+      _scale = 1.0;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      onTap: widget.onPressed,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: widget.isPrimary ? const Color(0xFF006A63) : Colors.white.withOpacity(0.45),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: widget.isPrimary ? const Color(0xFF006A63) : const Color(0xFF006A63).withOpacity(0.3),
+              width: 1.2,
+            ),
+            boxShadow: [
+              if (widget.isPrimary)
+                BoxShadow(
+                  color: const Color(0xFF006A63).withOpacity(0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 16, color: widget.isPrimary ? Colors.white : const Color(0xFF006A63)),
+              const SizedBox(width: 6),
+              Text(
+                widget.text,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: widget.isPrimary ? Colors.white : const Color(0xFF006A63),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
