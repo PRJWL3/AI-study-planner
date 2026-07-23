@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -452,16 +452,10 @@ class _GlobalEggyMascotState extends State<GlobalEggyMascot> with TickerProvider
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(32),
-                            child: Image.asset(
-                              _getAssetPath(controller),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.egg_rounded,
-                                  size: 32,
-                                  color: _getCourseIconColor(controller.userCourse),
-                                );
-                              },
+                            child: Icon(
+                              Icons.egg_rounded,
+                              size: 32,
+                              color: _getCourseIconColor(controller.userCourse),
                             ),
                           ),
                         ),

@@ -1807,17 +1807,20 @@ TweenAnimationBuilder<double>(
                                 const SizedBox(height: 20),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: List.generate(6, (idx) {
-                                    final filled = idx < 3;
-                                    return Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: filled ? const Color(0xFF006A63) : Colors.grey.shade200,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    );
-                                  }),
+                                  children: List.generate(
+                                    _sessionsGoal > 0 ? _sessionsGoal : 1,
+                                    (idx) {
+                                      final filled = idx < _sessionsCompleted;
+                                      return Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: filled ? const Color(0xFF006A63) : Colors.grey.shade200,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                               ],
                             ),

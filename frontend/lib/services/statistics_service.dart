@@ -115,6 +115,34 @@ class StatisticsService {
         ? 0.0
         : (1 - (timerSecondsRemaining / (timerDurationMinutes * 60))).clamp(0.0, 1.0);
 
+    double week4Hours = weeklyHours.values.fold(0.0, (sum, val) => sum + val);
+    double week3Hours = 0;
+    double week2Hours = 0;
+    double week1Hours = 0;
+
+    final w4Start = weekStart;
+    final w3Start = w4Start.subtract(const Duration(days: 7));
+    final w2Start = w3Start.subtract(const Duration(days: 7));
+    final w1Start = w2Start.subtract(const Duration(days: 7));
+
+    for (final event in studyEvents) {
+      final timestamp = DateTime.tryParse(event['timestamp']?.toString() ?? '');
+      if (timestamp == null) continue;
+      final minutes = (event['value'] as num?)?.toDouble() ?? 0;
+      final isSession = event['type'] == 'session';
+      if (!isSession) continue;
+
+      if (timestamp.isBefore(w4Start)) {
+        if (!timestamp.isBefore(w3Start)) {
+          week3Hours += minutes / 60.0;
+        } else if (!timestamp.isBefore(w2Start)) {
+          week2Hours += minutes / 60.0;
+        } else if (!timestamp.isBefore(w1Start)) {
+          week1Hours += minutes / 60.0;
+        }
+      }
+    }
+
     return StudyStatistics(
       streakDays: _streak(activeDays, date),
       todayEnergy: todayEnergy,
@@ -131,6 +159,7 @@ class StatisticsService {
       sessionsToday: sessionsToday,
       averageFocusMinutes: totalSessions == 0 ? 0 : (totalMinutes / totalSessions).round(),
       currentSessionProgress: currentProgress,
+      monthlyProgress: [week1Hours, week2Hours, week3Hours, week4Hours],
     );
   }
 

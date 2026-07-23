@@ -25,7 +25,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    EggyController.instance.isVisible = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        EggyController.instance.isVisible = false;
+      }
+    });
   }
 
   final List<String> _coursePresets = ["B.Tech", "MBBS", "B.Sc", "MBA", "Law", "Other"];

@@ -114,8 +114,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: const CircleAvatar(
                             radius: 16,
-                            backgroundColor: Colors.transparent,
-                            backgroundImage: AssetImage("assets/images/mascot_boy.png"),
+                            backgroundColor: Color(0xFFE2E8F0),
+                            child: Icon(Icons.person_rounded, size: 18, color: Color(0xFF004D40)),
                           ),
                         ),
                       ],
@@ -140,19 +140,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(28),
-                      child: Image.asset(
-                        "assets/images/mascot_girl_login.png",
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: const Color(0xFF006A63),
-                            child: const Icon(
-                              Icons.person_rounded,
-                              size: 100,
-                              color: Colors.white,
-                            ),
-                          );
-                        },
+                      child: Container(
+                        color: const Color(0xFF006A63),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          size: 100,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -453,16 +447,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Image.network(
-                                    "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg",
-                                    height: 20,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.g_mobiledata_rounded,
-                                        size: 24,
-                                        color: Color(0xFF1A1C1E),
-                                      );
-                                    },
+                                  const Icon(
+                                    Icons.g_mobiledata_rounded,
+                                    size: 24,
+                                    color: Color(0xFF1A1C1E),
                                   ),
                                   const SizedBox(width: 12),
                                   Text(

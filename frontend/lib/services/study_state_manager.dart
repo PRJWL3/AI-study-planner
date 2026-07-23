@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/subject.dart';
 import '../models/study_availability.dart';
@@ -137,16 +138,25 @@ class StudyStateManager extends ChangeNotifier {
       );
 
   Future<void> init() async {
-    if (_initialized) return;
+    debugPrint("APP_START: StudyStateManager.init() called");
+    if (_initialized) {
+      debugPrint("APP_START: StudyStateManager already initialized");
+      return;
+    }
 
     // Initialize Persistence/Hive
+    debugPrint("APP_START: Initializing PersistenceService...");
     await PersistenceService.instance.init();
+    debugPrint("APP_START: PersistenceService initialized");
 
+    debugPrint("APP_START: Fetching SharedPreferences...");
     _prefs = await SharedPreferences.getInstance();
+    debugPrint("APP_START: SharedPreferences fetched");
 
     // Copy / migrate data from SharedPreferences to Hive if not already present
     final statisticsBox = PersistenceService.instance.getBox('study_statistics');
     if (!statisticsBox.containsKey('streakDays')) {
+      debugPrint("APP_START: Migrating statistics to Hive...");
       await statisticsBox.put('streakDays', _prefs!.getInt("streak_days") ?? 0);
       await statisticsBox.put('todayEnergy', _prefs!.getInt("today_energy") ?? 0);
       await statisticsBox.put('weeklyEnergy', _prefs!.getInt("weekly_energy") ?? 0);
@@ -164,6 +174,7 @@ class StudyStateManager extends ChangeNotifier {
 
     final plannerBox = PersistenceService.instance.getBox('planner_settings');
     if (!plannerBox.containsKey('breakDuration')) {
+      debugPrint("APP_START: Migrating planner settings to Hive...");
       await plannerBox.put('breakDuration', _prefs!.getInt("planner_break_duration") ?? 10);
       await plannerBox.put('studyStyle', _prefs!.getString("planner_study_style") ?? "Balanced");
       await plannerBox.put('difficultyPref', _prefs!.getString("planner_difficulty_pref") ?? "Moderate");
@@ -175,16 +186,20 @@ class StudyStateManager extends ChangeNotifier {
 
     final crystalBox = PersistenceService.instance.getBox('crystal_progress');
     if (!crystalBox.containsKey('focusProgress')) {
+      debugPrint("APP_START: Initializing crystal progress in Hive...");
       await crystalBox.put('focusProgress', 0.0);
       await crystalBox.put('wisdomProgress', 0.0);
       await crystalBox.put('masteryProgress', 0.0);
     }
     
+    debugPrint("APP_START: Loading from prefs...");
     _loadFromPrefs();
+    debugPrint("APP_START: Refreshing crystal progress...");
     await _refreshCrystalProgress();
     
     // Check if a timer was running in the background and completed while app was closed
     if (isTimerActive && !isTimerPaused && timerEndTimestamp != null) {
+      debugPrint("APP_START: Processing active background timer...");
       final now = DateTime.now();
       final diff = timerEndTimestamp!.difference(now).inSeconds;
       if (diff > 0) {
@@ -204,6 +219,7 @@ class StudyStateManager extends ChangeNotifier {
     }
     
     _initialized = true;
+    debugPrint("APP_START: StudyStateManager init finished");
   }
 
   void _loadFromPrefs() {
@@ -301,8 +317,10 @@ class StudyStateManager extends ChangeNotifier {
     }
 
     // Update global eggy controller settings
-    EggyController.instance.userCourse = userCourse;
-    EggyController.instance.userMascot = userMascot;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      EggyController.instance.userCourse = userCourse;
+      EggyController.instance.userMascot = userMascot;
+    });
   }
 
   Future<void> saveData() async {
@@ -364,8 +382,10 @@ class StudyStateManager extends ChangeNotifier {
     await _prefs!.setString("study_events", jsonEncode(studyEvents));
 
     // Keep global eggy controller in sync
-    EggyController.instance.userCourse = userCourse;
-    EggyController.instance.userMascot = userMascot;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      EggyController.instance.userCourse = userCourse;
+      EggyController.instance.userMascot = userMascot;
+    });
   }
 
   // Mutators

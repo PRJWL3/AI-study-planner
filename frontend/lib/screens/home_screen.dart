@@ -102,8 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     StudyStateManager.instance.addListener(_onStateChanged);
     _onStateChanged();
-    EggyController.instance.isVisible = true;
-    EggyController.instance.currentTab = _currentTab;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        EggyController.instance.isVisible = true;
+        EggyController.instance.currentTab = _currentTab;
+      }
+    });
   }
 
   @override
@@ -849,9 +853,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final int completedCount = completedTasks.where((task) => task).length;
     final double loggedHoursTotal = weeklyProgressHours.values.fold(0.0, (sum, val) => sum + val);
 
-    // Dynamic metrics presentation based on toggled selectedPeriod
+    final statistics = StudyStateManager.instance.statistics;
     final int displayLessons = isWeekly ? completedCount : (completedCount * 4);
-    final double displayHours = isWeekly ? loggedHoursTotal : (loggedHoursTotal * 4.2);
+    final double displayHours = isWeekly
+        ? loggedHoursTotal
+        : (statistics.monthlyProgress[0] +
+            statistics.monthlyProgress[1] +
+            statistics.monthlyProgress[2] +
+            statistics.monthlyProgress[3]);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -979,15 +988,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             )
           else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildPillBar("Week 1", (loggedHoursTotal / 5) * 1.1 + 6.2, maxTarget: 12.0),
-                _buildPillBar("Week 2", (loggedHoursTotal / 5) * 0.9 + 8.1, maxTarget: 12.0),
-                _buildPillBar("Week 3", (loggedHoursTotal / 5) * 1.2 + 7.4, maxTarget: 12.0),
-                _buildPillBar("Week 4", (loggedHoursTotal / 5) * 0.8 + 9.5, maxTarget: 12.0),
-              ],
+            Builder(
+              builder: (context) {
+                final statistics = StudyStateManager.instance.statistics;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildPillBar("Week 1", statistics.monthlyProgress[0], maxTarget: 12.0),
+                    _buildPillBar("Week 2", statistics.monthlyProgress[1], maxTarget: 12.0),
+                    _buildPillBar("Week 3", statistics.monthlyProgress[2], maxTarget: 12.0),
+                    _buildPillBar("Week 4", statistics.monthlyProgress[3], maxTarget: 12.0),
+                  ],
+                );
+              }
             ),
         ],
       ),
@@ -1101,6 +1115,8 @@ class _HomeScreenState extends State<HomeScreen> {
             'subject': match.group(1)!,
             'difficulty': match.group(2)!,
             'hours': match.group(3)!,
+            'startTime': parsedItem['startTime'] ?? '',
+            'endTime': parsedItem['endTime'] ?? '',
           });
         } else {
           upcomingTasks.add({
@@ -1108,6 +1124,8 @@ class _HomeScreenState extends State<HomeScreen> {
             'subject': planItem,
             'difficulty': 'Medium',
             'hours': '1 hr',
+            'startTime': parsedItem['startTime'] ?? '',
+            'endTime': parsedItem['endTime'] ?? '',
           });
         }
       }
@@ -1454,9 +1472,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                    final int taskIndex = task['index'];
                                    final String subject = task['subject'];
                                    final String difficulty = task['difficulty'];
+                                   final String start = task['startTime'] ?? '';
+                                   final String end = task['endTime'] ?? '';
+                                   final String dueTime = start.isNotEmpty ? "$start - $end" : (task['hours'] ?? '');
                                    return PremiumTaskCard(
                                      subject: subject,
                                      difficulty: difficulty,
+                                     dueTime: dueTime,
                                      onChecked: () => _toggleTask(taskIndex, true),
                                    );
                                  },
@@ -1479,52 +1501,57 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(28),
                             border: Border.all(color: const Color(0xFFE8F5F1)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
+                          child: Builder(
+                            builder: (context) {
+                              final weather = _getDynamicWeather();
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    "28\u{00B0}C",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF1A1C1E),
-                                    ),
-                                  ),
-                                  const Icon(Icons.wb_cloudy_outlined, color: Color(0xFFEAA300), size: 20),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Partly Cloudy",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF594042),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
                                   Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      const Icon(Icons.location_on_rounded, color: Colors.grey, size: 10),
-                                      const SizedBox(width: 2),
                                       Text(
-                                        "San Francisco",
+                                        weather['temp'] as String,
                                         style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 8,
-                                          color: Colors.grey.shade500,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF1A1C1E),
                                         ),
+                                      ),
+                                      Icon(weather['icon'] as IconData, color: weather['iconColor'] as Color, size: 20),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        weather['status'] as String,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF594042),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.location_on_rounded, color: Colors.grey, size: 10),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            weather['location'] as String,
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 8,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
                                 ],
-                              ),
-                            ],
+                              );
+                            }
                           ),
                         ),
                       ),
@@ -1791,14 +1818,63 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Map<String, dynamic> _getDynamicWeather() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return {
+        'temp': "22\u{00B0}C",
+        'status': "Fresh Morning",
+        'icon': Icons.wb_sunny_rounded,
+        'iconColor': const Color(0xFFF59E0B),
+        'location': "Study Haven",
+      };
+    } else if (hour >= 12 && hour < 17) {
+      return {
+        'temp': "27\u{00B0}C",
+        'status': "Bright Afternoon",
+        'icon': Icons.wb_sunny_rounded,
+        'iconColor': const Color(0xFFEA580C),
+        'location': "Study Haven",
+      };
+    } else if (hour >= 17 && hour < 21) {
+      return {
+        'temp': "21\u{00B0}C",
+        'status': "Calm Evening",
+        'icon': Icons.wb_cloudy_outlined,
+        'iconColor': const Color(0xFF64748B),
+        'location': "Study Haven",
+      };
+    } else {
+      return {
+        'temp': "16\u{00B0}C",
+        'status': "Quiet Night",
+        'icon': Icons.nightlight_round,
+        'iconColor': const Color(0xFF38BDF8),
+        'location': "Study Haven",
+      };
+    }
+  }
+
   Widget _buildGreeting() {
+    final hour = DateTime.now().hour;
+    String greetingWord;
+    if (hour >= 5 && hour < 12) {
+      greetingWord = "Good morning,";
+    } else if (hour >= 12 && hour < 17) {
+      greetingWord = "Good afternoon,";
+    } else if (hour >= 17 && hour < 21) {
+      greetingWord = "Good evening,";
+    } else {
+      greetingWord = "Good night,";
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Good morning,",
+            greetingWord,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -1807,7 +1883,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Text(
-            "${userName.toLowerCase().contains('prajwal') ? 'Prajwal' : (userName.isNotEmpty ? userName : 'Alex')}! \u{1F44B}",
+            "${userName.isNotEmpty ? userName : 'Student'}! \u{1F44B}",
             style: GoogleFonts.plusJakartaSans(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -5316,14 +5392,53 @@ class _DashboardQuickActionItemState extends State<DashboardQuickActionItem> {
   }
 }
 
+class _DashboardMetric extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _DashboardMetric({
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF1A1C1E),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF8D7072),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class PremiumTaskCard extends StatefulWidget {
   final String subject;
   final String difficulty;
+  final String dueTime;
   final VoidCallback onChecked;
   const PremiumTaskCard({
     super.key,
     required this.subject,
     required this.difficulty,
+    required this.dueTime,
     required this.onChecked,
   });
 
@@ -5440,7 +5555,9 @@ class _PremiumTaskCardState extends State<PremiumTaskCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "Due today • 2:00 PM",
+                      widget.dueTime.isNotEmpty
+                          ? "Scheduled \u{2022} ${widget.dueTime}"
+                          : "Due today",
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 10,
                         color: Colors.grey.shade500,

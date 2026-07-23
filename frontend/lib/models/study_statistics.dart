@@ -14,6 +14,7 @@ class StudyStatistics {
   final int sessionsToday;
   final int averageFocusMinutes;
   final double currentSessionProgress;
+  final List<double> monthlyProgress;
 
   StudyStatistics({
     required this.streakDays,
@@ -31,6 +32,7 @@ class StudyStatistics {
     this.sessionsToday = 0,
     this.averageFocusMinutes = 0,
     this.currentSessionProgress = 0,
+    this.monthlyProgress = const [0.0, 0.0, 0.0, 0.0],
   });
 
   Map<String, dynamic> toJson() => {
@@ -49,6 +51,7 @@ class StudyStatistics {
     'sessionsToday': sessionsToday,
     'averageFocusMinutes': averageFocusMinutes,
     'currentSessionProgress': currentSessionProgress,
+    'monthlyProgress': monthlyProgress,
   };
 
   factory StudyStatistics.fromJson(Map<String, dynamic> json) => StudyStatistics(
@@ -67,5 +70,6 @@ class StudyStatistics {
     sessionsToday: json['sessionsToday'] as int? ?? 0,
     averageFocusMinutes: json['averageFocusMinutes'] as int? ?? 0,
     currentSessionProgress: (json['currentSessionProgress'] as num?)?.toDouble() ?? 0,
+    monthlyProgress: (json['monthlyProgress'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? const [0.0, 0.0, 0.0, 0.0],
   );
 }
