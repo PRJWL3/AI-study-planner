@@ -1,9 +1,10 @@
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/study_state_manager.dart';
 
 class EnergyChamberScreen extends StatefulWidget {
   final List<String> subjects;
@@ -20,6 +21,25 @@ class EnergyChamberScreen extends StatefulWidget {
 }
 
 class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerProviderStateMixin {
+  final List<_CelebrationParticle> _celebrationParticles = [];
+
+  void _spawnCelebrationParticles() {
+    final random = math.Random();
+    _celebrationParticles.clear();
+    for (int i = 0; i < 45; i++) {
+      final double angle = random.nextDouble() * 2.0 * math.pi;
+      final double speed = 4.0 + random.nextDouble() * 10.0;
+      _celebrationParticles.add(_CelebrationParticle(
+        x: 0.0,
+        y: 0.0,
+        vx: math.cos(angle) * speed,
+        vy: math.sin(angle) * speed,
+        color: random.nextBool() ? const Color(0xFF00D1C4) : const Color(0xFFFF5C77),
+        size: 2.0 + random.nextDouble() * 4.0,
+      ));
+    }
+  }
+
   // Timer States
   bool _isActive = false;
   bool _isPaused = false;
@@ -63,7 +83,7 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   late AnimationController _celebrationController;
 
   // Ambient particles
-  final List<math.Point<double>> _ambientParticles = List.generate(25, (index) {
+  final List<math.Point<double>> _ambientParticles = List.generate(45, (index) {
     final random = math.Random();
     return math.Point(random.nextDouble(), random.nextDouble());
   });
@@ -71,36 +91,38 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   @override
   void initState() {
     super.initState();
+    StudyStateManager.instance.addListener(_onStateChanged);
     _loadStats();
-
+ 
     // Constant rotation and background shifting controller
     _ambientController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 12),
     )..repeat();
-
+ 
     // High density particle stream flow speed controller
     _streamController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat();
-
+ 
     // Orb breathing and float controller
     _orbPulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
-
+ 
     _celebrationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-
+ 
     _startTimerInterval();
   }
-
+ 
   @override
   void dispose() {
+    StudyStateManager.instance.removeListener(_onStateChanged);
     _timer?.cancel();
     _ambientController.dispose();
     _streamController.dispose();
@@ -109,24 +131,33 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
     super.dispose();
   }
 
+  void _onStateChanged() {
+    if (!mounted) return;
+    if (_isActive) return; // Don't interrupt during active study session ticks
+    _loadStats();
+  }
+ 
   Future<void> _loadStats() async {
-    final prefs = await SharedPreferences.getInstance();
+    final state = StudyStateManager.instance;
     setState(() {
-      _streakDays = prefs.getInt("ec_streak_days") ?? 14;
-      _todayEnergyValue = prefs.getInt("ec_today_val") ?? 1860;
-      _focusCharge = prefs.getDouble("ec_focus_pct") ?? 59.0;
-      _wisdomCharge = prefs.getDouble("ec_wisdom_pct") ?? 34.0;
-      _masteryCharge = prefs.getDouble("ec_mastery_pct") ?? 14.0;
+      _streakDays = state.streakDays;
+      _todayEnergyValue = state.todayEnergyValue;
+      _weeklyEnergyValue = state.weeklyEnergyValue;
+      _sessionsCompleted = state.sessionsCompleted;
+      _sessionsGoal = state.sessionsGoal;
+      _focusCharge = state.focusCharge;
+      _wisdomCharge = state.wisdomCharge;
+      _masteryCharge = state.masteryCharge;
     });
   }
-
+ 
   Future<void> _saveStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt("ec_streak_days", _streakDays);
-    await prefs.setInt("ec_today_val", _todayEnergyValue);
-    await prefs.setDouble("ec_focus_pct", _focusCharge);
-    await prefs.setDouble("ec_wisdom_pct", _wisdomCharge);
-    await prefs.setDouble("ec_mastery_pct", _masteryCharge);
+    final state = StudyStateManager.instance;
+    state.streakDays = _streakDays;
+    state.todayEnergyValue = _todayEnergyValue;
+    state.weeklyEnergyValue = _weeklyEnergyValue;
+    state.sessionsCompleted = _sessionsCompleted;
+    await state.saveData();
   }
 
   void _startTimerInterval() {
@@ -204,21 +235,30 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
     _triggerMilestoneCelebration("Session Finished", "Energy registered to Chamber");
   }
 
-  void _completeSession() {
+  void _completeSession() async {
     _timer?.cancel();
     _streamController.stop();
     final double completedHours = _durationMinutes / 60.0;
-    widget.onSessionComplete(completedHours, _selectedSubject);
+    
+    await StudyStateManager.instance.completeFocusSession(completedHours, _selectedSubject, _durationMinutes);
 
     setState(() {
       _isActive = false;
       _isPaused = false;
       _secondsRemaining = _durationMinutes * 60;
-      _sessionsCompleted = (_sessionsCompleted + 1).clamp(0, _sessionsGoal);
-      _todayEnergyValue += 300;
+      _sessionsCompleted = StudyStateManager.instance.sessionsCompleted;
+      _todayEnergyValue = StudyStateManager.instance.todayEnergyValue;
+      _weeklyEnergyValue = StudyStateManager.instance.weeklyEnergyValue;
+      _streakDays = StudyStateManager.instance.streakDays;
     });
-    _saveStats();
-    _triggerMilestoneCelebration("Wisdom Crystal Evolved", "+1 Knowledge Energy");
+
+    // Trigger sequential haptic feedback bursts on celebration
+    HapticFeedback.heavyImpact();
+    Future.delayed(const Duration(milliseconds: 100), () => HapticFeedback.mediumImpact());
+    Future.delayed(const Duration(milliseconds: 250), () => HapticFeedback.lightImpact());
+
+    _spawnCelebrationParticles();
+    _triggerMilestoneCelebration("Wisdom Crystal Evolved", "+300 Knowledge Energy Generated!");
   }
 
   int get _activeTargetIndex {
@@ -543,6 +583,31 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                     alignment: Alignment.center,
                     clipBehavior: Clip.none, // Allow children to render outside bounds without clipping
                     children: [
+                      // Premium Core Glow Backdrop
+                      Positioned(
+                        top: 5,
+                        child: AnimatedBuilder(
+                          animation: _ambientController,
+                          builder: (context, _) {
+                            final double wave = math.sin(_ambientController.value * 2.0 * math.pi);
+                            return Container(
+                              width: 240,
+                              height: 240,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    const Color(0xFF006A63).withOpacity(0.25 + (0.08 * wave)),
+                                    const Color(0xFFFF5C77).withOpacity(0.12 + (0.04 * wave)),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.2, 0.6, 1.0],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                       // [NEW SPECIFICATION] Large Floating Liquid Glass Energy Core (Hero centerpiece - 220px)
                       Positioned(
                         top: 15, // Shifted higher as requested
@@ -951,10 +1016,19 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                                   textBaseline: TextBaseline.alphabetic,
                                   children: [
                                     const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF0D9488)),
-                                    Text(
-                                      " ${_todayEnergyValue.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}",
-                                      style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1C1E)),
+TweenAnimationBuilder<double>(
+                                      key: ValueKey(_todayEnergyValue),
+                                      tween: Tween<double>(begin: (_todayEnergyValue - 300).toDouble(), end: _todayEnergyValue.toDouble()),
+                                      duration: const Duration(seconds: 2),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, val, _) {
+                                        final formattedVal = val.round().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
+                                        return Text(
+                                          " $formattedVal",
+                                          style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1C1E)),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
@@ -1156,6 +1230,22 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
           ),
 
           // Premium Milestone Celebration Dialog Overlay
+          if (_showCelebration)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _celebrationController,
+                  builder: (context, _) {
+                    return CustomPaint(
+                      painter: CelebrationParticlesPainter(
+                        progress: _celebrationController.value,
+                        particles: _celebrationParticles,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
           if (_showCelebration)
             Positioned.fill(
               child: BackdropFilter(
@@ -1407,8 +1497,14 @@ class CrystallineOrbPainter extends CustomPainter {
 
     // Evolving progress factors: increases glows/brightness/reflections as charge grows
     final double progressFactor = charge / 100.0;
-    final double glowIntensity = 0.15 + (0.35 * progressFactor);
-    final double glowBlurRadius = (10.0 + (18.0 * progressFactor)) * (1.0 + (0.04 * pulse));
+    final double glowIntensity = 0.28 + (0.42 * progressFactor);
+    final double glowBlurRadius = (14.0 + (22.0 * progressFactor)) * (1.0 + (0.06 * pulse));
+
+    final paintBloom = Paint()
+      ..color = color.withOpacity(glowIntensity * 0.45)
+      ..style = PaintingStyle.fill
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, glowBlurRadius * 2.2);
+    canvas.drawCircle(center, 38, paintBloom);
 
     // Personality specific glow configurations
     if (id == "focus") {
@@ -1579,8 +1675,8 @@ class StudyRoomStreamsPainter extends CustomPainter {
       final double dx = midX + (p.x * 240 - 120) + math.cos(angle) * 10;
       final double dy = startY + 80 + (p.y * 180 - 90) + math.sin(angle) * 10;
 
-      paintAmbient.color = Colors.white.withOpacity(0.20 + (0.15 * math.sin(angle)));
-      canvas.drawCircle(Offset(dx, dy), 1.2 + (1.2 * p.x), paintAmbient);
+      paintAmbient.color = Colors.white.withOpacity(0.22 + (0.18 * math.sin(angle)));
+      canvas.drawCircle(Offset(dx, dy), 1.4 + (1.4 * p.x), paintAmbient);
     }
 
     // Draw flowing streams (curved paths linking core to orbs)
@@ -1799,4 +1895,42 @@ class SpecularHighlightPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant SpecularHighlightPainter oldDelegate) => false;
+}
+
+class CelebrationParticlesPainter extends CustomPainter {
+  final double progress;
+  final List<_CelebrationParticle> particles;
+  CelebrationParticlesPainter({required this.progress, required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()..style = PaintingStyle.fill;
+    for (final p in particles) {
+      final double distanceFactor = progress;
+      final double dx = center.dx + p.vx * distanceFactor * 25;
+      final double dy = center.dy + p.vy * distanceFactor * 25;
+      final double opacity = (1.0 - progress).clamp(0.0, 1.0);
+      paint.color = p.color.withOpacity(opacity);
+      canvas.drawCircle(Offset(dx, dy), p.size, paint);
+
+      // bloom highlight
+      final glowPaint = Paint()
+        ..color = p.color.withOpacity(opacity * 0.45)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+      canvas.drawCircle(Offset(dx, dy), p.size * 2.2, glowPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _CelebrationParticle {
+  double x, y;
+  final double vx, vy;
+  final Color color;
+  final double size;
+  _CelebrationParticle({required this.x, required this.y, required this.vx, required this.vy, required this.color, required this.size});
 }

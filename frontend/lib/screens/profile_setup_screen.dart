@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../widgets/global_eggy.dart';
 import 'home_screen.dart';
+import '../services/study_state_manager.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -55,20 +54,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         _isLoading = true;
       });
 
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Save fields to local SharedPreferences
-      await prefs.setString("user_name", _nameController.text.trim());
-      await prefs.setInt("user_age", int.parse(_ageController.text.trim()));
-      await prefs.setString("user_course", _selectedCourse);
-      await prefs.setString("user_mascot", _selectedMascot);
-      await prefs.setBool("is_profile_setup", true);
-      await prefs.setBool("onboarded", true); // Satisfies app check
-
-      // Synchronize mascot state in global Eggy floating controller
-      EggyController.instance.userCourse = _selectedCourse;
-      EggyController.instance.userMascot = _selectedMascot;
-      EggyController.instance.triggerJoyBounce();
+      await StudyStateManager.instance.saveProfile(
+        name: _nameController.text.trim(),
+        age: int.parse(_ageController.text.trim()),
+        course: _selectedCourse,
+        mascot: _selectedMascot,
+      );
 
       setState(() {
         _isLoading = false;

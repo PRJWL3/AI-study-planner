@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'widgets/global_eggy.dart';
+import 'services/study_state_manager.dart';
 
 void main() {
   runApp(const StudyPlannerApp());
@@ -81,8 +81,8 @@ class StudyPlannerApp extends StatelessWidget {
           ],
         );
       },
-      home: FutureBuilder<SharedPreferences>(
-        future: SharedPreferences.getInstance(),
+      home: FutureBuilder<void>(
+        future: StudyStateManager.instance.init(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
@@ -93,9 +93,9 @@ class StudyPlannerApp extends StatelessWidget {
               ),
             );
           }
-          final prefs = snapshot.data;
-          final bool isLoggedIn = prefs?.getBool("is_logged_in") ?? false;
-          final bool isProfileSetup = prefs?.getBool("is_profile_setup") ?? false;
+          final state = StudyStateManager.instance;
+          final bool isLoggedIn = state.isLoggedIn;
+          final bool isProfileSetup = state.isProfileSetup;
 
           if (isLoggedIn) {
             if (isProfileSetup) {

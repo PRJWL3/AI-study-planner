@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 import 'profile_setup_screen.dart';
+import '../services/study_state_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,10 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
       // Simulate authentication request delay
       await Future.delayed(const Duration(seconds: 1));
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool("is_logged_in", true);
-      
-      final bool isProfileSetup = prefs.getBool("is_profile_setup") ?? false;
+      await StudyStateManager.instance.login(true);
+      final bool isProfileSetup = StudyStateManager.instance.isProfileSetup;
 
       setState(() {
         _isLoading = false;

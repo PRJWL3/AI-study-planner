@@ -1,4 +1,3 @@
-﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +5,7 @@ import '../models/subject.dart';
 import '../services/api_service.dart';
 import 'home_screen.dart';
 import '../widgets/global_eggy.dart';
+import '../services/study_state_manager.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -103,8 +103,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       final courseName = _isCustomCourse ? _customCourseController.text.trim() : _selectedCourse;
-      final prefs = await SharedPreferences.getInstance();
-
       // Build and serialize Subject objects
       final List<Subject> selectedSubjectsList = [];
 
@@ -138,20 +136,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         }
       }
 
-      // Save everything to SharedPreferences
-      await prefs.setBool("onboarded", true);
-      await prefs.setString("user_course", courseName);
-      await prefs.setString("user_year", _selectedYear);
-      await prefs.setString("onboarding_strategy", _fetchedStrategy);
-      
-      await prefs.setString(
-        "subjects",
-        jsonEncode(selectedSubjectsList.map((e) => e.toJson()).toList()),
+      await StudyStateManager.instance.setSyllabusAndStrategy(
+        selectedSubjects: selectedSubjectsList,
+        course: courseName,
+        year: _selectedYear,
+        strategy: _fetchedStrategy,
       );
-
-      // Clean default study plan since syllabus has changed
-      await prefs.remove("studyPlan");
-      await prefs.remove("completedTasks");
 
       if (!mounted) return;
       Navigator.pushReplacement(

@@ -1,17 +1,14 @@
-﻿import 'dart:convert';
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'subject_detail_screen.dart';
-import 'onboarding_screen.dart';
 import '../widgets/study_timer_sheet.dart';
 import '../models/subject.dart';
 import '../services/api_service.dart';
 import 'edit_profile_screen.dart';
+import '../services/study_state_manager.dart';
 import 'tasks_tab_screen.dart';
 import '../widgets/global_eggy.dart';
 import 'energy_chamber_screen.dart';
@@ -100,13 +97,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    loadData();
+    StudyStateManager.instance.addListener(_onStateChanged);
+    _onStateChanged();
     EggyController.instance.isVisible = true;
     EggyController.instance.currentTab = _currentTab;
   }
 
   @override
   void dispose() {
+    StudyStateManager.instance.removeListener(_onStateChanged);
     pomodoroTimer?.cancel();
     _studyRoomTimer?.cancel();
     subjectController.dispose();
@@ -115,88 +114,53 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> saveData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("subjects", jsonEncode(subjects.map((e) => e.toJson()).toList()));
-    await prefs.setStringList("studyPlan", studyPlan);
-    await prefs.setString("completedTasks", jsonEncode(completedTasks));
-    await prefs.setString("hours", hoursController.text);
-    await prefs.setString("difficulty", selectedDifficulty);
-    await prefs.setString("weeklyProgressHours", jsonEncode(weeklyProgressHours));
+  void _onStateChanged() {
+    if (!mounted) return;
+    final state = StudyStateManager.instance;
+    setState(() {
+      subjects = state.subjects;
+      studyPlan = state.studyPlan;
+      completedTasks = state.completedTasks;
+      weeklyProgressHours = state.weeklyProgressHours;
+      selectedDifficulty = state.selectedDifficulty;
+      selectedDate = state.selectedDate;
+      userName = state.userName;
+      userCourse = state.userCourse;
+      userYear = state.userYear;
+      userMascot = state.userMascot;
+      onboardingStrategy = state.onboardingStrategy;
+      hoursController.text = state.plannerHoursPerDay.toString();
+      _plannerHoursPerDay = state.plannerHoursPerDay;
+      _plannerStudyStyle = state.plannerStudyStyle;
+      _plannerBreakDuration = state.plannerBreakDuration;
+      _plannerDifficultyPref = state.plannerDifficultyPref;
+      _plannerPreferredTime = state.plannerPreferredTime;
+    });
+  }
 
-    if (selectedDate != null) {
-      await prefs.setString("examDate", selectedDate!.toIso8601String());
-    }
+  void _updateSettings({int? hours, String? style, int? breakDuration, String? difficulty, String? preferredTime}) {
+    StudyStateManager.instance.updatePlannerSettings(
+      hours: hours ?? StudyStateManager.instance.plannerHoursPerDay,
+      style: style ?? StudyStateManager.instance.plannerStudyStyle,
+      breakDuration: breakDuration ?? StudyStateManager.instance.plannerBreakDuration,
+      difficulty: difficulty ?? StudyStateManager.instance.plannerDifficultyPref,
+      preferredTime: preferredTime ?? StudyStateManager.instance.plannerPreferredTime,
+    );
+  }
+
+  Future<void> saveData() async {
+    await StudyStateManager.instance.saveData();
   }
 
   Future<void> loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final subjectsData = prefs.getString("subjects");
-    final planData = prefs.getStringList("studyPlan");
-    final tasksData = prefs.getString("completedTasks");
-    final hours = prefs.getString("hours");
-    final difficulty = prefs.getString("difficulty");
-    final examDate = prefs.getString("examDate");
-    final progressData = prefs.getString("weeklyProgressHours");
-
-    final course = prefs.getString("user_course") ?? "";
-    final year = prefs.getString("user_year") ?? "";
-    final strategy = prefs.getString("onboarding_strategy") ?? "";
-    final name = prefs.getString("user_name") ?? "";
-    final mascot = prefs.getString("user_mascot") ?? "assets/images/mascot_boy.png";
-
-    setState(() {
-      userCourse = course;
-      userYear = year;
-      onboardingStrategy = strategy;
-      userName = name;
-      userMascot = mascot;
-
-      if (subjectsData != null) {
-        subjects = (jsonDecode(subjectsData) as List)
-            .map((e) => Subject.fromJson(e))
-            .toList();
-      }
-      EggyController.instance.userCourse = course;
-
-      if (planData != null) {
-        studyPlan = planData;
-      }
-
-      if (tasksData != null) {
-        completedTasks = List<bool>.from(jsonDecode(tasksData));
-      }
-
-      if (hours != null) {
-        hoursController.text = hours;
-      }
-
-      if (difficulty != null) {
-        selectedDifficulty = difficulty;
-      }
-
-      if (examDate != null) {
-        selectedDate = DateTime.parse(examDate);
-      }
-
-      if (progressData != null) {
-        final Map<String, dynamic> decoded = jsonDecode(progressData);
-        weeklyProgressHours = decoded.map((key, value) => MapEntry(key, (value as num).toDouble()));
-      }
-
-      // Check list sizes match to prevent errors
-      if (studyPlan.length != completedTasks.length) {
-        completedTasks = List.generate(studyPlan.length, (_) => false);
-      }
-    });
+    await StudyStateManager.instance.init();
+    _onStateChanged();
   }
 
   double getProgress() {
     if (completedTasks.isEmpty) {
       return 0.0;
     }
-
     int completed = completedTasks.where((task) => task).length;
     return completed / completedTasks.length;
   }
@@ -215,45 +179,31 @@ class _HomeScreenState extends State<HomeScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
-      await saveData();
+      await StudyStateManager.instance.updatePlannerSettings(
+        hours: StudyStateManager.instance.plannerHoursPerDay,
+        style: StudyStateManager.instance.plannerStudyStyle,
+        breakDuration: StudyStateManager.instance.plannerBreakDuration,
+        difficulty: StudyStateManager.instance.plannerDifficultyPref,
+        preferredTime: StudyStateManager.instance.plannerPreferredTime,
+        examDate: picked,
+      );
     }
   }
 
   Future<void> _deleteSubject(int index) async {
-    setState(() {
-      subjects.removeAt(index);
-    });
-    await saveData();
+    await StudyStateManager.instance.deleteSubject(index);
   }
 
   void _addTask(String subject, String difficulty, int duration) {
-    setState(() {
-      studyPlan.add("$subject ($difficulty) - $duration mins");
-      completedTasks.add(false);
-    });
-    saveData();
+    StudyStateManager.instance.addTask(subject, difficulty, duration);
   }
 
   void _deleteTask(int index) {
-    setState(() {
-      if (index >= 0 && index < studyPlan.length) {
-        studyPlan.removeAt(index);
-        completedTasks.removeAt(index);
-      }
-    });
-    saveData();
+    StudyStateManager.instance.deleteTask(index);
   }
 
   void _editTask(int index, String subject, String difficulty, String hours) {
-    setState(() {
-      if (index >= 0 && index < studyPlan.length) {
-        studyPlan[index] = "$subject ($difficulty) - $hours";
-      }
-    });
-    saveData();
+    StudyStateManager.instance.editTask(index, subject, difficulty, hours);
   }
 
   void _showReportsDialog() {
@@ -1373,14 +1323,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildQuickActionItem(
+                            DashboardQuickActionItem(
                               icon: Icons.playlist_add_check_rounded,
                               label: "New Task",
                               bgColor: const Color(0xFFE8F5F1),
                               iconColor: const Color(0xFF006A63),
                               onTap: () => _showAddTaskDialogOnDashboard(context),
                             ),
-                            _buildQuickActionItem(
+                            DashboardQuickActionItem(
                               icon: Icons.calendar_today_rounded,
                               label: "Schedule",
                               bgColor: const Color(0xFFF3E8FF),
@@ -1392,7 +1342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 EggyController.instance.currentTab = 1;
                               },
                             ),
-                            _buildQuickActionItem(
+                            DashboardQuickActionItem(
                               icon: Icons.track_changes_rounded,
                               label: "Goals",
                               bgColor: const Color(0xFFFFEDD5),
@@ -1404,7 +1354,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 EggyController.instance.currentTab = 4;
                               },
                             ),
-                            _buildQuickActionItem(
+                            DashboardQuickActionItem(
                               icon: Icons.bar_chart_rounded,
                               label: "Reports",
                               bgColor: const Color(0xFFE0E7FF),
@@ -1475,91 +1425,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: upcomingTasks.length,
                                 itemBuilder: (context, index) {
-                                  final task = upcomingTasks[index];
-                                  final int taskIndex = task['index'];
-                                  final String subject = task['subject'];
-                                  final String difficulty = task['difficulty'];
-
-                                  Color badgeColor;
-                                  Color badgeText;
-                                  if (difficulty.toLowerCase() == 'hard') {
-                                    badgeColor = const Color(0xFFFEE2E2);
-                                    badgeText = const Color(0xFFBA1A1A);
-                                  } else if (difficulty.toLowerCase() == 'medium') {
-                                    badgeColor = const Color(0xFFFFEDD5);
-                                    badgeText = const Color(0xFFEA580C);
-                                  } else {
-                                    badgeColor = const Color(0xFFE8F5F1);
-                                    badgeText = const Color(0xFF006A63);
-                                  }
-
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 10),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Checkbox(
-                                          value: false,
-                                          onChanged: (val) {
-                                            if (val == true) {
-                                              _toggleTask(taskIndex, true);
-                                            }
-                                          },
-                                          activeColor: const Color(0xFF006A63),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                subject,
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF1A1C1E),
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                "Due today \u{2022} 2:00 PM",
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontSize: 10,
-                                                  color: Colors.grey.shade400,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: badgeColor,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            difficulty,
-                                            style: GoogleFonts.plusJakartaSans(
-                                              color: badgeText,
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                                   final task = upcomingTasks[index];
+                                   final int taskIndex = task['index'];
+                                   final String subject = task['subject'];
+                                   final String difficulty = task['difficulty'];
+                                   return PremiumTaskCard(
+                                     subject: subject,
+                                     difficulty: difficulty,
+                                     onChecked: () => _toggleTask(taskIndex, true),
+                                   );
+                                 },
                               ),
                       ),
                     ],
@@ -3604,10 +3479,7 @@ Widget _buildSettingsTab() {
             GestureDetector(
               onTap: () {
                 if (_plannerHoursPerDay > 1) {
-                  setState(() {
-                    _plannerHoursPerDay--;
-                    hoursController.text = _plannerHoursPerDay.toString();
-                  });
+                  _updateSettings(hours: _plannerHoursPerDay - 1);
                 }
               },
               child: Container(
@@ -3639,9 +3511,9 @@ Widget _buildSettingsTab() {
                   Text(
                     '$_plannerHoursPerDay',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1A1C1E),
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF006A63),
                     ),
                   ),
                   Text(
@@ -3659,10 +3531,7 @@ Widget _buildSettingsTab() {
             GestureDetector(
               onTap: () {
                 if (_plannerHoursPerDay < 16) {
-                  setState(() {
-                    _plannerHoursPerDay++;
-                    hoursController.text = _plannerHoursPerDay.toString();
-                  });
+                  _updateSettings(hours: _plannerHoursPerDay + 1);
                 }
               },
               child: Container(
@@ -3720,7 +3589,7 @@ Widget _buildSettingsTab() {
             delayMs: 0,
             child: _buildGlassCard(
               borderRadius: 28,
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -3970,7 +3839,7 @@ Widget _buildSettingsTab() {
                       options: studyStyles,
                       selected: _plannerStudyStyle,
                       activeColor: const Color(0xFFFF5C77),
-                      onSelect: (v) => setState(() => _plannerStudyStyle = v),
+                      onSelect: (v) => _updateSettings(style: v),
                     ),
                   ),
 
@@ -3984,7 +3853,7 @@ Widget _buildSettingsTab() {
                       options: breakOptions,
                       selected: _plannerBreakDuration,
                       activeColor: const Color(0xFFEA580C),
-                      onSelect: (v) => setState(() => _plannerBreakDuration = v),
+                      onSelect: (v) => _updateSettings(breakDuration: v),
                     ),
                   ),
 
@@ -3998,7 +3867,7 @@ Widget _buildSettingsTab() {
                       options: difficultyOptions,
                       selected: _plannerDifficultyPref,
                       activeColor: const Color(0xFF4F46E5),
-                      onSelect: (v) => setState(() => _plannerDifficultyPref = v),
+                      onSelect: (v) => _updateSettings(difficulty: v),
                     ),
                   ),
 
@@ -4012,7 +3881,7 @@ Widget _buildSettingsTab() {
                       options: timeOptions,
                       selected: _plannerPreferredTime,
                       activeColor: const Color(0xFFF59E0B),
-                      onSelect: (v) => setState(() => _plannerPreferredTime = v),
+                      onSelect: (v) => _updateSettings(preferredTime: v),
                     ),
                   ),
                 ],
@@ -4178,22 +4047,12 @@ Widget _buildSettingsTab() {
         return "$subj ($diff) - $hrsStr hrs/day";
       }).toList();
 
+      await StudyStateManager.instance.saveStudyPlan(formattedPlan);
+
       setState(() {
-        studyPlan = formattedPlan;
-        completedTasks = List.generate(studyPlan.length, (_) => false);
-        weeklyProgressHours = {
-          "Mon": 0.0,
-          "Tue": 0.0,
-          "Wed": 0.0,
-          "Thu": 0.0,
-          "Fri": 0.0,
-          "Sat": 0.0,
-          "Sun": 0.0,
-        };
         _currentTab = 0; // Redirect to Dashboard
       });
       EggyController.instance.currentTab = 0;
-      await saveData();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -4611,6 +4470,231 @@ class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with Single
     );
   }
 }
+class DashboardQuickActionItem extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color bgColor;
+  final Color iconColor;
+  final VoidCallback onTap;
+  const DashboardQuickActionItem({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.bgColor,
+    required this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  State<DashboardQuickActionItem> createState() => _DashboardQuickActionItemState();
+}
+
+class _DashboardQuickActionItemState extends State<DashboardQuickActionItem> {
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _scale = 0.90),
+      onTapUp: (_) => setState(() => _scale = 1.0),
+      onTapCancel: () => setState(() => _scale = 1.0),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 120),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: widget.bgColor,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.iconColor.withOpacity(0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(widget.icon, color: widget.iconColor, size: 24),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF594042),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumTaskCard extends StatefulWidget {
+  final String subject;
+  final String difficulty;
+  final VoidCallback onChecked;
+  const PremiumTaskCard({
+    super.key,
+    required this.subject,
+    required this.difficulty,
+    required this.onChecked,
+  });
+
+  @override
+  State<PremiumTaskCard> createState() => _PremiumTaskCardState();
+}
+
+class _PremiumTaskCardState extends State<PremiumTaskCard> {
+  double _scale = 1.0;
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    Color badgeColor;
+    Color badgeText;
+    IconData subjectIcon;
+    Color iconColor;
+
+    final subLower = widget.subject.toLowerCase();
+    if (subLower.contains("physic")) {
+      subjectIcon = Icons.blur_on_rounded;
+      iconColor = const Color(0xFFEA580C);
+    } else if (subLower.contains("chem")) {
+      subjectIcon = Icons.science_rounded;
+      iconColor = const Color(0xFF059669);
+    } else if (subLower.contains("math") || subLower.contains("discret")) {
+      subjectIcon = Icons.functions_rounded;
+      iconColor = const Color(0xFF7C3AED);
+    } else if (subLower.contains("database") || subLower.contains("dbms")) {
+      subjectIcon = Icons.storage_rounded;
+      iconColor = const Color(0xFF4F46E5);
+    } else if (subLower.contains("algorithm") || subLower.contains("structure") || subLower.contains("dsa")) {
+      subjectIcon = Icons.code_rounded;
+      iconColor = const Color(0xFF2563EB);
+    } else {
+      subjectIcon = Icons.book_rounded;
+      iconColor = const Color(0xFF006A63);
+    }
+
+    if (widget.difficulty.toLowerCase() == 'hard') {
+      badgeColor = const Color(0xFFFEE2E2);
+      badgeText = const Color(0xFFBA1A1A);
+    } else if (widget.difficulty.toLowerCase() == 'medium') {
+      badgeColor = const Color(0xFFFFEDD5);
+      badgeText = const Color(0xFFEA580C);
+    } else {
+      badgeColor = const Color(0xFFE8F5F1);
+      badgeText = const Color(0xFF006A63);
+    }
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() { _scale = 0.97; _isHovered = true; }),
+      onTapUp: (_) => setState(() { _scale = 1.0; _isHovered = false; }),
+      onTapCancel: () => setState(() { _scale = 1.0; _isHovered = false; }),
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 150),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(_isHovered ? 0.8 : 0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _isHovered ? iconColor.withOpacity(0.4) : Colors.white.withOpacity(0.35),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isHovered ? iconColor.withOpacity(0.08) : Colors.black.withOpacity(0.02),
+                blurRadius: _isHovered ? 16 : 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Checkbox(
+                value: false,
+                onChanged: (val) {
+                  if (val == true) {
+                    widget.onChecked();
+                  }
+                },
+                activeColor: const Color(0xFF006A63),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(subjectIcon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.subject,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1A1C1E),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Due today • 2:00 PM",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  widget.difficulty,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: badgeText,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class SubjectHeroCard extends StatefulWidget {
   final String userName;
   final int totalSubjects;

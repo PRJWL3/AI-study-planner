@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -594,17 +594,19 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> dates = [
-      {"day": "Mon", "num": "12"},
-      {"day": "Tue", "num": "13"},
-      {"day": "Wed", "num": "14"},
-      {"day": "Thu", "num": "15"},
-      {"day": "Fri", "num": "16"},
-      {"day": "Sat", "num": "17"},
-      {"day": "Sun", "num": "18"},
-    ];
+    final now = DateTime.now();
+    final currentWeekday = now.weekday; // 1 = Monday, 7 = Sunday
+    final monday = now.subtract(Duration(days: currentWeekday - 1));
+    final List<Map<String, String>> dates = List.generate(7, (index) {
+      final day = monday.add(Duration(days: index));
+      final daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      return {
+        "day": daysOfWeek[index],
+        "num": "${day.day}",
+      };
+    });
 
-    // Filter tasks list based on query & selected category filter
+    // Filter tasks list based on query, selected day index, and category filter
     final List<int> filteredIndices = [];
     for (int i = 0; i < widget.studyPlan.length; i++) {
       final parsed = _parsePlanItem(widget.studyPlan[i]);
@@ -613,9 +615,12 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       
       bool matchesFilter = true;
       if (_selectedFilter == "Today") {
-        matchesFilter = (i <= 3);
+        matchesFilter = (i % 7 == _selectedDateIndex);
       } else if (_selectedFilter == "Completed") {
-        matchesFilter = widget.completedTasks[i];
+        matchesFilter = widget.completedTasks[i] && (i % 7 == _selectedDateIndex);
+      } else {
+        // "All" filter for selected day
+        matchesFilter = (i % 7 == _selectedDateIndex);
       }
 
       if (matchesSearch && matchesFilter) {
@@ -759,193 +764,246 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                 const SizedBox(height: 24), // 24px spacing between sections
 
                 // 3. AI Planner Summary Card (Perfect column balance)
-                _buildGlassCard(
-                  borderRadius: 24,
-                  padding: const EdgeInsets.all(20),
-                  child: IntrinsicHeight(
-                    child: Row(
-                      children: [
-                        // Left Column
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
+                Builder(
+                  builder: (context) {
+                    double totalHoursToday = 0.0;
+                    for (final item in widget.studyPlan) {
+                      final parsed = _parsePlanItem(item);
+                      final hoursStr = parsed['hours'] ?? '';
+                      final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
+                      if (hoursMatch != null) {
+                        final val = double.tryParse(hoursMatch.group(1)!) ?? 0.0;
+                        if (hoursStr.contains('min')) {
+                          totalHoursToday += val / 60.0;
+                        } else {
+                          totalHoursToday += val;
+                        }
+                      }
+                    }
+                    int summaryHours = totalHoursToday.floor();
+                    int summaryMinutes = ((totalHoursToday - summaryHours) * 60).round();
+
+                    int completedCount = widget.completedTasks.where((task) => task).length;
+                    int totalTasks = widget.studyPlan.length;
+                    double progress = totalTasks > 0 ? completedCount / totalTasks : 0.0;
+                    int progressPct = (progress * 100).round();
+
+                    int nextSessionIdx = -1;
+                    for (int k = 0; k < widget.completedTasks.length; k++) {
+                      if (!widget.completedTasks[k]) {
+                        nextSessionIdx = k;
+                        break;
+                      }
+                    }
+                    
+                    String nextSubject = "No sessions";
+                    String nextTime = "All tasks complete!";
+                    String nextTimeAgo = "Done";
+                    
+                    if (nextSessionIdx != -1) {
+                      final parsed = _parsePlanItem(widget.studyPlan[nextSessionIdx]);
+                      nextSubject = parsed['subject']!;
+                      final List<String> times = [
+                        "09:00 AM", "10:45 AM", "12:30 PM", "02:00 PM",
+                        "03:45 PM", "05:30 PM", "07:15 PM"
+                      ];
+                      nextTime = nextSessionIdx < times.length ? times[nextSessionIdx] : "05:00 PM";
+                      nextTimeAgo = "next up";
+                    }
+
+                    return _buildGlassCard(
+                      borderRadius: 24,
+                      padding: const EdgeInsets.all(20),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          children: [
+                            // Left Column
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.auto_awesome_rounded, color: Color(0xFF006A63), size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "AI Planner",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF006A63),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Text(
-                                    "4h",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF1A1C1E),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    "30m",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF1A1C1E),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                "Study Hours Today",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 10,
-                                  color: Colors.grey.shade500,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: const LinearProgressIndicator(
-                                  value: 0.7,
-                                  minHeight: 5,
-                                  backgroundColor: Color(0xFFE2E8F0),
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "70% of daily goal",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 9,
-                                  color: const Color(0xFF006A63),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Balanced Center Divider
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: VerticalDivider(width: 2, color: Colors.white30, thickness: 1),
-                        ),
-                        // Right Column
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Next Session",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF8D7072),
-                                    ),
-                                  ),
-                                  // Starts in 18 min clock indicator badge
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.access_time_rounded, size: 8, color: Colors.grey.shade700),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          "in 18 min",
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 7.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.grey.shade700,
-                                          ),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.auto_awesome_rounded, color: Color(0xFF006A63), size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "AI Planner",
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF006A63),
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFF3E8FF),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.bookmark_added_rounded, color: Color(0xFF7C3AED), size: 16),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Mathematics",
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF1A1C1E),
-                                          ),
-                                        ),
-                                        Text(
-                                          "10:45 AM - 12:00 PM",
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 9,
-                                            color: Colors.grey.shade500,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              InkWell(
-                                onTap: () {},
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "View Full Plan",
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF006A63),
                                       ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        "${summaryHours}h",
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF1A1C1E),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        "${summaryMinutes}m",
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF1A1C1E),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    "Study Hours Today",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 10,
+                                      color: Colors.grey.shade500,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const Icon(Icons.chevron_right_rounded, color: Color(0xFF006A63), size: 14),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: progress,
+                                      minHeight: 5,
+                                      backgroundColor: const Color(0xFFE2E8F0),
+                                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "$progressPct% of daily goal",
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 9,
+                                      color: const Color(0xFF006A63),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            // Balanced Center Divider
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              child: VerticalDivider(width: 2, color: Colors.white30, thickness: 1),
+                            ),
+                            // Right Column
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Next Session",
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF8D7072),
+                                        ),
+                                      ),
+                                      // Starts in 18 min clock indicator badge
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade200,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.access_time_rounded, size: 8, color: Colors.grey.shade700),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              nextTimeAgo,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 7.5,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFF3E8FF),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.bookmark_added_rounded, color: Color(0xFF7C3AED), size: 16),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              nextSubject,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF1A1C1E),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              nextTime,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 9,
+                                                color: Colors.grey.shade500,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  InkWell(
+                                    onTap: () {
+                                      widget.onRegenerate();
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "View Full Plan",
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF006A63),
+                                          ),
+                                        ),
+                                        const Icon(Icons.chevron_right_rounded, color: Color(0xFF006A63), size: 14),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 24), // 24px spacing between sections
 
@@ -1107,7 +1165,14 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                           final difficulty = parsed['difficulty']!;
                           final hours = parsed['hours']!;
                           final bool isCompleted = widget.completedTasks[index];
-                          final bool isCurrent = (index == 1); // Mock index 1 as active task
+                          int firstUncompletedIdx = -1;
+                          for (int k = 0; k < widget.completedTasks.length; k++) {
+                            if (!widget.completedTasks[k]) {
+                              firstUncompletedIdx = k;
+                              break;
+                            }
+                          }
+                          final bool isCurrent = (index == firstUncompletedIdx);
                           final bool isLast = (idx == filteredIndices.length - 1);
 
                           final List<String> times = [
@@ -1203,22 +1268,36 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                                   Expanded(
                                                     child: ClipRRect(
                                                       borderRadius: BorderRadius.circular(3),
-                                                      child: LinearProgressIndicator(
-                                                        value: progressPercent,
-                                                        minHeight: 4,
-                                                        backgroundColor: Colors.white.withOpacity(0.4),
-                                                        valueColor: AlwaysStoppedAnimation<Color>(semanticColor),
+                                                      child: TweenAnimationBuilder<double>(
+                                                        tween: Tween<double>(begin: 0.0, end: progressPercent),
+                                                        duration: const Duration(milliseconds: 600),
+                                                        curve: Curves.easeOutCubic,
+                                                        builder: (context, val, _) {
+                                                          return LinearProgressIndicator(
+                                                            value: val,
+                                                            minHeight: 4,
+                                                            backgroundColor: Colors.white.withOpacity(0.4),
+                                                            valueColor: AlwaysStoppedAnimation<Color>(semanticColor),
+                                                          );
+                                                        },
                                                       ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 8),
-                                                  Text(
-                                                    "${(progressPercent * 100).round()}%",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 9,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF1A1C1E),
-                                                    ),
+                                                  TweenAnimationBuilder<double>(
+                                                    tween: Tween<double>(begin: 0.0, end: progressPercent),
+                                                    duration: const Duration(milliseconds: 600),
+                                                    curve: Curves.easeOutCubic,
+                                                    builder: (context, val, _) {
+                                                      return Text(
+                                                        "${(val * 100).round()}%",
+                                                        style: GoogleFonts.plusJakartaSans(
+                                                          fontSize: 9,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: const Color(0xFF1A1C1E),
+                                                        ),
+                                                      );
+                                                    },
                                                   ),
                                                 ],
                                               ),
@@ -1385,8 +1464,8 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                     boxShadow: [
                                       BoxShadow(
                                         color: const Color(0xFF22D3EE).withOpacity(_pulseAnimation.value * 0.25),
-                                        blurRadius: 12,
-                                        spreadRadius: 2,
+                                        blurRadius: 20,
+                                        spreadRadius: 3,
                                       ),
                                     ],
                                   ),
@@ -1412,13 +1491,13 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                         Positioned(
                                           top: 45,
                                           bottom: 0,
-                                          child: Container(width: 1.5, color: Colors.grey.shade200),
+                                          child: Container(width: 2.0, color: Colors.grey.shade400),
                                         ),
                                       if (idx > 0)
                                         Positioned(
                                           top: 0,
                                           bottom: 45,
-                                          child: Container(width: 1.5, color: Colors.grey.shade200),
+                                          child: Container(width: 2.0, color: Colors.grey.shade400),
                                         ),
                                       // Time stamp text
                                       Positioned(
