@@ -201,8 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
     await StudyStateManager.instance.deleteSubject(index);
   }
 
-  void _addTask(String subject, String difficulty, int duration) {
-    StudyStateManager.instance.addTask(subject, difficulty, duration);
+  void _addTask(String subject, String difficulty, int duration, {int? dayIndex}) {
+    StudyStateManager.instance.addTask(subject, difficulty, duration, dayIndex: dayIndex);
   }
 
   void _deleteTask(int index) {
@@ -211,6 +211,267 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _editTask(int index, String subject, String difficulty, String hours) {
     StudyStateManager.instance.editTask(index, subject, difficulty, hours);
+  }
+
+  Widget _buildPremiumStatItem({
+    required IconData icon,
+    required Color iconColor,
+    required String value,
+    required String label,
+  }) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: iconColor, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1A1C1E),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _generateRecommendations() {
+    final state = StudyStateManager.instance;
+    final stats = state.statistics;
+    final List<Map<String, dynamic>> list = [];
+
+    // 1. Continue session (from Study Plan or Subjects list)
+    String continueSubject = "Data Structures";
+    String continueTopic = "Binary Trees";
+    if (state.subjects.isNotEmpty) {
+      final incompleteSubj = state.subjects.firstWhere(
+        (s) => s.topics.any((t) => !t.isCompleted),
+        orElse: () => state.subjects.first,
+      );
+      continueSubject = incompleteSubj.name;
+      if (incompleteSubj.topics.isNotEmpty) {
+        final incompleteTopic = incompleteSubj.topics.firstWhere(
+          (t) => !t.isCompleted,
+          orElse: () => incompleteSubj.topics.first,
+        );
+        continueTopic = incompleteTopic.name;
+      }
+    } else if (state.studyPlan.isNotEmpty) {
+      final parsed = state.parsePlanItem(state.studyPlan.first);
+      continueSubject = parsed['subject'] ?? 'Data Structures';
+      continueTopic = "Core Chapters";
+    }
+    list.add({
+      'type': 'continue',
+      'icon': Icons.book_rounded,
+      'iconColor': const Color(0xFF3B82F6),
+      'title': 'Continue',
+      'content': '$continueSubject ($continueTopic)',
+    });
+
+    // 2. Revision due
+    String revisionSubject = "Operating Systems";
+    if (state.subjects.length > 1) {
+      final revSubj = state.subjects.firstWhere(
+        (s) => s.name != continueSubject,
+        orElse: () => state.subjects.last,
+      );
+      revisionSubject = revSubj.name;
+    }
+    list.add({
+      'type': 'revision',
+      'icon': Icons.warning_amber_rounded,
+      'iconColor': const Color(0xFFEF4444),
+      'title': 'Revision Due',
+      'content': revisionSubject,
+    });
+
+    // 3. Best study time
+    String bestTime = "7:00 PM – 8:30 PM";
+    final prefTime = state.plannerPreferredTime.toLowerCase();
+    if (prefTime.contains('morning')) {
+      bestTime = "9:00 AM – 10:30 AM";
+    } else if (prefTime.contains('afternoon')) {
+      bestTime = "2:00 PM – 3:30 PM";
+    } else if (prefTime.contains('evening') || prefTime.contains('night')) {
+      bestTime = "7:00 PM – 8:30 PM";
+    }
+    list.add({
+      'type': 'best_time',
+      'icon': Icons.watch_later_rounded,
+      'iconColor': const Color(0xFF10B981),
+      'title': 'Best Study Time',
+      'content': bestTime,
+    });
+
+    // 4. Upcoming exam
+    String examSubject = "DBMS";
+    int daysRemaining = 3;
+    final examDate = state.selectedDate;
+    if (examDate != null) {
+      final diff = examDate.difference(DateTime.now()).inDays;
+      if (diff >= 0) {
+        daysRemaining = diff;
+        if (state.subjects.isNotEmpty) {
+          examSubject = state.subjects.first.name;
+        }
+      }
+    }
+    list.add({
+      'type': 'exam',
+      'icon': Icons.calendar_month_rounded,
+      'iconColor': const Color(0xFFF59E0B),
+      'title': 'Upcoming Exam',
+      'content': '$examSubject - $daysRemaining Days Remaining',
+    });
+
+    // 5. Weekly progress
+    double onTrackPct = 82.0;
+    if (stats.weeklyGoalMinutes > 0) {
+      onTrackPct = ((stats.weeklyCompletedMinutes / stats.weeklyGoalMinutes) * 100).clamp(0.0, 100.0);
+    }
+    list.add({
+      'type': 'progress',
+      'icon': Icons.trending_up_rounded,
+      'iconColor': const Color(0xFF10B981),
+      'title': 'Weekly Progress',
+      'content': '${onTrackPct.round()}% On Track',
+    });
+
+    // 6. AI Tip
+    int completedSessions = stats.sessionsCompleted;
+    int target = 10;
+    while (completedSessions >= target) {
+      target += 10;
+    }
+    int remSessions = target - completedSessions;
+    list.add({
+      'type': 'tip',
+      'icon': Icons.lightbulb_rounded,
+      'iconColor': const Color(0xFFF59E0B),
+      'title': 'AI Tip',
+      'content': 'Complete $remSessions more study session${remSessions > 1 ? 's' : ''} today to unlock your next achievement.',
+    });
+
+    // 7. Crystal Goal
+    int currentCrystals = stats.sessionsCompleted * 2 + (stats.totalStudyMinutes ~/ 20);
+    String crystalGoalMsg = "Study for 45 minutes to earn another Wisdom Crystal.";
+    if (currentCrystals % 3 == 0) {
+      crystalGoalMsg = "Complete 1 focus session to earn a Focus Crystal.";
+    } else if (currentCrystals % 3 == 1) {
+      crystalGoalMsg = "Complete a quiz to earn a Mastery Crystal.";
+    }
+    list.add({
+      'type': 'crystal',
+      'icon': Icons.diamond_rounded,
+      'iconColor': const Color(0xFF6366F1),
+      'title': 'Crystal Goal',
+      'content': crystalGoalMsg,
+    });
+
+    return list;
+  }
+
+  void _showRecommendationsInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFFDF6).withOpacity(0.95),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: Text(
+            "AI Smart Recommendations",
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF1A1C1E)),
+          ),
+          content: Text(
+            "These tips are automatically tailored to your availability windows, exam deadlines, topic mastery progress, focus patterns, and crystal collection milestones to keep your learning optimal.",
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey.shade700),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Got it", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF006A63))),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAchievementsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFFDF6).withOpacity(0.95),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: Text(
+            "All Achievements & Badges",
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF1A1C1E)),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAchievementDialogRow("🛡️", "Crystal Guardian Badge", "Complete your Next Achievement to unlock this premium badge."),
+                const Divider(),
+                _buildAchievementDialogRow("🔥", "Streak Lord", "Maintain a study streak of 7 days. Completed!"),
+                const Divider(),
+                _buildAchievementDialogRow("📚", "Knowledge Seeker", "Complete 20 focus study sessions."),
+                const Divider(),
+                _buildAchievementDialogRow("💎", "Crystal Master", "Earn 100 focus crystals."),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Close", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF006A63))),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAchievementDialogRow(String icon, String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 13, color: const Color(0xFF1A1C1E)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  desc,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 10, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showReportsDialog() {
@@ -1410,81 +1671,468 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                // Tasks Checklist Section (Glass card)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Upcoming Tasks",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1A1C1E),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _currentTab = 1;
-                              });
-                              EggyController.instance.currentTab = 1;
-                            },
-                            child: Text(
-                              "See all",
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF006A63),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _buildGlassCard(
-                        padding: const EdgeInsets.all(16),
-                        child: upcomingTasks.isEmpty
-                            ? Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                child: Center(
-                                  child: Text(
-                                    "No upcoming tasks! ðŸŽ‰",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      color: const Color(0xFF8D7072),
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                  child: _buildGlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Text("🔥", style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "Learning Streak & Achievements",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1A1C1E),
                                   ),
                                 ),
-                              )
-                            : ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: upcomingTasks.length,
-                                itemBuilder: (context, index) {
-                                   final task = upcomingTasks[index];
-                                   final int taskIndex = task['index'];
-                                   final String subject = task['subject'];
-                                   final String difficulty = task['difficulty'];
-                                   final String start = task['startTime'] ?? '';
-                                   final String end = task['endTime'] ?? '';
-                                   final String dueTime = start.isNotEmpty ? "$start - $end" : (task['hours'] ?? '');
-                                   return PremiumTaskCard(
-                                     subject: subject,
-                                     difficulty: difficulty,
-                                     dueTime: dueTime,
-                                     onChecked: () => _toggleTask(taskIndex, true),
-                                   );
-                                 },
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                _showAchievementsDialog();
+                              },
+                              child: Text(
+                                "See all",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF006A63),
+                                ),
                               ),
-                      ),
-                    ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Stats row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildPremiumStatItem(
+                              icon: Icons.local_fire_department_rounded,
+                              iconColor: const Color(0xFFF97316),
+                              value: "${statistics.streakDays}",
+                              label: "Day Streak",
+                            ),
+                            _buildPremiumStatItem(
+                              icon: Icons.star_rounded,
+                              iconColor: const Color(0xFFFBBF24),
+                              value: "${(statistics.totalStudyMinutes * 15 + statistics.sessionsCompleted * 100 + statistics.streakDays * 50).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}",
+                              label: "XP Earned",
+                            ),
+                            _buildPremiumStatItem(
+                              icon: Icons.menu_book_rounded,
+                              iconColor: const Color(0xFF3B82F6),
+                              value: "${statistics.sessionsCompleted}",
+                              label: "Sessions",
+                            ),
+                            _buildPremiumStatItem(
+                              icon: Icons.watch_later_rounded,
+                              iconColor: const Color(0xFF10B981),
+                              value: "${(statistics.totalStudyMinutes / 60.0).toStringAsFixed(1)}",
+                              label: "Focus Hours",
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Crystal Collection Section
+                        Builder(
+                          builder: (context) {
+                            int completedTopics = 0;
+                            for (final subject in subjects) {
+                              completedTopics += subject.topics.where((t) => t.isCompleted).length;
+                            }
+                            int completedSubjects = subjects.where((subject) =>
+                              subject.topics.isNotEmpty && subject.topics.every((t) => t.isCompleted)
+                            ).length;
+
+                            final int focusCrystals = statistics.sessionsCompleted * 2 + (statistics.totalStudyMinutes ~/ 20);
+                            final int wisdomCrystals = completedTopics * 5;
+                            final int masteryCrystals = completedSubjects * 10 + (completedTopics ~/ 2);
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Crystal Collection",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Text("💙", style: TextStyle(fontSize: 14)),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    "$focusCrystals",
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: const Color(0xFF1A1C1E),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Focus",
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 8,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Text("🟣", style: TextStyle(fontSize: 14)),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    "$wisdomCrystals",
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: const Color(0xFF1A1C1E),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Wisdom",
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 8,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const Text("🟡", style: TextStyle(fontSize: 14)),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    "$masteryCrystals",
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: const Color(0xFF1A1C1E),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Mastery",
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 8,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Next Achievement Section
+                        Builder(
+                          builder: (context) {
+                            int targetSessions = 10;
+                            int completed = statistics.sessionsCompleted;
+                            while (completed >= targetSessions) {
+                              targetSessions += 10; // Next tier
+                            }
+                            int remaining = targetSessions - completed;
+                            double progressPct = (completed / targetSessions).clamp(0.0, 1.0);
+                            int progressPctInt = (progressPct * 100).round();
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6366F1).withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.15), width: 1),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFEEF2F6),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Text("🏆", style: TextStyle(fontSize: 16)),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Next Achievement",
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                            ),
+                                            Text(
+                                              "Focus Master",
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF1A1C1E),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            "$progressPctInt%",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF6366F1),
+                                            ),
+                                          ),
+                                          Text(
+                                            "$remaining study sessions remaining",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  // Progress bar
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: progressPct,
+                                      backgroundColor: const Color(0xFFE2E8F0),
+                                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                                      minHeight: 8,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Next Unlock",
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.shield_rounded, color: Color(0xFFF59E0B), size: 12),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "Crystal Guardian Badge",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF1A1C1E),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: _buildGlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Text("🤖", style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "Smart Recommendations",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1A1C1E),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                _showRecommendationsInfoDialog();
+                              },
+                              child: Text(
+                                "See all",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF006A63),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Builder(
+                          builder: (context) {
+                            final recommendations = _generateRecommendations();
+                            return Column(
+                              children: List.generate(recommendations.length, (idx) {
+                                final rec = recommendations[idx];
+                                final isLast = idx == recommendations.length - 1;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(rec['icon'] as IconData, color: rec['iconColor'] as Color, size: 18),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  rec['title'] as String,
+                                                  style: GoogleFonts.plusJakartaSans(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.grey.shade500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  rec['content'] as String,
+                                                  style: GoogleFonts.plusJakartaSans(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: const Color(0xFF1A1C1E),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isLast)
+                                      Divider(color: Colors.grey.shade300, height: 16),
+                                  ],
+                                );
+                              }),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Weather & Quote side-by-side
@@ -4905,9 +5553,9 @@ class _HomeScreenState extends State<HomeScreen> {
       await StudyStateManager.instance.generatePlanFromAvailability();
 
       setState(() {
-        _currentTab = 0; // Redirect to Dashboard
+        _currentTab = 1; // Redirect to Schedule Tasks timeline
       });
-      EggyController.instance.currentTab = 0;
+      EggyController.instance.currentTab = 1;
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -4953,9 +5601,9 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           onRegenerate: () {
             setState(() {
-              _currentTab = 3;
+              _currentTab = 4; // Redirect to Study Plan Setup tab
             });
-            EggyController.instance.currentTab = 3;
+            EggyController.instance.currentTab = 4;
           },
           onDeleteTask: _deleteTask,
           onEditTask: _editTask,

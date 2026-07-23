@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/study_state_manager.dart';
 
 class TasksTabScreen extends StatefulWidget {
   final List<String> studyPlan;
@@ -11,7 +12,7 @@ class TasksTabScreen extends StatefulWidget {
   final VoidCallback onRegenerate;
   final Function(int) onDeleteTask;
   final Function(int, String, String, String) onEditTask;
-  final Function(String, String, int) onAddTask;
+  final Function(String, String, int, {int? dayIndex}) onAddTask;
 
   const TasksTabScreen({
     super.key,
@@ -53,11 +54,19 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   final TextEditingController _durationController = TextEditingController();
   String _selectedDifficulty = "Medium";
 
+  void _onStudyStateChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     final today = DateTime.now();
     _selectedDateIndex = today.weekday - 1; // 0 = Mon, 6 = Sun
+
+    StudyStateManager.instance.addListener(_onStudyStateChanged);
 
     _searchFocusNode.addListener(() {
       setState(() {
@@ -83,6 +92,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
 
   @override
   void dispose() {
+    StudyStateManager.instance.removeListener(_onStudyStateChanged);
     _minuteTimer?.cancel();
     _searchFocusNode.dispose();
     _pulseController.dispose();
@@ -445,7 +455,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                     final String title = _titleController.text.trim();
                     final int? duration = int.tryParse(_durationController.text.trim());
                     if (title.isNotEmpty && duration != null && duration > 0) {
-                      widget.onAddTask(title, _selectedDifficulty, duration);
+                      widget.onAddTask(title, _selectedDifficulty, duration, dayIndex: _selectedDateIndex);
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -753,6 +763,8 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final studyPlan = StudyStateManager.instance.studyPlan;
+    final completedTasks = StudyStateManager.instance.completedTasks;
     final currentWeekday = now.weekday; // 1 = Monday, 7 = Sunday
     final monday = now.subtract(Duration(days: currentWeekday - 1));
     final List<Map<String, String>> dates = List.generate(7, (index) {
@@ -767,8 +779,8 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     final List<Map<String, dynamic>> sessions = [];
     DateTime currentStart = DateTime(now.year, now.month, now.day, 9, 0);
 
-    for (int i = 0; i < widget.studyPlan.length; i++) {
-      final parsed = _parsePlanItem(widget.studyPlan[i]);
+    for (int i = 0; i < studyPlan.length; i++) {
+      final parsed = _parsePlanItem(studyPlan[i]);
       final hoursStr = parsed['hours'] ?? '';
       double durationMins = 60.0;
       final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
@@ -808,14 +820,14 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         "index": i,
         "start": start,
         "end": end,
-        "isCompleted": widget.completedTasks[i],
+        "isCompleted": completedTasks[i],
       });
     }
 
     // Filter tasks list based on query, selected day index, and category filter
     final List<int> filteredIndices = [];
-    for (int i = 0; i < widget.studyPlan.length; i++) {
-      final parsed = _parsePlanItem(widget.studyPlan[i]);
+    for (int i = 0; i < studyPlan.length; i++) {
+      final parsed = _parsePlanItem(studyPlan[i]);
       final subject = parsed['subject']!;
       final bool matchesSearch = subject.toLowerCase().contains(_searchQuery.toLowerCase());
       
@@ -827,7 +839,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       if (_selectedFilter == "Today") {
         matchesFilter = (itemDayIndex == _selectedDateIndex);
       } else if (_selectedFilter == "Completed") {
-        matchesFilter = widget.completedTasks[i] && (itemDayIndex == _selectedDateIndex);
+        matchesFilter = completedTasks[i] && (itemDayIndex == _selectedDateIndex);
       } else {
         // "All" filter for selected day
         matchesFilter = (itemDayIndex == _selectedDateIndex);
@@ -993,7 +1005,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                 Builder(
                   builder: (context) {
                     double totalHoursToday = 0.0;
-                    for (final item in widget.studyPlan) {
+                    for (final item in studyPlan) {
                       final parsed = _parsePlanItem(item);
                       final hoursStr = parsed['hours'] ?? '';
                       final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
@@ -1009,16 +1021,26 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                     int summaryHours = totalHoursToday.floor();
                     int summaryMinutes = ((totalHoursToday - summaryHours) * 60).round();
 
-                    int completedCount = widget.completedTasks.where((task) => task).length;
-                    int totalTasks = widget.studyPlan.length;
+                    int completedCount = completedTasks.where((task) => task).length;
+                    int totalTasks = studyPlan.length;
                     double progress = totalTasks > 0 ? completedCount / totalTasks : 0.0;
                     int progressPct = (progress * 100).round();
 
                     int nextSessionIdx = -1;
-                    for (int k = 0; k < widget.completedTasks.length; k++) {
-                      if (!widget.completedTasks[k]) {
+                    for (int k = 0; k < completedTasks.length; k++) {
+                      final s = sessions[k];
+                      final DateTime end = s['end'] as DateTime;
+                      if (!completedTasks[k] && end.isAfter(now)) {
                         nextSessionIdx = k;
                         break;
+                      }
+                    }
+                    if (nextSessionIdx == -1) {
+                      for (int k = 0; k < completedTasks.length; k++) {
+                        if (!completedTasks[k]) {
+                          nextSessionIdx = k;
+                          break;
+                        }
                       }
                     }
                     
@@ -1027,7 +1049,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                     String nextTimeAgo = "Done";
                     
                     if (nextSessionIdx != -1) {
-                      final parsed = _parsePlanItem(widget.studyPlan[nextSessionIdx]);
+                      final parsed = _parsePlanItem(studyPlan[nextSessionIdx]);
                       nextSubject = parsed['subject']!;
                       
                       final nextSession = sessions[nextSessionIdx];
@@ -1398,18 +1420,20 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                           ],
                         ),
                       )
-                    : ListView.builder(
+: ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: filteredIndices.length,
                         itemBuilder: (context, idx) {
                           final index = filteredIndices[idx];
-                          final planItem = widget.studyPlan[index];
+                          final planItem = studyPlan[index];
                           final parsed = _parsePlanItem(planItem);
                           final subject = parsed['subject']!;
                           final difficulty = parsed['difficulty']!;
                           final hours = parsed['hours']!;
-                          final bool isCompleted = widget.completedTasks[index];
+                          final bool isCompleted = completedTasks[index];
+                          final List<int> conflicts = StudyStateManager.instance.getConflictIndices();
+                          final bool hasConflict = conflicts.contains(index);
                           final session = sessions[index];
                           final DateTime startTime = session['start'];
                           final DateTime endTime = session['end'];
@@ -1428,8 +1452,8 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                           }
                           
                           int firstUncompletedIdx = -1;
-                          for (int k = 0; k < widget.completedTasks.length; k++) {
-                            if (!widget.completedTasks[k]) {
+                          for (int k = 0; k < completedTasks.length; k++) {
+                            if (!completedTasks[k]) {
                               firstUncompletedIdx = k;
                               break;
                             }
@@ -1502,16 +1526,47 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              Text(
-                                                subject,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: const Color(0xFF1A1C1E),
-                                                  decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                                ),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      subject,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: GoogleFonts.plusJakartaSans(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 14,
+                                                        color: const Color(0xFF1A1C1E),
+                                                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (hasConflict) ...[
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFEF4444).withOpacity(0.12),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444), size: 10),
+                                                          const SizedBox(width: 2),
+                                                          Text(
+                                                            "Conflict",
+                                                            style: GoogleFonts.plusJakartaSans(
+                                                              color: const Color(0xFFEF4444),
+                                                              fontSize: 9,
+                                                              fontWeight: FontWeight.bold,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
                                               ),
                                               const SizedBox(height: 2),
                                               Builder(
@@ -2054,7 +2109,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                       setState(() {
                         _isFabMenuOpen = false;
                       });
-                      widget.onAddTask("Break", "Easy", 30);
+                      widget.onAddTask("Break", "Easy", 30, dayIndex: _selectedDateIndex);
                     },
                   ),
                   const SizedBox(height: 12),
@@ -2065,7 +2120,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                       setState(() {
                         _isFabMenuOpen = false;
                       });
-                      widget.onAddTask("Revision Session", "Medium", 45);
+                      widget.onAddTask("Revision Session", "Medium", 45, dayIndex: _selectedDateIndex);
                     },
                   ),
                   const SizedBox(height: 12),

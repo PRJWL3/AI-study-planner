@@ -11,6 +11,7 @@ import 'persistence_service.dart';
 import 'planner_service.dart';
 import 'statistics_service.dart';
 import 'crystal_progress_service.dart';
+import 'schedule_service.dart';
 
 class StudyStateManager extends ChangeNotifier {
   static final StudyStateManager instance = StudyStateManager._internal();
@@ -537,8 +538,34 @@ class StudyStateManager extends ChangeNotifier {
     }
   }
 
-  Future<void> addTask(String subject, String difficulty, int duration) async {
-    studyPlan.add("$subject ($difficulty) - $duration mins");
+  Future<void> addTask(String subject, String difficulty, int duration, {int? dayIndex}) async {
+    final int day = dayIndex ?? 0;
+    
+    // Find last task on this day to prevent overlap on add
+    int lastEndMinutes = 9 * 60; // Start at 09:00 AM by default
+    for (final item in studyPlan) {
+      final parsed = parsePlanItem(item);
+      if (parsed['dayIndex'] == day.toString() && parsed['endTime']!.isNotEmpty) {
+        final endParts = parsed['endTime']!.split(':');
+        if (endParts.length >= 2) {
+          final hr = int.tryParse(endParts[0]) ?? 0;
+          final min = int.tryParse(endParts[1]) ?? 0;
+          final totalMins = hr * 60 + min;
+          if (totalMins > lastEndMinutes) {
+            lastEndMinutes = totalMins;
+          }
+        }
+      }
+    }
+    
+    // Schedule new task 15 mins after the last one
+    final startMinutes = lastEndMinutes + 15;
+    final endMinutes = startMinutes + duration;
+    
+    final startTime = "${(startMinutes ~/ 60).toString().padLeft(2, '0')}:${(startMinutes % 60).toString().padLeft(2, '0')}";
+    final endTime = "${(endMinutes ~/ 60).toString().padLeft(2, '0')}:${(endMinutes % 60).toString().padLeft(2, '0')}";
+
+    studyPlan.add("$subject ($difficulty) - $duration mins | $startTime - $endTime | $day | manual");
     completedTasks.add(false);
     await saveData();
     notifyListeners();
@@ -555,8 +582,28 @@ class StudyStateManager extends ChangeNotifier {
 
   Future<void> editTask(int index, String subject, String difficulty, String hours) async {
     if (index >= 0 && index < studyPlan.length) {
-      // Reformat to correct string representation
-      studyPlan[index] = "$subject ($difficulty) - $hours hrs/day";
+      final parts = hours.split('|');
+      String finalHours = hours;
+      String timesPart = "";
+      String dayPart = "";
+      
+      if (parts.length >= 3) {
+        finalHours = parts[0].trim();
+        timesPart = parts[1].trim();
+        dayPart = parts[2].trim();
+      } else {
+        final originalParsed = parsePlanItem(studyPlan[index]);
+        finalHours = hours.replaceAll("hrs/day", "").trim();
+        timesPart = "${originalParsed['startTime']} - ${originalParsed['endTime']}";
+        dayPart = originalParsed['dayIndex'] ?? "0";
+      }
+      
+      finalHours = finalHours.replaceAll("hrs/day", "").trim();
+      if (!finalHours.contains("mins") && !finalHours.contains("min") && !finalHours.contains("hr")) {
+        finalHours = "$finalHours mins";
+      }
+
+      studyPlan[index] = "$subject ($difficulty) - $finalHours | $timesPart | $dayPart | manual";
       await saveData();
       notifyListeners();
     }
@@ -645,46 +692,163 @@ class StudyStateManager extends ChangeNotifier {
   Future<void> generatePlanFromAvailability() async {
     final List<Subject> currentSubjects = subjects;
     if (currentSubjects.isEmpty) return;
-    
+
     final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    final List<String> newPlan = [];
+    final int todayIndex = DateTime.now().weekday - 1; // 0 = Mon, 6 = Sun
+    final nowTime = DateTime.now();
+    final nowMins = nowTime.hour * 60 + nowTime.minute;
+
+    // 1. Identify and extract all preserved tasks from the current studyPlan
+    final Map<int, List<Map<String, dynamic>>> preservedByDay = {};
+    for (int d = 0; d < 7; d++) {
+      preservedByDay[d] = [];
+    }
+
+    for (int i = 0; i < studyPlan.length; i++) {
+      final rawItem = studyPlan[i];
+      final parsed = parsePlanItem(rawItem);
+      final int dayVal = int.tryParse(parsed['dayIndex'] ?? '') ?? (i % 7);
+      
+      bool shouldPreserve = false;
+      
+      // Completed tasks are always preserved
+      if (i < completedTasks.length && completedTasks[i]) {
+        shouldPreserve = true;
+      }
+      // Manually edited/added tasks are always preserved
+      if (parsed['isManual'] == 'true') {
+        shouldPreserve = true;
+      }
+      // Past days are always preserved
+      if (dayVal < todayIndex) {
+        shouldPreserve = true;
+      }
+      // Past hours of today are preserved
+      if (dayVal == todayIndex && parsed['endTime']!.isNotEmpty) {
+        final endParts = parsed['endTime']!.split(':');
+        if (endParts.length >= 2) {
+          final hr = int.tryParse(endParts[0]) ?? 0;
+          final min = int.tryParse(endParts[1]) ?? 0;
+          if (hr * 60 + min <= nowMins) {
+            shouldPreserve = true;
+          }
+        }
+      }
+
+      if (shouldPreserve) {
+        preservedByDay[dayVal]!.add({
+          'raw': rawItem,
+          'parsed': parsed,
+          'completed': i < completedTasks.length ? completedTasks[i] : false,
+        });
+      }
+    }
+
+    // 2. Generate the new plan day by day
+    final List<String> finalPlan = [];
+    final List<bool> finalCompleted = [];
+    int subjectIdx = 0;
+
     final availability = getAvailability();
-    
-    // Sort availability windows by day and start time
-    final Map<String, List<StudyAvailability>> grouped = {};
+    final Map<String, List<StudyAvailability>> groupedAvailability = {};
     for (final day in weekdays) {
-      grouped[day] = availability.where((w) => w.weekday == day).toList()
+      groupedAvailability[day] = availability.where((w) => w.weekday == day).toList()
         ..sort((a, b) => a.startTime.compareTo(b.startTime));
     }
-    
-    int subjectIdx = 0;
-    
-    for (int dayIdx = 0; dayIdx < 7; dayIdx++) {
-      final dayName = weekdays[dayIdx];
-      final List<StudyAvailability> windows = grouped[dayName] ?? [];
+
+    for (int dayVal = 0; dayVal < 7; dayVal++) {
+      final dayName = weekdays[dayVal];
       
+      // If the day is in the past, just add its preserved tasks directly
+      if (dayVal < todayIndex) {
+        for (final item in preservedByDay[dayVal]!) {
+          finalPlan.add(item['raw'] as String);
+          finalCompleted.add(item['completed'] as bool);
+        }
+        continue;
+      }
+
+      // Find availability windows for today/future day
+      final List<StudyAvailability> windows = groupedAvailability[dayName] ?? [];
+      final List<Map<String, dynamic>> dayPreserved = preservedByDay[dayVal]!;
+      
+      // We will identify the free intervals within the availability windows
+      final List<Map<String, int>> freeIntervals = [];
+
       for (final window in windows) {
         final startParts = window.startTime.split(':');
         final endParts = window.endTime.split(':');
         if (startParts.length < 2 || endParts.length < 2) continue;
-        
-        final startHr = int.tryParse(startParts[0]) ?? 0;
-        final startMin = int.tryParse(startParts[1]) ?? 0;
-        final endHr = int.tryParse(endParts[0]) ?? 0;
-        final endMin = int.tryParse(endParts[1]) ?? 0;
-        
-        int currentTotalMins = startHr * 60 + startMin;
-        final endTotalMins = endHr * 60 + endMin;
-        
+
+        int winStart = (int.tryParse(startParts[0]) ?? 0) * 60 + (int.tryParse(startParts[1]) ?? 0);
+        final winEnd = (int.tryParse(endParts[0]) ?? 0) * 60 + (int.tryParse(endParts[1]) ?? 0);
+
+        // If it's today, we only generate slots in the future of today
+        if (dayVal == todayIndex && winStart < nowMins) {
+          winStart = nowMins;
+        }
+
+        if (winStart >= winEnd) continue;
+
+        // Find all preserved tasks on this day that overlap with [winStart, winEnd]
+        final List<Map<String, int>> occupied = [];
+        for (final p in dayPreserved) {
+          final parsed = p['parsed'] as Map<String, String>;
+          if (parsed['startTime']!.isNotEmpty && parsed['endTime']!.isNotEmpty) {
+            final sParts = parsed['startTime']!.split(':');
+            final eParts = parsed['endTime']!.split(':');
+            final pStart = (int.tryParse(sParts[0]) ?? 0) * 60 + (int.tryParse(sParts[1]) ?? 0);
+            final pEnd = (int.tryParse(eParts[0]) ?? 0) * 60 + (int.tryParse(eParts[1]) ?? 0);
+            
+            // Check if there is overlap with window
+            if (pStart < winEnd && winStart < pEnd) {
+              occupied.add({
+                'start': pStart,
+                'end': pEnd,
+              });
+            }
+          }
+        }
+
+        // Sort occupied intervals by start time
+        occupied.sort((a, b) => a['start']!.compareTo(b['start']!));
+
+        // Subtract occupied intervals from [winStart, winEnd] to find free intervals
+        int currentStart = winStart;
+        for (final occ in occupied) {
+          if (occ['start']! > currentStart) {
+            freeIntervals.add({
+              'start': currentStart,
+              'end': occ['start']!,
+            });
+          }
+          if (occ['end']! > currentStart) {
+            currentStart = occ['end']!;
+          }
+        }
+        if (winEnd > currentStart) {
+          freeIntervals.add({
+            'start': currentStart,
+            'end': winEnd,
+          });
+        }
+      }
+
+      // Now, allocate new study sessions in the free intervals
+      final List<Map<String, dynamic>> newlyGeneratedTasks = [];
+      for (final interval in freeIntervals) {
+        int currentTotalMins = interval['start']!;
+        final endTotalMins = interval['end']!;
+
         while (currentTotalMins < endTotalMins) {
           final remainingMins = endTotalMins - currentTotalMins;
           if (remainingMins < 15) {
             break;
           }
-          
+
           final subject = currentSubjects[subjectIdx % currentSubjects.length];
           subjectIdx++;
-          
+
           int sessionLength = 45;
           switch (subject.difficulty.toLowerCase()) {
             case 'hard':
@@ -696,30 +860,70 @@ class StudyStateManager extends ChangeNotifier {
             default:
               sessionLength = 45;
           }
-          
+
           if (sessionLength > remainingMins) {
             sessionLength = remainingMins;
           }
-          
+
           final sessionStartStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
           currentTotalMins += sessionLength;
           final sessionEndStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
-          
-          newPlan.add("${subject.name} (${subject.difficulty}) - $sessionLength mins | $sessionStartStr - $sessionEndStr | $dayIdx");
-          
+
+          final String rawStr = "${subject.name} (${subject.difficulty}) - $sessionLength mins | $sessionStartStr - $sessionEndStr | $dayVal";
+          newlyGeneratedTasks.add({
+            'raw': rawStr,
+            'start': (currentTotalMins - sessionLength),
+            'completed': false,
+          });
+
           final nextRemainingMins = endTotalMins - currentTotalMins;
           if (nextRemainingMins >= (plannerBreakDuration + 15)) {
             final breakStartStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
             currentTotalMins += plannerBreakDuration;
             final breakEndStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
-            
-            newPlan.add("Break (Easy) - $plannerBreakDuration mins | $breakStartStr - $breakEndStr | $dayIdx");
+
+            final String breakStr = "Break (Easy) - $plannerBreakDuration mins | $breakStartStr - $breakEndStr | $dayVal";
+            newlyGeneratedTasks.add({
+              'raw': breakStr,
+              'start': (currentTotalMins - plannerBreakDuration),
+              'completed': false,
+            });
           }
         }
       }
+
+      // Merge preserved and newly generated tasks for this day
+      final List<Map<String, dynamic>> dayTasks = [];
+      for (final item in dayPreserved) {
+        final parsed = item['parsed'] as Map<String, String>;
+        int startMins = 0;
+        if (parsed['startTime']!.isNotEmpty) {
+          final parts = parsed['startTime']!.split(':');
+          startMins = (int.tryParse(parts[0]) ?? 0) * 60 + (int.tryParse(parts[1]) ?? 0);
+        }
+        dayTasks.add({
+          'raw': item['raw'],
+          'start': startMins,
+          'completed': item['completed'],
+        });
+      }
+      dayTasks.addAll(newlyGeneratedTasks);
+
+      // Sort day tasks by start time so they appear in order
+      dayTasks.sort((a, b) => (a['start'] as int).compareTo(b['start'] as int));
+
+      for (final task in dayTasks) {
+        finalPlan.add(task['raw'] as String);
+        finalCompleted.add(task['completed'] as bool);
+      }
     }
+
+    // 3. Save the new targeted plan and preserve completion states
+    studyPlan = finalPlan;
+    completedTasks = finalCompleted;
     
-    await saveStudyPlan(newPlan);
+    await saveData();
+    notifyListeners();
   }
 
   Future<void> updatePlannerSettings({
@@ -874,6 +1078,14 @@ class StudyStateManager extends ChangeNotifier {
       dayIndex = parts[2].trim();
     }
     
+    // Check if the plan item has manual flag (either in 4th part or text contains 'manual')
+    bool isManual = false;
+    if (parts.length >= 4) {
+      isManual = parts[3].trim().toLowerCase() == 'manual';
+    } else if (planStr.contains('manual')) {
+      isManual = true;
+    }
+    
     return {
       'subject': subject,
       'difficulty': difficulty,
@@ -881,6 +1093,47 @@ class StudyStateManager extends ChangeNotifier {
       'startTime': startTime,
       'endTime': endTime,
       'dayIndex': dayIndex,
+      'isManual': isManual ? 'true' : 'false',
     };
+  }
+
+  List<int> getConflictIndices() {
+    final List<int> conflicts = [];
+    final List<Map<String, dynamic>> parsedTasks = [];
+    
+    for (int i = 0; i < studyPlan.length; i++) {
+      final parsed = parsePlanItem(studyPlan[i]);
+      parsedTasks.add({
+        'index': i,
+        'dayIndex': parsed['dayIndex'] ?? '',
+        'startTime': parsed['startTime'] ?? '',
+        'endTime': parsed['endTime'] ?? '',
+        'subject': parsed['subject'] ?? '',
+      });
+    }
+
+    for (int i = 0; i < parsedTasks.length; i++) {
+      final t1 = parsedTasks[i];
+      if (t1['startTime'].isEmpty || t1['endTime'].isEmpty) continue;
+      
+      for (int j = i + 1; j < parsedTasks.length; j++) {
+        final t2 = parsedTasks[j];
+        if (t2['startTime'].isEmpty || t2['endTime'].isEmpty) continue;
+        
+        if (t1['dayIndex'] == t2['dayIndex']) {
+          final overlap = ScheduleService.instance.hasOverlap(
+            t1['startTime'],
+            t1['endTime'],
+            t2['startTime'],
+            t2['endTime'],
+          );
+          if (overlap) {
+            if (!conflicts.contains(t1['index'])) conflicts.add(t1['index']);
+            if (!conflicts.contains(t2['index'])) conflicts.add(t2['index']);
+          }
+        }
+      }
+    }
+    return conflicts;
   }
 }
