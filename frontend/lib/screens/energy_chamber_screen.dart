@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/study_state_manager.dart';
+import '../models/subject.dart';
 
 class EnergyChamberScreen extends StatefulWidget {
   final List<String> subjects;
@@ -76,6 +77,10 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   double _wisdomCharge = 34.0;  // matching screenshot: 34%
   double _masteryCharge = 14.0;  // matching screenshot: 14%
 
+  double _totalHours = 0.0;
+  int _avgSessionMinutes = 25;
+  int _completedTopics = 0;
+
   // Animation controllers for premium constant motion
   late AnimationController _ambientController;
   late AnimationController _streamController;
@@ -137,17 +142,247 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
     _loadStats();
   }
  
+  List<String> getSubTopicsForChapter(String chapterName) {
+    final nameLower = chapterName.toLowerCase();
+    if (nameLower.contains("organic")) {
+      return ["Basics & Nomenclature", "Reaction Mechanisms", "Functional Groups", "Spectroscopy & Analysis"];
+    } else if (nameLower.contains("biomolecule")) {
+      return ["Amino Acids & Proteins", "Nucleic Acids (DNA/RNA)", "Enzyme Kinetics", "Lipids & Membranes"];
+    } else if (nameLower.contains("carbohydrate")) {
+      return ["Monosaccharides", "Disaccharides & Polysaccharides", "Glycolysis Pathway", "Glycoproteins"];
+    } else if (nameLower.contains("lipid")) {
+      return ["Fatty Acids", "Triacylglycerols", "Phospholipids", "Cholesterol & Steroids"];
+    } else if (nameLower.contains("mechanic")) {
+      return ["Newton's Laws", "Work, Energy & Power", "Rotational Dynamics", "Gravitation"];
+    } else if (nameLower.contains("algebra")) {
+      return ["Linear Equations", "Matrices & Determinants", "Vector Spaces", "Eigenvalues & Eigenvectors"];
+    } else if (nameLower.contains("thermo")) {
+      return ["Laws of Thermodynamics", "Entropy & Free Energy", "Thermodynamic Cycles", "Heat Transfer"];
+    } else {
+      return [
+        "Fundamentals & Definitions",
+        "Core Theories & Models",
+        "Key Applications & Examples",
+        "Self-Assessment & Review"
+      ];
+    }
+  }
+
+  Map<String, dynamic> _resolveActiveSessionDetails() {
+    final state = StudyStateManager.instance;
+    final now = DateTime.now();
+    final currentWeekday = now.weekday; // 1 = Monday, 7 = Sunday
+    final monday = now.subtract(Duration(days: currentWeekday - 1));
+    
+    DateTime currentStart = DateTime(now.year, now.month, now.day, 9, 0);
+    Map<String, dynamic>? activeSession;
+    Map<String, dynamic>? nextUpcomingSession;
+    
+    for (int i = 0; i < state.studyPlan.length; i++) {
+      final parsed = state.parsePlanItem(state.studyPlan[i]);
+      final hoursStr = parsed['hours'] ?? '';
+      double durationMins = 60.0;
+      final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
+      if (hoursMatch != null) {
+        final val = double.tryParse(hoursMatch.group(1)!) ?? 1.0;
+        if (hoursStr.contains('min')) {
+          durationMins = val;
+        } else {
+          durationMins = val * 60.0;
+        }
+      }
+      
+      DateTime start;
+      DateTime end;
+      
+      if (parsed['startTime'] != null && parsed['startTime']!.isNotEmpty) {
+        final dayIndex = int.tryParse(parsed['dayIndex'] ?? '0') ?? 0;
+        final sessionDay = monday.add(Duration(days: dayIndex));
+        
+        final startParts = parsed['startTime']!.split(':');
+        final startHr = int.tryParse(startParts[0]) ?? 9;
+        final startMin = int.tryParse(startParts[1]) ?? 0;
+        
+        final endParts = parsed['endTime']!.split(':');
+        final endHr = int.tryParse(endParts[0]) ?? 10;
+        final endMin = int.tryParse(endParts[1]) ?? 0;
+        
+        start = DateTime(sessionDay.year, sessionDay.month, sessionDay.day, startHr, startMin);
+        end = DateTime(sessionDay.year, sessionDay.month, sessionDay.day, endHr, endMin);
+      } else {
+        start = currentStart;
+        end = start.add(Duration(minutes: durationMins.round()));
+        currentStart = end.add(const Duration(minutes: 15));
+      }
+      
+      final sessionInfo = {
+        "index": i,
+        "dayIndex": parsed['dayIndex'] ?? '0',
+        "subject": parsed['subject'] ?? 'General Study',
+        "difficulty": parsed['difficulty'] ?? 'Medium',
+        "durationMinutes": durationMins.round(),
+        "start": start,
+        "end": end,
+        "isCompleted": state.completedTasks[i],
+      };
+      
+      if (now.isAfter(start) && now.isBefore(end)) {
+        activeSession = sessionInfo;
+      }
+      
+      if (now.isBefore(start) && nextUpcomingSession == null && !state.completedTasks[i]) {
+        nextUpcomingSession = sessionInfo;
+      }
+    }
+    
+    final Map<String, dynamic> selected = activeSession ?? nextUpcomingSession ?? (state.studyPlan.isNotEmpty ? {
+      "index": 0,
+      "dayIndex": state.parsePlanItem(state.studyPlan[0])['dayIndex'] ?? '0',
+      "subject": state.parsePlanItem(state.studyPlan[0])['subject'] ?? 'General Study',
+      "difficulty": state.parsePlanItem(state.studyPlan[0])['difficulty'] ?? 'Medium',
+      "durationMinutes": 45,
+      "start": DateTime(now.year, now.month, now.day, 9, 0),
+      "end": DateTime(now.year, now.month, now.day, 9, 45),
+      "isCompleted": false,
+    } : {
+      "index": -1,
+      "dayIndex": (now.weekday - 1).toString(),
+      "subject": state.studyRoomSelectedSubject,
+      "durationMinutes": state.studyRoomDurationMinutes,
+      "difficulty": "Medium",
+      "start": DateTime(now.year, now.month, now.day, 9, 0),
+      "end": DateTime(now.year, now.month, now.day, 9, 0).add(Duration(minutes: state.studyRoomDurationMinutes)),
+      "isCompleted": false,
+    });
+    
+    String chapter = "Focus Session";
+    String topic = "Deep Concentration";
+    
+    final matchingSubject = state.subjects.firstWhere(
+      (s) => s.name.toLowerCase() == selected['subject'].toString().toLowerCase(),
+      orElse: () => Subject(name: selected['subject'].toString(), difficulty: selected['difficulty'].toString()),
+    );
+    
+    if (matchingSubject.topics.isNotEmpty) {
+      final uncompletedTopic = matchingSubject.topics.firstWhere(
+        (t) => !t.isCompleted,
+        orElse: () => matchingSubject.topics.first,
+      );
+      chapter = uncompletedTopic.name;
+      
+      final subTopics = getSubTopicsForChapter(chapter);
+      if (subTopics.isNotEmpty) {
+        topic = subTopics.first;
+      }
+    }
+    
+    return {
+      "exam": state.userCourse.isNotEmpty ? state.userCourse : "Semester Finals",
+      "subject": selected['subject'],
+      "chapter": chapter,
+      "topic": topic,
+      "difficulty": selected['difficulty'],
+      "durationMinutes": selected['durationMinutes'],
+      "startTime": selected['start'],
+      "endTime": selected['end'],
+      "index": selected['index'],
+      "dayIndex": selected['dayIndex'] ?? '0',
+    };
+  }
+
+  String _formatTime(DateTime dt) {
+    int hour = dt.hour;
+    final int minute = dt.minute;
+    final String period = hour >= 12 ? "PM" : "AM";
+    if (hour > 12) hour -= 12;
+    if (hour == 0) hour = 12;
+    final String minuteStr = minute < 10 ? "0$minute" : "$minute";
+    return "$hour:$minuteStr $period";
+  }
+
   Future<void> _loadStats() async {
     final state = StudyStateManager.instance;
+    final now = DateTime.now();
+
+    int todayEnergyGained = 0;
+    for (final ev in state.studyEvents) {
+      final ts = DateTime.tryParse(ev['timestamp'] ?? '');
+      if (ts != null && ts.year == now.year && ts.month == now.month && ts.day == now.day) {
+        if (ev['type'] == 'session') {
+          todayEnergyGained += 300;
+        } else if (ev['type'] == 'task') {
+          todayEnergyGained += 100;
+        }
+      }
+    }
+
+    double totalMinutes = 0.0;
+    int sessionCount = 0;
+    for (final ev in state.studyEvents) {
+      if (ev['type'] == 'session') {
+        final double val = (ev['value'] as num?)?.toDouble() ?? 0.0;
+        totalMinutes += val;
+        sessionCount++;
+      }
+    }
+    final double computedTotalHours = totalMinutes / 60.0;
+    final int computedAvgSessionMinutes = sessionCount > 0 ? (totalMinutes / sessionCount).round() : 25;
+
+    int compTopics = 0;
+    for (final s in state.subjects) {
+      compTopics += s.topics.where((t) => t.isCompleted).length;
+    }
+
     setState(() {
       _streakDays = state.streakDays;
       _todayEnergyValue = state.todayEnergyValue;
+      _todayEnergyChange = todayEnergyGained;
       _weeklyEnergyValue = state.weeklyEnergyValue;
       _sessionsCompleted = state.sessionsCompleted;
       _sessionsGoal = state.sessionsGoal;
       _focusCharge = state.focusCharge;
       _wisdomCharge = state.wisdomCharge;
       _masteryCharge = state.masteryCharge;
+
+      _totalHours = computedTotalHours;
+      _avgSessionMinutes = computedAvgSessionMinutes;
+      _completedTopics = compTopics;
+
+      if (state.isTimerActive) {
+        _isActive = true;
+        _isPaused = state.isTimerPaused;
+        _durationMinutes = state.timerDurationMinutes;
+        _selectedSubject = state.timerSelectedSubject;
+        _activeTopic = "${state.timerActiveChapter} - ${state.timerActiveTopic}";
+
+        // Recompute remaining seconds from wall-clock so that time elapsed
+        // while the app was closed is accounted for correctly.
+        if (!_isPaused && state.timerEndTimestamp != null) {
+          final int remaining =
+              state.timerEndTimestamp!.difference(DateTime.now()).inSeconds;
+          _secondsRemaining = remaining.clamp(0, _durationMinutes * 60);
+          if (_secondsRemaining <= 0) {
+            // Session finished while app was closed — auto-complete.
+            Future.microtask(_completeSession);
+          }
+        } else {
+          _secondsRemaining = state.timerSecondsRemaining;
+        }
+
+        if (!_isPaused) {
+          _streamController.repeat();
+        } else {
+          _streamController.stop();
+        }
+      } else {
+        _isActive = false;
+        _isPaused = false;
+        final details = _resolveActiveSessionDetails();
+        _durationMinutes = details['durationMinutes'];
+        _secondsRemaining = _durationMinutes * 60;
+        _selectedSubject = details['subject'];
+        _activeTopic = "${details['chapter']} - ${details['topic']}";
+      }
     });
   }
  
@@ -163,17 +398,18 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   void _startTimerInterval() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final state = StudyStateManager.instance;
       if (_isActive && !_isPaused) {
         setState(() {
           if (_secondsRemaining > 0) {
             _secondsRemaining--;
-
-            // Tick progress
+            
+            state.timerSecondsRemaining = _secondsRemaining;
+            
             _focusCharge = (_focusCharge + 0.01).clamp(0.0, 100.0);
             _wisdomCharge = (_wisdomCharge + 0.007).clamp(0.0, 100.0);
             _masteryCharge = (_masteryCharge + 0.005).clamp(0.0, 100.0);
 
-            // Simulation of milestone evolution for verification
             if (_secondsRemaining == 1098) {
               _triggerMilestoneCelebration("Focus Crystal Evolved", "+1 Knowledge Energy");
             }
@@ -203,18 +439,43 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   }
 
   void _togglePause() {
+    final state = StudyStateManager.instance;
+    final details = _resolveActiveSessionDetails();
+    
     setState(() {
       if (!_isActive) {
         _isActive = true;
         _isPaused = false;
+        
+        _secondsRemaining = _durationMinutes * 60;
+        _selectedSubject = details['subject'];
+        _activeTopic = "${details['chapter']} - ${details['topic']}";
+        
+        state.isTimerActive = true;
+        state.isTimerPaused = false;
+        state.timerSecondsRemaining = _secondsRemaining;
+        state.timerDurationMinutes = _durationMinutes;
+        state.timerSelectedSubject = _selectedSubject;
+        state.timerActiveChapter = details['chapter'];
+        state.timerActiveTopic = details['topic'];
+        state.timerTaskIndex = details['index'];
+        state.timerEndTimestamp = DateTime.now().add(Duration(seconds: _secondsRemaining));
+        state.saveData();
+        
         _streamController.repeat();
       } else {
         _isPaused = !_isPaused;
+        state.isTimerPaused = _isPaused;
+        
         if (_isPaused) {
           _streamController.stop();
+          state.timerSecondsRemaining = _secondsRemaining;
+          state.timerEndTimestamp = null;
         } else {
           _streamController.repeat();
+          state.timerEndTimestamp = DateTime.now().add(Duration(seconds: _secondsRemaining));
         }
+        state.saveData();
       }
     });
   }
@@ -222,14 +483,32 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   void _endSession() {
     _timer?.cancel();
     _streamController.stop();
-    final double completedHours = (1500 - _secondsRemaining) / 3600.0;
-    widget.onSessionComplete(completedHours, _selectedSubject);
-    _saveStats();
+    
+    final state = StudyStateManager.instance;
+    final double completedHours = (_durationMinutes * 60 - _secondsRemaining) / 3600.0;
+    
+    if (completedHours > 0.01) {
+      state.completeFocusSession(completedHours, _selectedSubject, ((_durationMinutes * 60 - _secondsRemaining) / 60.0).round());
+    }
+    
+    state.isTimerActive = false;
+    state.isTimerPaused = false;
+    state.timerSecondsRemaining = 0;
+    state.timerEndTimestamp = null;
+    state.timerTaskIndex = -1;
+    state.saveData();
 
     setState(() {
       _isActive = false;
       _isPaused = false;
+      
+      final details = _resolveActiveSessionDetails();
+      _durationMinutes = details['durationMinutes'];
       _secondsRemaining = _durationMinutes * 60;
+      _selectedSubject = details['subject'];
+      _activeTopic = "${details['chapter']} - ${details['topic']}";
+      
+      _loadStats();
     });
 
     _triggerMilestoneCelebration("Session Finished", "Energy registered to Chamber");
@@ -238,27 +517,293 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
   void _completeSession() async {
     _timer?.cancel();
     _streamController.stop();
+    
+    final state = StudyStateManager.instance;
     final double completedHours = _durationMinutes / 60.0;
     
-    await StudyStateManager.instance.completeFocusSession(completedHours, _selectedSubject, _durationMinutes);
+    await state.completeFocusSession(completedHours, _selectedSubject, _durationMinutes);
+    if (state.timerTaskIndex >= 0 && state.timerTaskIndex < state.studyPlan.length) {
+      state.completedTasks[state.timerTaskIndex] = true;
+      await state.saveData();
+    }
+    
+    state.isTimerActive = false;
+    state.isTimerPaused = false;
+    state.timerSecondsRemaining = 0;
+    state.timerEndTimestamp = null;
+    state.timerTaskIndex = -1;
+    await state.saveData();
 
     setState(() {
       _isActive = false;
       _isPaused = false;
+      
+      final details = _resolveActiveSessionDetails();
+      _durationMinutes = details['durationMinutes'];
       _secondsRemaining = _durationMinutes * 60;
-      _sessionsCompleted = StudyStateManager.instance.sessionsCompleted;
-      _todayEnergyValue = StudyStateManager.instance.todayEnergyValue;
-      _weeklyEnergyValue = StudyStateManager.instance.weeklyEnergyValue;
-      _streakDays = StudyStateManager.instance.streakDays;
+      _selectedSubject = details['subject'];
+      _activeTopic = "${details['chapter']} - ${details['topic']}";
+      
+      _loadStats();
     });
 
-    // Trigger sequential haptic feedback bursts on celebration
     HapticFeedback.heavyImpact();
     Future.delayed(const Duration(milliseconds: 100), () => HapticFeedback.mediumImpact());
     Future.delayed(const Duration(milliseconds: 250), () => HapticFeedback.lightImpact());
 
     _spawnCelebrationParticles();
     _triggerMilestoneCelebration("Wisdom Crystal Evolved", "+300 Knowledge Energy Generated!");
+  }
+
+  // ── Duration override ──────────────────────────────────────────────────────
+
+  /// Shows a +/− dialog to let the user set a custom session duration
+  /// (15–240 min, step 5).  Only callable when the timer is not yet active.
+  void _showDurationOverrideDialog() {
+    if (_isActive) return;
+
+    final int scheduledDuration =
+        _resolveActiveSessionDetails()['durationMinutes'] as int;
+    int tempDuration = _durationMinutes;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFFF8FFFE),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              "Session Duration",
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF1A1C1E),
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Adjust how long this session will run.",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: tempDuration > 15
+                          ? () => setDialogState(() =>
+                              tempDuration =
+                                  (tempDuration - 5).clamp(15, 240))
+                          : null,
+                      icon: const Icon(
+                          Icons.remove_circle_outline_rounded,
+                          color: Color(0xFF006A63)),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "$tempDuration min",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1A1C1E),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: tempDuration < 240
+                          ? () => setDialogState(() =>
+                              tempDuration =
+                                  (tempDuration + 5).clamp(15, 240))
+                          : null,
+                      icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: Color(0xFF006A63)),
+                    ),
+                  ],
+                ),
+                if (tempDuration != scheduledDuration)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      tempDuration > scheduledDuration
+                          ? "+${tempDuration - scheduledDuration} min from planned"
+                          : "${tempDuration - scheduledDuration} min from planned",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: tempDuration > scheduledDuration
+                            ? Colors.orange.shade700
+                            : const Color(0xFF006A63),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  "Cancel",
+                  style: GoogleFonts.plusJakartaSans(
+                      color: Colors.grey.shade600),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF006A63),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  if (tempDuration != scheduledDuration) {
+                    // Duration differs from AI plan — ask about schedule
+                    _askAdjustRemainingSchedule(
+                        tempDuration, scheduledDuration);
+                  } else {
+                    setState(() {
+                      _durationMinutes = tempDuration;
+                      _secondsRemaining = tempDuration * 60;
+                    });
+                  }
+                },
+                child: Text(
+                  "Set Duration",
+                  style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Asks whether the remaining sessions for the day should be shifted by
+  /// the same delta as the duration change, or whether only the current
+  /// session should use the custom duration.
+  void _askAdjustRemainingSchedule(
+      int newDuration, int scheduledDuration) {
+    final int shift = newDuration - scheduledDuration;
+    final details = _resolveActiveSessionDetails();
+    final int sessionIndex = details['index'] as int;
+    final String dayIndex =
+        (details['dayIndex'] as String?) ?? '0';
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFFF8FFFE),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          "Apply to Today's Schedule?",
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF1A1C1E),
+          ),
+        ),
+        content: Text(
+          shift > 0
+              ? "This session is $shift min longer than planned. Push remaining sessions today by $shift min, or keep only this session longer?"
+              : "This session is ${-shift} min shorter than planned. Pull remaining sessions today forward by ${-shift} min, or keep only this session shorter?",
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: Colors.grey.shade700,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _durationMinutes = newDuration;
+                _secondsRemaining = newDuration * 60;
+              });
+            },
+            child: Text(
+              "This session only",
+              style: GoogleFonts.plusJakartaSans(
+                  color: Colors.grey.shade700),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF006A63),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() {
+                _durationMinutes = newDuration;
+                _secondsRemaining = newDuration * 60;
+              });
+              await _adjustRemainingSchedule(
+                  sessionIndex, dayIndex, shift);
+            },
+            child: Text(
+              "Adjust today's schedule",
+              style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shifts the start/end times of every session after [fromIndex] on the
+  /// same [dayIndex] by [shiftMinutes].  Updates the plan in-place so that
+  /// completedTasks are preserved.
+  Future<void> _adjustRemainingSchedule(
+      int fromIndex, String dayIndex, int shiftMinutes) async {
+    if (fromIndex < 0) return;
+
+    final state = StudyStateManager.instance;
+    final List<String> plan = List<String>.from(state.studyPlan);
+
+    for (int i = fromIndex + 1; i < plan.length; i++) {
+      final parsed = state.parsePlanItem(plan[i]);
+      if (parsed['dayIndex'] != dayIndex) continue;
+      final String startStr = parsed['startTime'] ?? '';
+      final String endStr = parsed['endTime'] ?? '';
+      if (startStr.isEmpty || endStr.isEmpty) continue;
+
+      final startParts = startStr.split(':');
+      final endParts = endStr.split(':');
+      if (startParts.length < 2 || endParts.length < 2) continue;
+
+      int startMins = (int.tryParse(startParts[0]) ?? 0) * 60 +
+          (int.tryParse(startParts[1]) ?? 0);
+      int endMins = (int.tryParse(endParts[0]) ?? 0) * 60 +
+          (int.tryParse(endParts[1]) ?? 0);
+
+      startMins = (startMins + shiftMinutes).clamp(0, 1439);
+      endMins = (endMins + shiftMinutes).clamp(0, 1439);
+
+      final newStart =
+          "${(startMins ~/ 60).toString().padLeft(2, '0')}:${(startMins % 60).toString().padLeft(2, '0')}";
+      final newEnd =
+          "${(endMins ~/ 60).toString().padLeft(2, '0')}:${(endMins % 60).toString().padLeft(2, '0')}";
+
+      plan[i] =
+          "${parsed['subject']} (${parsed['difficulty']}) - ${parsed['hours']} | $newStart - $newEnd | ${parsed['dayIndex']}";
+    }
+
+    await state.updateStudyPlanInPlace(plan);
   }
 
   int get _activeTargetIndex {
@@ -459,116 +1004,158 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                 const SizedBox(height: 12), // Compressed spacing
 
                 // 2. [Polished] Compact Subject Card (AI Breathing Glow dot & hover shimmer decoration)
-                _buildGlassCard(
-                  borderRadius: 24,
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE6F4F1),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(color: const Color(0xFF006A63).withOpacity(0.15), blurRadius: 8, spreadRadius: 1)
-                          ],
-                        ),
-                        child: const Icon(Icons.menu_book_rounded, color: Color(0xFF006A63), size: 16),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                Builder(
+                  builder: (context) {
+                    final details = _resolveActiveSessionDetails();
+                    final DateTime nowTime = DateTime.now();
+                    final DateTime estEndTime = nowTime.add(Duration(seconds: _secondsRemaining));
+                    final String estEndTimeStr = _formatTime(estEndTime);
+                    
+                    return _buildGlassCard(
+                      borderRadius: 24,
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6F4F1),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(color: const Color(0xFF006A63).withOpacity(0.15), blurRadius: 8, spreadRadius: 1)
+                              ],
+                            ),
+                            child: const Icon(Icons.menu_book_rounded, color: Color(0xFF006A63), size: 16),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              "🎯 ${details['exam']}",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 10,
+                                                color: const Color(0xFF006A63),
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          AnimatedBuilder(
+                                            animation: _orbPulseController,
+                                            builder: (context, _) {
+                                              return Container(
+                                                width: 6,
+                                                height: 6,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: const Color(0xFF10B981).withOpacity(0.35 + (0.65 * _orbPulseController.value)),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF10B981).withOpacity(0.5),
+                                                      blurRadius: 4 * _orbPulseController.value,
+                                                      spreadRadius: 1,
+                                                    )
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        details['subject'],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF1C1E20),
+                                        ),
+                                      ),
+                                      Text(
+                                        "${details['chapter']} • ${details['topic']}",
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 9.5,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      "📘 Current Subject",
+                                      "${details['difficulty']} Diff",
                                       style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 11,
-                                        color: const Color(0xFF1A1C1E),
+                                        fontSize: 9.5,
+                                        color: const Color(0xFFEA580C),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    // Animated AI Indicator Dot
-                                    AnimatedBuilder(
-                                      animation: _orbPulseController,
-                                      builder: (context, _) {
-                                        return Container(
-                                          width: 6,
-                                          height: 6,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFF10B981).withOpacity(0.35 + (0.65 * _orbPulseController.value)),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFF10B981).withOpacity(0.5),
-                                                blurRadius: 4 * _orbPulseController.value,
-                                                spreadRadius: 1,
-                                              )
-                                            ],
+                                    GestureDetector(
+                                      onTap: !_isActive
+                                          ? _showDurationOverrideDialog
+                                          : null,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "$_durationMinutes min goal",
+                                            style:
+                                                GoogleFonts.plusJakartaSans(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800,
+                                              color:
+                                                  const Color(0xFF1A1C1E),
+                                            ),
                                           ),
-                                        );
-                                      },
+                                          if (!_isActive) ...([
+                                            const SizedBox(width: 3),
+                                            const Icon(
+                                              Icons.edit_rounded,
+                                              size: 9,
+                                              color: Color(0xFF006A63),
+                                            ),
+                                          ]),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      "Est. End: $estEndTimeStr",
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 8.5,
+                                        color: Colors.grey.shade500,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  _selectedSubject,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF006A63),
-                                  ),
-                                ),
-                                Text(
-                                  _activeTopic,
-                                  style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 9.5, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                                ),
                               ],
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Session Goal",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 9.5,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  "50 / 60 min",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF1A1C1E),
-                                  ),
-                                ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  "Est. Finish: 01:45 PM",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 8.5,
-                                    color: Colors.grey.shade500,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  }
                 ),
                 const SizedBox(height: 12), // Compressed spacing
 
@@ -736,7 +1323,7 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                                             ),
                                             const SizedBox(height: 1),
                                             Text(
-                                              "of 25:00",
+                                              "of ${_durationMinutes.toString().padLeft(2, '0')}:00",
                                               style: GoogleFonts.plusJakartaSans(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
@@ -809,8 +1396,8 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                                       name: "Focus",
                                       charge: _focusCharge,
                                       color: Colors.blue,
-                                      subtitle: "Concentration & Consistency",
-                                      duration: "12 min",
+                                      subtitle: "Focus Session Consistency\nTotal Focus: ${_totalHours.toStringAsFixed(1)} hrs\nAvg Session: $_avgSessionMinutes min",
+                                      duration: "${_totalHours.toStringAsFixed(1)} hrs",
                                       phase: 0.0,
                                       isTarget: _activeTargetIndex == 0,
                                       streamProgress: _streamController.value,
@@ -823,8 +1410,8 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                                       name: "Wisdom",
                                       charge: _wisdomCharge,
                                       color: Colors.purple,
-                                      subtitle: "Deep Learning & Understanding",
-                                      duration: "20 min",
+                                      subtitle: "Deep Learning & Understanding\nCompleted Chapters: $_completedTopics",
+                                      duration: "$_completedTopics chapters",
                                       phase: 2.0,
                                       isTarget: _activeTargetIndex == 1,
                                       streamProgress: _streamController.value,
@@ -837,8 +1424,8 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                                       name: "Mastery",
                                       charge: _masteryCharge,
                                       color: Colors.amber,
-                                      subtitle: "Mastery & Long Term Achievement",
-                                      duration: "40 min",
+                                      subtitle: "Streaks & Overall Progress\nStudy Streak: $_streakDays days",
+                                      duration: "$_streakDays day streak",
                                       phase: 4.0,
                                       isTarget: _activeTargetIndex == 2,
                                       streamProgress: _streamController.value,
@@ -880,71 +1467,86 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                 _buildGlassCard(
                   borderRadius: 20,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Builder(
+                    builder: (context) {
+                      final double currentProgress = 1.0 - (_secondsRemaining / (_durationMinutes * 60));
+                      final int minsStudied = ((_durationMinutes * 60 - _secondsRemaining) / 60).floor();
+                      
+                      String focusScore = "Excellent ✨";
+                      if (currentProgress < 0.3) {
+                        focusScore = "Initiating 💫";
+                      } else if (currentProgress < 0.7) {
+                        focusScore = "Good ⚡";
+                      }
+                      
+                      final int energyGenerated = (minsStudied * 12).round();
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            "Current Session",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1A1C1E),
-                            ),
-                          ),
-                          Text(
-                            "18 / 25 min",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF006A63),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      // Custom Segmented Block Progress Bar representing energy storage segments
-                      Row(
-                        children: List.generate(12, (index) {
-                          final double pct = (index + 1) / 12;
-                          final bool filled = pct <= 0.72; // matching 72%
-                          return Expanded(
-                            child: Container(
-                              height: 6,
-                              margin: const EdgeInsets.symmetric(horizontal: 1),
-                              decoration: BoxDecoration(
-                                color: filled ? const Color(0xFF006A63) : Colors.white24,
-                                borderRadius: BorderRadius.circular(1.5),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Current Session",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1A1C1E),
+                                ),
                               ),
-                            ),
-                          );
-                        }),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Focus Score: Excellent ✨",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 9.5,
-                              color: const Color(0xFF006A63),
-                              fontWeight: FontWeight.bold,
-                            ),
+                              Text(
+                                "$minsStudied / $_durationMinutes min",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF006A63),
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            "Energy Generated: ⚡ 186",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 9.5,
-                              color: const Color(0xFF1A1C1E),
-                              fontWeight: FontWeight.bold,
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: List.generate(12, (index) {
+                              final double pct = (index + 1) / 12;
+                               final bool filled = pct <= currentProgress;
+                              return Expanded(
+                                child: Container(
+                                  height: 6,
+                                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  decoration: BoxDecoration(
+                                    color: filled ? const Color(0xFF006A63) : Colors.white24,
+                                    borderRadius: BorderRadius.circular(1.5),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Focus Score: $focusScore",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 9.5,
+                                  color: const Color(0xFF006A63),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                "Energy Generated: ⚡ $energyGenerated",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 9.5,
+                                  color: const Color(0xFF1A1C1E),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    }
                   ),
                 ),
                 const SizedBox(height: 16), // Compressed spacing
@@ -954,24 +1556,24 @@ class _EnergyChamberScreenState extends State<EnergyChamberScreen> with TickerPr
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildAppleMusicControl(
+                      icon: Icons.stop_rounded,
+                      scale: _endScale,
+                      onScaleChanged: (s) => setState(() => _endScale = s),
+                      onTap: _endSession,
+                      size: 54,
+                      primary: false,
+                      label: "End Session",
+                    ),
+                    _buildAppleMusicControl(
                       icon: !_isActive
                           ? Icons.play_arrow_rounded
                           : (_isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
                       scale: _pauseScale,
                       onScaleChanged: (s) => setState(() => _pauseScale = s),
                       onTap: _togglePause,
-                      size: 54,
-                      primary: false,
-                      label: !_isActive ? "Start" : (_isPaused ? "Resume" : "Pause"),
-                    ),
-                    _buildAppleMusicControl(
-                      icon: Icons.stop_rounded,
-                      scale: _endScale,
-                      onScaleChanged: (s) => setState(() => _endScale = s),
-                      onTap: _endSession,
                       size: 68,
                       primary: true,
-                      label: "End Session",
+                      label: !_isActive ? "Start Session" : (_isPaused ? "Resume" : "Pause"),
                     ),
                     _buildAppleMusicControl(
                       icon: Icons.skip_next_rounded,
@@ -1134,7 +1736,7 @@ TweenAnimationBuilder<double>(
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  "🔥 14",
+                                  "🔥 $_streakDays",
                                   style: GoogleFonts.plusJakartaSans(
                                       fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1C1E)),
                                 ),
@@ -1165,7 +1767,7 @@ TweenAnimationBuilder<double>(
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Best: 28 days",
+                                  "Best: ${_streakDays > 28 ? _streakDays : 28} days",
                                   style: GoogleFonts.plusJakartaSans(fontSize: 7, color: Colors.grey, fontWeight: FontWeight.bold),
                                 ),
                               ],
@@ -1193,7 +1795,7 @@ TweenAnimationBuilder<double>(
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  "3 / 6",
+                                  "$_sessionsCompleted / $_sessionsGoal",
                                   style: GoogleFonts.plusJakartaSans(
                                       fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1C1E)),
                                 ),

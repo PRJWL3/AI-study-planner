@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/study_timer_sheet.dart';
 import '../models/subject.dart';
+import '../models/study_availability.dart';
 import '../services/api_service.dart';
 import 'edit_profile_screen.dart';
 import '../services/study_state_manager.dart';
@@ -49,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _plannerDifficultyPref = "Moderate";
   String _plannerPreferredTime = "Morning";
   int _plannerHoursPerDay = 4; // stepper - synced with hoursController
+  String _selectedPlannerDay = "Mon";
 
   String userCourse = "";
   String userYear = "";
@@ -81,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isAddingSubject = false;
   bool _showAddSubjectForm = false;
   final Set<int> _expandedSubjectIndices = {};
+  final Set<String> _expandedChapterKeys = {};
   String _subjectsFilter = "All";
   String _subjectsSort = "Recent";
   bool _isSearchFocused = false;
@@ -1074,14 +1077,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboardTab() {
-    final double progress = getProgress();
-    final int totalTasks = studyPlan.length;
-    final int completedCount = completedTasks.where((task) => task).length;
+    final statistics = StudyStateManager.instance.statistics;
+    final double progress = statistics.todayGoalTotal == 0
+        ? 0.0
+        : statistics.todayGoalCompleted / statistics.todayGoalTotal;
+    final int totalTasks = statistics.todayGoalTotal;
+    final int completedCount = statistics.todayGoalCompleted;
+    final int todayIndex = DateTime.now().weekday - 1;
 
     // Filter up to 3 uncompleted tasks for the dashboard checklist widget
     final List<Map<String, dynamic>> upcomingTasks = [];
     for (int i = 0; i < studyPlan.length; i++) {
-      if (!completedTasks[i]) {
+      final parsedItem = StudyStateManager.instance.parsePlanItem(studyPlan[i]);
+      final itemDay = int.tryParse(parsedItem['dayIndex'] ?? '');
+      final isBreak = (parsedItem['subject'] ?? '').toLowerCase() == 'break';
+      if (!isBreak && itemDay == todayIndex && !completedTasks[i]) {
         final planItem = studyPlan[i];
         final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
         final match = regex.firstMatch(planItem);
@@ -1363,6 +1373,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  child: _buildGlassCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _DashboardMetric(value: '${statistics.weeklyCompletedMinutes}/${statistics.weeklyGoalMinutes}m', label: 'Weekly Goal'),
+                        _DashboardMetric(value: '${statistics.todayStudyMinutes}m', label: 'Study Hours'),
+                        _DashboardMetric(value: '${statistics.streakDays}', label: 'Current Streak'),
+                        _DashboardMetric(value: '${statistics.sessionsToday}', label: 'Sessions'),
                       ],
                     ),
                   ),
@@ -2335,6 +2360,351 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  List<String> getSubTopicsForChapter(String chapterName) {
+    final nameLower = chapterName.toLowerCase();
+    if (nameLower.contains("organic")) {
+      return ["Basics & Nomenclature", "Reaction Mechanisms", "Functional Groups", "Spectroscopy & Analysis"];
+    } else if (nameLower.contains("biomolecule")) {
+      return ["Amino Acids & Proteins", "Nucleic Acids (DNA/RNA)", "Enzyme Kinetics", "Lipids & Membranes"];
+    } else if (nameLower.contains("carbohydrate")) {
+      return ["Monosaccharides", "Disaccharides & Polysaccharides", "Glycolysis Pathway", "Glycoproteins"];
+    } else if (nameLower.contains("lipid")) {
+      return ["Fatty Acids", "Triacylglycerols", "Phospholipids", "Cholesterol & Steroids"];
+    } else if (nameLower.contains("mechanic")) {
+      return ["Newton's Laws", "Work, Energy & Power", "Rotational Dynamics", "Gravitation"];
+    } else if (nameLower.contains("algebra")) {
+      return ["Linear Equations", "Matrices & Determinants", "Vector Spaces", "Eigenvalues & Eigenvectors"];
+    } else if (nameLower.contains("thermo")) {
+      return ["Laws of Thermodynamics", "Entropy & Free Energy", "Thermodynamic Cycles", "Heat Transfer"];
+    } else {
+      return [
+        "Fundamentals & Definitions",
+        "Core Theories & Models",
+        "Key Applications & Examples",
+        "Self-Assessment & Review"
+      ];
+    }
+  }
+
+  void _showStatsModal({
+    required BuildContext context,
+    required String title,
+    required String icon,
+    required Widget content,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Text(icon, style: const TextStyle(fontSize: 20)),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF1A1C1E),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: content,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSubjectsDetailsModal(BuildContext context) {
+    _showStatsModal(
+      context: context,
+      title: "My Subjects",
+      icon: "📚",
+      content: Column(
+        children: subjects.map((s) {
+          final double prog = s.topics.isEmpty ? 0.0 : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9F9FC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s.name,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: const Color(0xFF1A1C1E),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "${s.topics.length} Chapters • ${s.difficulty}",
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    "${(prog * 100).round()}%",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      color: const Color(0xFF006A63),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showChaptersDetailsModal(BuildContext context) {
+    _showStatsModal(
+      context: context,
+      title: "All Chapters",
+      icon: "📖",
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: subjects.map((s) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    color: const Color(0xFF006A63),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                if (s.topics.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      "No chapters added yet.",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  )
+                else
+                  ...s.topics.map((t) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            t.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                            size: 16,
+                            color: t.isCompleted ? const Color(0xFF059669) : Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              t.name,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 13,
+                                color: const Color(0xFF1A1C1E),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _showCompletedDetailsModal(BuildContext context) {
+    final List<Map<String, dynamic>> completedList = [];
+    for (final s in subjects) {
+      for (final t in s.topics) {
+        if (t.isCompleted) {
+          completedList.add({
+            "chapter": t.name,
+            "subject": s.name,
+          });
+        }
+      }
+    }
+
+    Widget contentWidget;
+    if (completedList.isEmpty) {
+      contentWidget = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          child: Column(
+            children: [
+              const Text("💤", style: TextStyle(fontSize: 32)),
+              const SizedBox(height: 12),
+              Text(
+                "No chapters completed yet.",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      contentWidget = Column(
+        children: completedList.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFDCFCE7)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item["chapter"]!,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: const Color(0xFF1A1C1E),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item["subject"]!,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    _showStatsModal(
+      context: context,
+      title: "Completed Chapters",
+      icon: "✅",
+      content: contentWidget,
+    );
+  }
+
+  void _showProgressDetailsModal(BuildContext context) {
+    _showStatsModal(
+      context: context,
+      title: "Subject Progress",
+      icon: "🎯",
+      content: Column(
+        children: subjects.map((s) {
+          final double prog = s.topics.isEmpty ? 0.0 : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
+          final int completedCount = s.topics.where((t) => t.isCompleted).length;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      s.name,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: const Color(0xFF1A1C1E),
+                      ),
+                    ),
+                    Text(
+                      "${(prog * 100).round()}% ($completedCount/${s.topics.length})",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: const Color(0xFF006A63),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: prog,
+                    minHeight: 6,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   void _showAddTopicDialog(BuildContext context, int actualIndex) {
     String newTopicName = "";
     showDialog(
@@ -2442,48 +2812,53 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color accentColor,
     required Color bgColor,
     bool isPercentage = false,
+    VoidCallback? onTap,
   }) {
-    return _buildGlassCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: bgColor,
-              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: _buildGlassCard(
+        borderRadius: 20,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Text(iconEmoji, style: const TextStyle(fontSize: 16)),
             ),
-            child: Text(iconEmoji, style: const TextStyle(fontSize: 16)),
-          ),
-          const SizedBox(height: 8),
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: value.toDouble()),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.easeOutCubic,
-            builder: (context, val, child) {
-              return Text(
-                "${val.round()}${isPercentage ? '%' : ''}",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1A1C1E),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF8D7072),
+            const SizedBox(height: 8),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: value.toDouble()),
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeOutCubic,
+              builder: (context, val, child) {
+                return Text(
+                  "${val.round()}${isPercentage ? '%' : ''}",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1A1C1E),
+                  ),
+                );
+              },
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF8D7072),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2644,6 +3019,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: "Subjects",
                     accentColor: const Color(0xFF7C3AED),
                     bgColor: const Color(0xFFF3E8FF).withOpacity(0.4),
+                    onTap: () => _showSubjectsDetailsModal(context),
                   ),
                   _buildStatCard(
                     iconEmoji: "📖",
@@ -2651,6 +3027,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: "Chapters",
                     accentColor: const Color(0xFF4F46E5),
                     bgColor: const Color(0xFFE0E7FF).withOpacity(0.4),
+                    onTap: () => _showChaptersDetailsModal(context),
                   ),
                   _buildStatCard(
                     iconEmoji: "✅",
@@ -2658,6 +3035,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: "Completed",
                     accentColor: const Color(0xFF059669),
                     bgColor: const Color(0xFFD1FAE5).withOpacity(0.4),
+                    onTap: () => _showCompletedDetailsModal(context),
                   ),
                   _buildStatCard(
                     iconEmoji: "🎯",
@@ -2666,6 +3044,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     accentColor: const Color(0xFF6366F1),
                     bgColor: const Color(0xFFE2E8F0).withOpacity(0.4),
                     isPercentage: true,
+                    onTap: () => _showProgressDetailsModal(context),
                   ),
                 ],
               ),
@@ -3151,35 +3530,106 @@ class _HomeScreenState extends State<HomeScreen> {
                                               const SizedBox(height: 8),
                                               ...List.generate(subject.topics.length, (topicIdx) {
                                                 final topic = subject.topics[topicIdx];
-                                                return Padding(
-                                                  padding: const EdgeInsets.symmetric(vertical: 2),
-                                                  child: Row(
-                                                    children: [
-                                                      Checkbox(
-                                                        value: topic.isCompleted,
-                                                        activeColor: const Color(0xFF006A63),
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                                        onChanged: (val) async {
-                                                          setState(() {
-                                                            topic.isCompleted = val ?? false;
-                                                          });
-                                                          await saveData();
-                                                        },
-                                                      ),
-                                                      Expanded(
-                                                        child: Text(
-                                                          topic.name,
-                                                          style: GoogleFonts.plusJakartaSans(
-                                                            fontSize: 13,
-                                                            color: const Color(0xFF1A1C1E),
-                                                            decoration: topic.isCompleted
-                                                                ? TextDecoration.lineThrough
-                                                                : null,
+                                                final String chapterKey = "$actualIndex-$topicIdx";
+                                                final bool isChapterExpanded = _expandedChapterKeys.contains(chapterKey);
+                                                return Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Padding(
+                                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                                      child: Row(
+                                                        children: [
+                                                          Checkbox(
+                                                            value: topic.isCompleted,
+                                                            activeColor: const Color(0xFF006A63),
+                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                                            onChanged: (val) async {
+                                                              await StudyStateManager.instance.toggleTopicCompletion(
+                                                                subject.name,
+                                                                topic.name,
+                                                                val ?? false,
+                                                              );
+                                                            },
                                                           ),
+                                                          Expanded(
+                                                            child: InkWell(
+                                                              onTap: () {
+                                                                setState(() {
+                                                                  if (isChapterExpanded) {
+                                                                    _expandedChapterKeys.remove(chapterKey);
+                                                                  } else {
+                                                                    _expandedChapterKeys.add(chapterKey);
+                                                                  }
+                                                                });
+                                                              },
+                                                              child: Padding(
+                                                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                                                child: Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Text(
+                                                                        topic.name,
+                                                                        style: GoogleFonts.plusJakartaSans(
+                                                                          fontSize: 13,
+                                                                          fontWeight: FontWeight.bold,
+                                                                          color: const Color(0xFF1A1C1E),
+                                                                          decoration: topic.isCompleted
+                                                                              ? TextDecoration.lineThrough
+                                                                              : null,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    Icon(
+                                                                      isChapterExpanded
+                                                                          ? Icons.keyboard_arrow_up_rounded
+                                                                          : Icons.keyboard_arrow_down_rounded,
+                                                                      size: 18,
+                                                                      color: Colors.grey.shade400,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    if (isChapterExpanded)
+                                                      Padding(
+                                                        padding: const EdgeInsets.only(left: 48, top: 4, bottom: 8),
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          children: getSubTopicsForChapter(topic.name).map((subTopic) {
+                                                            return Padding(
+                                                              padding: const EdgeInsets.symmetric(vertical: 2),
+                                                              child: Row(
+                                                                children: [
+                                                                  Container(
+                                                                    width: 5,
+                                                                    height: 5,
+                                                                    decoration: const BoxDecoration(
+                                                                      color: Color(0xFF006A63),
+                                                                      shape: BoxShape.circle,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(width: 8),
+                                                                  Expanded(
+                                                                    child: Text(
+                                                                      subTopic,
+                                                                      style: GoogleFonts.plusJakartaSans(
+                                                                        fontSize: 12,
+                                                                        color: const Color(0xFF594042).withOpacity(0.8),
+                                                                        fontWeight: FontWeight.w500,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          }).toList(),
                                                         ),
                                                       ),
-                                                    ],
-                                                  ),
+                                                  ],
                                                 );
                                               }),
                                             ],
@@ -3295,11 +3745,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-Widget _buildSettingsTab() {
+  Widget _buildSettingsTab() {
     // -- computed summary values --------------------------------------------------
     final int daysLeft     = getDaysLeft() > 0 ? getDaysLeft() : 0;
     final int hoursPerDay  = _plannerHoursPerDay;
-    final int totalHours   = daysLeft * hoursPerDay;
+    final statistics = StudyStateManager.instance.statistics;
+    final bool hasGeneratedPlan = studyPlan.isNotEmpty;
+    final int totalHours = (statistics.weeklyGoalMinutes / 60).ceil();
+    final int remainingHours = ((statistics.weeklyGoalMinutes - statistics.weeklyCompletedMinutes).clamp(0, statistics.weeklyGoalMinutes) / 60).ceil();
     final int subjectsCount = subjects.length;
 
     // -- option lists -------------------------------------------------------------
@@ -3560,6 +4013,339 @@ Widget _buildSettingsTab() {
       );
     }
 
+    Future<void> _showAddEditWindowDialog(BuildContext context, int? index, StudyAvailability? window) async {
+      final bool isEdit = index != null && window != null;
+      
+      TimeOfDay startTime = const TimeOfDay(hour: 14, minute: 0);
+      TimeOfDay endTime = const TimeOfDay(hour: 16, minute: 0);
+      
+      if (isEdit) {
+        final startParts = window.startTime.split(':');
+        final endParts = window.endTime.split(':');
+        if (startParts.length >= 2) {
+          startTime = TimeOfDay(
+            hour: int.tryParse(startParts[0]) ?? 14,
+            minute: int.tryParse(startParts[1]) ?? 0,
+          );
+        }
+        if (endParts.length >= 2) {
+          endTime = TimeOfDay(
+            hour: int.tryParse(endParts[0]) ?? 16,
+            minute: int.tryParse(endParts[1]) ?? 0,
+          );
+        }
+      }
+      
+      showDialog(
+        context: context,
+        builder: (context) {
+          TimeOfDay selectedStart = startTime;
+          TimeOfDay selectedEnd = endTime;
+          
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              String formatTimeOfDay(TimeOfDay tod) {
+                final hr = tod.hour.toString().padLeft(2, '0');
+                final min = tod.minute.toString().padLeft(2, '0');
+                return "$hr:$min";
+              }
+              
+              return AlertDialog(
+                backgroundColor: const Color(0xFFF9F9FC),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                title: Text(
+                  isEdit ? "Edit Availability Window" : "Add Availability Window",
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1A1C1E),
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      title: Text(
+                        "Start Time",
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        formatTimeOfDay(selectedStart),
+                        style: GoogleFonts.plusJakartaSans(color: const Color(0xFF006A63), fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      trailing: const Icon(Icons.access_time_rounded, color: Color(0xFF006A63)),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: selectedStart,
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedStart = picked;
+                          });
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      title: Text(
+                        "End Time",
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        formatTimeOfDay(selectedEnd),
+                        style: GoogleFonts.plusJakartaSans(color: const Color(0xFF006A63), fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      trailing: const Icon(Icons.access_time_rounded, color: Color(0xFF006A63)),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: selectedEnd,
+                        );
+                        if (picked != null) {
+                          setDialogState(() {
+                            selectedEnd = picked;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      "Cancel",
+                      style: GoogleFonts.plusJakartaSans(color: const Color(0xFF594042), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final windowObj = StudyAvailability(
+                        weekday: _selectedPlannerDay,
+                        startTime: formatTimeOfDay(selectedStart),
+                        endTime: formatTimeOfDay(selectedEnd),
+                      );
+                      
+                      if (isEdit) {
+                        StudyStateManager.instance.editAvailabilityWindow(index, windowObj);
+                      } else {
+                        StudyStateManager.instance.addAvailabilityWindow(windowObj);
+                      }
+                      
+                      Navigator.pop(context);
+                      setState(() {});
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF006A63),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text(
+                      isEdit ? "Save" : "Add",
+                      style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
+
+    Widget availabilityPlanner() {
+      final state = StudyStateManager.instance;
+      final availability = state.getAvailability();
+      
+      final dayWindows = availability.where((w) => w.weekday == _selectedPlannerDay).toList();
+      final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: weekdays.map((day) {
+                final bool isSelected = _selectedPlannerDay == day;
+                final int windowCount = availability.where((w) => w.weekday == day).length;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedPlannerDay = day;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.only(right: 8, bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF006A63)
+                          : Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF006A63)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF006A63).withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ]
+                          : [],
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          day,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : const Color(0xFF1A1C1E),
+                          ),
+                        ),
+                        if (windowCount > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white.withOpacity(0.25) : const Color(0xFFE8F5F1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              "$windowCount",
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? Colors.white : const Color(0xFF006A63),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          if (dayWindows.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.event_busy_rounded, color: Colors.grey.shade400, size: 36),
+                  const SizedBox(height: 8),
+                  Text(
+                    "No study availability defined for $_selectedPlannerDay",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF594042),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: dayWindows.length,
+              itemBuilder: (context, index) {
+                final window = dayWindows[index];
+                final actualIdx = availability.indexOf(window);
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE8F5F1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded, color: Color(0xFF006A63), size: 18),
+                          const SizedBox(width: 10),
+                          Text(
+                            "${window.startTime} - ${window.endTime}",
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1A1C1E),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit_rounded, color: Color(0xFF006A63), size: 18),
+                            onPressed: () => _showAddEditWindowDialog(context, actualIdx, window),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                            onPressed: () {
+                              StudyStateManager.instance.deleteAvailabilityWindow(actualIdx);
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          const SizedBox(height: 8),
+          
+          GestureDetector(
+            onTap: () => _showAddEditWindowDialog(context, null, null),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5F1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF006A63).withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_rounded, color: Color(0xFF006A63), size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Add Window",
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF006A63),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     // -- fade-in wrapper ----------------------------------------------------------
     Widget fadeIn({required Widget child, int delayMs = 0}) {
       return TweenAnimationBuilder<double>(
@@ -3771,13 +4557,13 @@ Widget _buildSettingsTab() {
                   ),
                   const SizedBox(height: 22),
 
-                  // Study Hours stepper
+                  // Daily Study Availability Planner
                   fieldRow(
-                    icon: Icons.access_time_rounded,
+                    icon: Icons.calendar_view_week_rounded,
                     iconColor: const Color(0xFF006A63),
                     iconBg: const Color(0xFFE8F5F1),
-                    label: "STUDY HOURS PER DAY",
-                    field: hoursStepper(),
+                    label: "DAILY STUDY AVAILABILITY",
+                    field: availabilityPlanner(),
                   ),
 
                   // Exam Date
@@ -3922,6 +4708,22 @@ Widget _buildSettingsTab() {
                     ],
                   ),
                   const SizedBox(height: 18),
+                  if (!hasGeneratedPlan)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Center(
+                        child: Text(
+                          'Generate your AI plan to see its study summary.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: const Color(0xFF8D7072),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                  else ...[
                   Row(
                     children: [
                       summaryTile(
@@ -3937,8 +4739,8 @@ Widget _buildSettingsTab() {
                         icon: Icons.access_time_rounded,
                         iconColor: const Color(0xFF006A63),
                         iconBg: const Color(0xFFE8F5F1),
-                        value: hoursPerDay > 0 ? "$hoursPerDay hrs" : "--",
-                        label: "Hours / Day",
+                        value: totalHours > 0 ? "$totalHours hrs" : "--",
+                        label: "Study Hours",
                         bg: const Color(0xFFE8F5F1).withOpacity(0.4),
                       ),
                       const SizedBox(width: 10),
@@ -3946,8 +4748,8 @@ Widget _buildSettingsTab() {
                         icon: Icons.local_fire_department_rounded,
                         iconColor: const Color(0xFFEA580C),
                         iconBg: const Color(0xFFFFEDD5),
-                        value: totalHours > 0 ? "$totalHours" : "--",
-                        label: "Total Hrs",
+                        value: remainingHours > 0 ? "$remainingHours hrs" : "0 hrs",
+                        label: "Remaining",
                         bg: const Color(0xFFFFEDD5).withOpacity(0.4),
                       ),
                     ],
@@ -3974,6 +4776,7 @@ Widget _buildSettingsTab() {
                       ),
                     ],
                   ),
+                  ],
                 ],
               ),
             ),
@@ -4017,37 +4820,13 @@ Widget _buildSettingsTab() {
       );
       return;
     }
-    if (hoursController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please specify daily study hours!")),
-      );
-      return;
-    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final requestBody = {
-        "subjects": subjects.map((e) => e.toJson()).toList(),
-        "hours_per_day": (double.tryParse(hoursController.text) ?? 4.0).round(),
-        "days_left": getDaysLeft() > 0 ? getDaysLeft() : 30,
-      };
-
-      final response = await ApiService.generatePlan(requestBody);
-      final List<dynamic> planData = response["study_plan"] ?? [];
-
-      final List<String> formattedPlan = planData.map((e) {
-        final map = e as Map<String, dynamic>;
-        final String subj = map["subject"] ?? "";
-        final String diff = map["difficulty"] ?? "";
-        final double hrs = (map["hours"] as num?)?.toDouble() ?? 0.0;
-        final String hrsStr = hrs % 1 == 0 ? hrs.toInt().toString() : hrs.toStringAsFixed(1);
-        return "$subj ($diff) - $hrsStr hrs/day";
-      }).toList();
-
-      await StudyStateManager.instance.saveStudyPlan(formattedPlan);
+      await StudyStateManager.instance.generatePlanFromAvailability();
 
       setState(() {
         _currentTab = 0; // Redirect to Dashboard
@@ -4056,7 +4835,7 @@ Widget _buildSettingsTab() {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("AI Study Plan generated successfully!")),
+        const SnackBar(content: Text("AI Study Plan generated successfully from availability windows!")),
       );
     } catch (e) {
       if (!mounted) return;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,11 +30,12 @@ class TasksTabScreen extends StatefulWidget {
 }
 
 class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProviderStateMixin {
-  int _selectedDateIndex = 2; // Wednesday 14 selected by default
+  int _selectedDateIndex = 0; // Will be set dynamically to today's weekday
   bool _isFabMenuOpen = false;
   bool _isFabPressed = false;
   bool _reorderMode = false;
   final Set<int> _expandedTimelineCardIndices = {};
+  Timer? _minuteTimer;
 
   // Search & Filter state
   String _searchQuery = "";
@@ -54,6 +56,9 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
+    final today = DateTime.now();
+    _selectedDateIndex = today.weekday - 1; // 0 = Mon, 6 = Sun
+
     _searchFocusNode.addListener(() {
       setState(() {
         _isSearchFocused = _searchFocusNode.hasFocus;
@@ -67,30 +72,74 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     _pulseAnimation = Tween<double>(begin: 0.45, end: 1.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    // Refresh layout periodically (every 30 seconds) to update "Now" and remaining time automatically
+    _minuteTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
+    _minuteTimer?.cancel();
     _searchFocusNode.dispose();
     _pulseController.dispose();
     super.dispose();
   }
 
   Map<String, String> _parsePlanItem(String planStr) {
+    final parts = planStr.split('|');
+    final mainPlan = parts[0].trim();
+    
     final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
-    final match = regex.firstMatch(planStr);
+    final match = regex.firstMatch(mainPlan);
+    
+    String subject = mainPlan;
+    String difficulty = 'Medium';
+    String hours = '60 mins';
+    
     if (match != null) {
-      return {
-        'subject': match.group(1)!,
-        'difficulty': match.group(2)!,
-        'hours': match.group(3)!,
-      };
+      subject = match.group(1)!.trim();
+      difficulty = match.group(2)!.trim();
+      hours = match.group(3)!.trim();
     }
+    
+    String startTime = "";
+    String endTime = "";
+    String dayIndex = "";
+    
+    if (parts.length >= 2) {
+      final times = parts[1].split('-');
+      if (times.length >= 2) {
+        startTime = times[0].trim();
+        endTime = times[1].trim();
+      }
+    }
+    
+    if (parts.length >= 3) {
+      dayIndex = parts[2].trim();
+    }
+    
     return {
-      'subject': planStr,
-      'difficulty': '',
-      'hours': '',
+      'subject': subject,
+      'difficulty': difficulty,
+      'hours': hours,
+      'startTime': startTime,
+      'endTime': endTime,
+      'dayIndex': dayIndex,
     };
+  }
+
+  String _formatTime(DateTime dt) {
+    int hour = dt.hour;
+    final int minute = dt.minute;
+    final String period = hour >= 12 ? "PM" : "AM";
+    if (hour > 12) hour -= 12;
+    if (hour == 0) hour = 12;
+    final String minuteStr = minute < 10 ? "0$minute" : "$minute";
+    return "$hour:$minuteStr $period";
   }
 
   String _formatHoursToReadable(String hoursStr) {
@@ -429,16 +478,52 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
     );
   }
 
-  void _showEditDialog(BuildContext context, int index, String currentSubject, String currentDifficulty, String currentHours) {
+  void _showEditDialog(BuildContext context, int index, String rawPlanItem) {
+    final parsed = _parsePlanItem(rawPlanItem);
+    final String currentSubject = parsed['subject']!;
+    final String currentDifficulty = parsed['difficulty']!;
+    final String currentHours = parsed['hours']!;
+    final String initialStart = parsed['startTime']!;
+    final String initialEnd = parsed['endTime']!;
+    final String dayIndex = parsed['dayIndex']!;
+
     final titleController = TextEditingController(text: currentSubject);
     final hoursController = TextEditingController(text: currentHours);
     String selectedDifficulty = currentDifficulty.isNotEmpty ? currentDifficulty : "Medium";
+    
+    TimeOfDay selectedStart = const TimeOfDay(hour: 9, minute: 0);
+    TimeOfDay selectedEnd = const TimeOfDay(hour: 10, minute: 0);
+    
+    if (initialStart.isNotEmpty) {
+      final startParts = initialStart.split(':');
+      if (startParts.length >= 2) {
+        selectedStart = TimeOfDay(
+          hour: int.tryParse(startParts[0]) ?? 9,
+          minute: int.tryParse(startParts[1]) ?? 0,
+        );
+      }
+    }
+    if (initialEnd.isNotEmpty) {
+      final endParts = initialEnd.split(':');
+      if (endParts.length >= 2) {
+        selectedEnd = TimeOfDay(
+          hour: int.tryParse(endParts[0]) ?? 10,
+          minute: int.tryParse(endParts[1]) ?? 0,
+        );
+      }
+    }
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setDlgState) {
+            String formatTimeOfDay(TimeOfDay tod) {
+              final hr = tod.hour.toString().padLeft(2, '0');
+              final min = tod.minute.toString().padLeft(2, '0');
+              return "$hr:$min";
+            }
+            
             return AlertDialog(
               backgroundColor: const Color(0xFFF9F9FC),
               shape: RoundedRectangleBorder(
@@ -525,27 +610,88 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "Estimated Duration",
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF594042),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: hoursController,
-                      style: GoogleFonts.plusJakartaSans(),
-                      decoration: InputDecoration(
-                        hintText: "e.g. 1.5 hrs/day or 45 min",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    
+                    if (initialStart.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        "Schedule Time Range",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF594042),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          "Start Time",
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        subtitle: Text(
+                          formatTimeOfDay(selectedStart),
+                          style: GoogleFonts.plusJakartaSans(color: const Color(0xFF006A63), fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        trailing: const Icon(Icons.access_time_rounded, color: Color(0xFF006A63), size: 20),
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: selectedStart,
+                          );
+                          if (picked != null) {
+                            setDlgState(() {
+                              selectedStart = picked;
+                            });
+                          }
+                        },
+                      ),
+                      const Divider(),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          "End Time",
+                          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        subtitle: Text(
+                          formatTimeOfDay(selectedEnd),
+                          style: GoogleFonts.plusJakartaSans(color: const Color(0xFF006A63), fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        trailing: const Icon(Icons.access_time_rounded, color: Color(0xFF006A63), size: 20),
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: selectedEnd,
+                          );
+                          if (picked != null) {
+                            setDlgState(() {
+                              selectedEnd = picked;
+                            });
+                          }
+                        },
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        "Estimated Duration",
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF594042),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: hoursController,
+                        style: GoogleFonts.plusJakartaSans(),
+                        decoration: InputDecoration(
+                          hintText: "e.g. 1.5 hrs/day or 45 min",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -563,9 +709,21 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                 ElevatedButton(
                   onPressed: () {
                     final String newTitle = titleController.text.trim();
-                    final String newHrs = hoursController.text.trim();
-                    if (newTitle.isNotEmpty && newHrs.isNotEmpty) {
-                      widget.onEditTask(index, newTitle, selectedDifficulty, newHrs);
+                    if (newTitle.isNotEmpty) {
+                      if (initialStart.isNotEmpty) {
+                        final startMins = selectedStart.hour * 60 + selectedStart.minute;
+                        final endMins = selectedEnd.hour * 60 + selectedEnd.minute;
+                        final durationVal = endMins > startMins ? (endMins - startMins) : 60;
+                        
+                        final String durationStr = "$durationVal mins";
+                        final String finalValue = "$durationStr | ${formatTimeOfDay(selectedStart)} - ${formatTimeOfDay(selectedEnd)} | $dayIndex";
+                        widget.onEditTask(index, newTitle, selectedDifficulty, finalValue);
+                      } else {
+                        final String newHrs = hoursController.text.trim();
+                        if (newHrs.isNotEmpty) {
+                          widget.onEditTask(index, newTitle, selectedDifficulty, newHrs);
+                        }
+                      }
                       Navigator.pop(context);
                     }
                   },
@@ -606,6 +764,54 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       };
     });
 
+    final List<Map<String, dynamic>> sessions = [];
+    DateTime currentStart = DateTime(now.year, now.month, now.day, 9, 0);
+
+    for (int i = 0; i < widget.studyPlan.length; i++) {
+      final parsed = _parsePlanItem(widget.studyPlan[i]);
+      final hoursStr = parsed['hours'] ?? '';
+      double durationMins = 60.0;
+      final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
+      if (hoursMatch != null) {
+        final val = double.tryParse(hoursMatch.group(1)!) ?? 1.0;
+        if (hoursStr.contains('min')) {
+          durationMins = val;
+        } else {
+          durationMins = val * 60.0;
+        }
+      }
+
+      DateTime start;
+      DateTime end;
+      
+      if (parsed['startTime'] != null && parsed['startTime']!.isNotEmpty) {
+        final dayIndex = int.tryParse(parsed['dayIndex'] ?? '0') ?? 0;
+        final sessionDay = monday.add(Duration(days: dayIndex));
+        
+        final startParts = parsed['startTime']!.split(':');
+        final startHr = int.tryParse(startParts[0]) ?? 9;
+        final startMin = int.tryParse(startParts[1]) ?? 0;
+        
+        final endParts = parsed['endTime']!.split(':');
+        final endHr = int.tryParse(endParts[0]) ?? 10;
+        final endMin = int.tryParse(endParts[1]) ?? 0;
+        
+        start = DateTime(sessionDay.year, sessionDay.month, sessionDay.day, startHr, startMin);
+        end = DateTime(sessionDay.year, sessionDay.month, sessionDay.day, endHr, endMin);
+      } else {
+        start = currentStart;
+        end = start.add(Duration(minutes: durationMins.round()));
+        currentStart = end.add(const Duration(minutes: 15));
+      }
+
+      sessions.add({
+        "index": i,
+        "start": start,
+        "end": end,
+        "isCompleted": widget.completedTasks[i],
+      });
+    }
+
     // Filter tasks list based on query, selected day index, and category filter
     final List<int> filteredIndices = [];
     for (int i = 0; i < widget.studyPlan.length; i++) {
@@ -613,14 +819,18 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       final subject = parsed['subject']!;
       final bool matchesSearch = subject.toLowerCase().contains(_searchQuery.toLowerCase());
       
+      final itemDayIndex = parsed['dayIndex']!.isNotEmpty
+          ? (int.tryParse(parsed['dayIndex']!) ?? 0)
+          : (i % 7);
+      
       bool matchesFilter = true;
       if (_selectedFilter == "Today") {
-        matchesFilter = (i % 7 == _selectedDateIndex);
+        matchesFilter = (itemDayIndex == _selectedDateIndex);
       } else if (_selectedFilter == "Completed") {
-        matchesFilter = widget.completedTasks[i] && (i % 7 == _selectedDateIndex);
+        matchesFilter = widget.completedTasks[i] && (itemDayIndex == _selectedDateIndex);
       } else {
         // "All" filter for selected day
-        matchesFilter = (i % 7 == _selectedDateIndex);
+        matchesFilter = (itemDayIndex == _selectedDateIndex);
       }
 
       if (matchesSearch && matchesFilter) {
@@ -702,6 +912,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                   child: Row(
                     children: List.generate(dates.length, (idx) {
                       final isSelected = _selectedDateIndex == idx;
+                      final isToday = idx == DateTime.now().weekday - 1;
                       final d = dates[idx];
                       return Padding(
                         padding: const EdgeInsets.only(right: 14),
@@ -722,8 +933,12 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                 color: isSelected ? const Color(0xFF005953) : Colors.white.withOpacity(0.45),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF005953) : Colors.white.withOpacity(0.25),
-                                  width: 1.5,
+                                  color: isSelected
+                                      ? const Color(0xFF005953)
+                                      : (isToday
+                                          ? const Color(0xFF006A63).withOpacity(0.6)
+                                          : Colors.white.withOpacity(0.25)),
+                                  width: (isSelected || isToday) ? 1.8 : 1.5,
                                 ),
                                 boxShadow: isSelected ? [
                                   BoxShadow(
@@ -752,6 +967,17 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                       color: isSelected ? Colors.white : const Color(0xFF1A1C1E),
                                     ),
                                   ),
+                                  if (isToday) ...[
+                                    const SizedBox(height: 2),
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? Colors.white : const Color(0xFF006A63),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -803,12 +1029,31 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                     if (nextSessionIdx != -1) {
                       final parsed = _parsePlanItem(widget.studyPlan[nextSessionIdx]);
                       nextSubject = parsed['subject']!;
-                      final List<String> times = [
-                        "09:00 AM", "10:45 AM", "12:30 PM", "02:00 PM",
-                        "03:45 PM", "05:30 PM", "07:15 PM"
-                      ];
-                      nextTime = nextSessionIdx < times.length ? times[nextSessionIdx] : "05:00 PM";
-                      nextTimeAgo = "next up";
+                      
+                      final nextSession = sessions[nextSessionIdx];
+                      final DateTime nextStart = nextSession['start'];
+                      final DateTime nextEnd = nextSession['end'];
+                      nextTime = "${_formatTime(nextStart)} - ${_formatTime(nextEnd)}";
+                      
+                      final bool isSelectedDayToday = (_selectedDateIndex == now.weekday - 1);
+                      if (isSelectedDayToday) {
+                        if (now.isAfter(nextStart) && now.isBefore(nextEnd)) {
+                          nextTimeAgo = "active";
+                        } else {
+                          final diff = nextStart.difference(now);
+                          if (diff.inMinutes > 0) {
+                            if (diff.inHours > 0) {
+                              nextTimeAgo = "in ${diff.inHours}h ${diff.inMinutes % 60}m";
+                            } else {
+                              nextTimeAgo = "in ${diff.inMinutes}m";
+                            }
+                          } else {
+                            nextTimeAgo = "upcoming";
+                          }
+                        }
+                      } else {
+                        nextTimeAgo = "next up";
+                      }
                     }
 
                     return _buildGlassCard(
@@ -1165,6 +1410,23 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                           final difficulty = parsed['difficulty']!;
                           final hours = parsed['hours']!;
                           final bool isCompleted = widget.completedTasks[index];
+                          final session = sessions[index];
+                          final DateTime startTime = session['start'];
+                          final DateTime endTime = session['end'];
+                          final String timeVal = _formatTime(startTime);
+
+                          final bool isSelectedDayToday = (_selectedDateIndex == now.weekday - 1);
+                          final bool isCurrent = isSelectedDayToday && now.isAfter(startTime) && now.isBefore(endTime);
+                          
+                          // Check if any session is active right now today
+                          bool anySessionActive = false;
+                          for (final s in sessions) {
+                            if (now.isAfter(s['start'] as DateTime) && now.isBefore(s['end'] as DateTime)) {
+                              anySessionActive = true;
+                              break;
+                            }
+                          }
+                          
                           int firstUncompletedIdx = -1;
                           for (int k = 0; k < widget.completedTasks.length; k++) {
                             if (!widget.completedTasks[k]) {
@@ -1172,19 +1434,9 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                               break;
                             }
                           }
-                          final bool isCurrent = (index == firstUncompletedIdx);
+                          
+                          final bool isFocused = isCurrent || (!anySessionActive && isSelectedDayToday && index == firstUncompletedIdx);
                           final bool isLast = (idx == filteredIndices.length - 1);
-
-                          final List<String> times = [
-                            "09:00 AM",
-                            "10:45 AM",
-                            "12:30 PM",
-                            "02:00 PM",
-                            "03:45 PM",
-                            "05:30 PM",
-                            "07:15 PM"
-                          ];
-                          final String timeVal = index < times.length ? times[index] : "05:00 PM";
 
                           // Semantic Color Mapping
                           final Color semanticColor = _getSemanticColor(subject, difficulty, isCompleted);
@@ -1192,16 +1444,29 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
 
                           final bool isExpanded = _expandedTimelineCardIndices.contains(index);
 
-                          final double progressPercent = isCompleted ? 1.0 : (isCurrent ? 0.6 : 0.0);
+                          double progressPercent = 0.0;
+                          if (isCompleted) {
+                            progressPercent = 1.0;
+                          } else if (isFocused) {
+                            if (isCurrent) {
+                              final int totalMins = endTime.difference(startTime).inMinutes;
+                              final int passedMins = now.difference(startTime).inMinutes;
+                              if (totalMins > 0) {
+                                progressPercent = (passedMins / totalMins).clamp(0.0, 1.0);
+                              }
+                            } else {
+                              progressPercent = 0.0;
+                            }
+                          }
 
                           Widget cardContent = _buildGlassCard(
                             borderRadius: 24,
                             padding: EdgeInsets.zero,
-                            elevation: isCurrent ? 8.0 : 0.0, // Higher elevation shadow for current task
-                            glassColor: isCurrent
+                            elevation: isFocused ? 8.0 : 0.0, // Higher elevation shadow for current task
+                            glassColor: isFocused
                                 ? Colors.white.withOpacity(0.85) // Brighter glass
                                 : Colors.white.withOpacity(0.65),
-                            borderOutlineColor: isCurrent
+                            borderOutlineColor: isFocused
                                 ? const Color(0xFF22D3EE).withOpacity(0.8) // Teal glowing outline
                                 : Colors.white.withOpacity(0.35),
                             child: Column(
@@ -1249,17 +1514,32 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                                 ),
                                               ),
                                               const SizedBox(height: 2),
-                                              Text(
-                                                subject.toLowerCase() == "break"
-                                                    ? "Relax & Recharge ✨"
-                                                    : (difficulty.isNotEmpty ? "$difficulty difficulty" : "Study Session"),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontSize: 10,
-                                                  color: Colors.grey.shade500,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                              Builder(
+                                                builder: (context) {
+                                                  String info = subject.toLowerCase() == "break"
+                                                      ? "Relax & Recharge ✨"
+                                                      : (difficulty.isNotEmpty ? "$difficulty difficulty" : "Study Session");
+                                                  if (isCompleted) {
+                                                    info += " • Done";
+                                                  } else if (isCurrent) {
+                                                    final int rem = endTime.difference(now).inMinutes;
+                                                    info += " • ${rem}m left";
+                                                  } else if (isSelectedDayToday && now.isAfter(endTime)) {
+                                                    info += " • Ended";
+                                                  } else if (isSelectedDayToday && now.isBefore(startTime)) {
+                                                    info += " • Upcoming";
+                                                  }
+                                                  return Text(
+                                                    info,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: GoogleFonts.plusJakartaSans(
+                                                      fontSize: 10,
+                                                      color: Colors.grey.shade500,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  );
+                                                }
                                               ),
                                               const SizedBox(height: 6),
                                               // Progress indicator (Animates on active/pulse)
@@ -1336,7 +1616,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                               elevation: 8,
                                               onSelected: (val) {
                                                 if (val == 'edit') {
-                                                  _showEditDialog(context, index, subject, difficulty, hours);
+                                                  _showEditDialog(context, index, planItem);
                                                 } else if (val == 'delete') {
                                                   widget.onDeleteTask(index);
                                                 } else if (val == 'toggle') {
@@ -1427,7 +1707,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                                 ),
                                                 OutlinedButton(
                                                   onPressed: () {
-                                                    _showEditDialog(context, index, subject, difficulty, hours);
+                                                    _showEditDialog(context, index, planItem);
                                                   },
                                                   style: OutlinedButton.styleFrom(
                                                     side: const BorderSide(color: Color(0xFF006A63)),

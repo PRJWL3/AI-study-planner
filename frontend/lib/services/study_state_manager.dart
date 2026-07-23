@@ -3,7 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/subject.dart';
+import '../models/study_availability.dart';
+import '../models/study_statistics.dart';
 import '../widgets/global_eggy.dart';
+import 'persistence_service.dart';
+import 'planner_service.dart';
+import 'statistics_service.dart';
+import 'crystal_progress_service.dart';
 
 class StudyStateManager extends ChangeNotifier {
   static final StudyStateManager instance = StudyStateManager._internal();
@@ -30,24 +36,42 @@ class StudyStateManager extends ChangeNotifier {
   List<String> studyPlan = [];
   List<bool> completedTasks = [];
 
-  // Weekly Progress (Hours per weekday)
-  Map<String, double> weeklyProgressHours = {
-    "Mon": 0.0,
-    "Tue": 0.0,
-    "Wed": 0.0,
-    "Thu": 0.0,
-    "Fri": 0.0,
-    "Sat": 0.0,
-    "Sun": 0.0,
-  };
+  // Weekly Progress (Hours per weekday) delegated to StatisticsService
+  Map<String, double> get weeklyProgressHours => StatisticsService.instance.getWeeklyProgress();
+  set weeklyProgressHours(Map<String, double> val) {
+    StatisticsService.instance.weeklyProgress = val;
+    notifyListeners();
+  }
 
-  // Planner Settings
+  // Planner Settings delegated to PlannerService
   int plannerHoursPerDay = 4;
-  String plannerStudyStyle = "Balanced";
-  int plannerBreakDuration = 10;
-  String plannerDifficultyPref = "Moderate";
+  
+  String get plannerStudyStyle => PlannerService.instance.studyStyle;
+  set plannerStudyStyle(String val) {
+    PlannerService.instance.studyStyle = val;
+    notifyListeners();
+  }
+
+  int get plannerBreakDuration => PlannerService.instance.breakDuration;
+  set plannerBreakDuration(int val) {
+    PlannerService.instance.breakDuration = val;
+    notifyListeners();
+  }
+
+  String get plannerDifficultyPref => PlannerService.instance.difficultyPref;
+  set plannerDifficultyPref(String val) {
+    PlannerService.instance.difficultyPref = val;
+    notifyListeners();
+  }
+
   String plannerPreferredTime = "Morning";
-  DateTime? selectedDate;
+
+  DateTime? get selectedDate => PlannerService.instance.examDate;
+  set selectedDate(DateTime? val) {
+    PlannerService.instance.examDate = val;
+    notifyListeners();
+  }
+
   String selectedDifficulty = "Medium";
 
   // Study Room / Pomodoro focus timer state
@@ -55,20 +79,130 @@ class StudyStateManager extends ChangeNotifier {
   int studyRoomDurationMinutes = 25;
   String studyRoomActiveTopic = "Focus Session";
 
-  // Persistent analytics values (seeded with mockup values)
-  int streakDays = 14;
-  int todayEnergyValue = 1860;
-  int weeklyEnergyValue = 12450;
-  int sessionsCompleted = 3;
-  int sessionsGoal = 6;
+  // Persistent live timer state fields
+  bool isTimerActive = false;
+  bool isTimerPaused = false;
+  int timerSecondsRemaining = 0;
+  int timerDurationMinutes = 25;
+  String timerSelectedSubject = "General Study";
+  String timerActiveChapter = "";
+  String timerActiveTopic = "";
+  int timerTaskIndex = -1;
+  DateTime? timerEndTimestamp;
+
+  // Persistent analytics values delegated to StatisticsService
+  int get streakDays => StatisticsService.instance.streakDays;
+  set streakDays(int val) {
+    StatisticsService.instance.streakDays = val;
+    notifyListeners();
+  }
+
+  int get todayEnergyValue => StatisticsService.instance.todayEnergy;
+  set todayEnergyValue(int val) {
+    StatisticsService.instance.todayEnergy = val;
+    notifyListeners();
+  }
+
+  int get weeklyEnergyValue => StatisticsService.instance.weeklyEnergy;
+  set weeklyEnergyValue(int val) {
+    StatisticsService.instance.weeklyEnergy = val;
+    notifyListeners();
+  }
+
+  int get sessionsCompleted => StatisticsService.instance.sessionsCompleted;
+  set sessionsCompleted(int val) {
+    StatisticsService.instance.sessionsCompleted = val;
+    notifyListeners();
+  }
+
+  int get sessionsGoal => StatisticsService.instance.sessionsGoal;
+  set sessionsGoal(int val) {
+    StatisticsService.instance.sessionsGoal = val;
+    notifyListeners();
+  }
 
   // List of logged study events (task or session)
   List<Map<String, dynamic>> studyEvents = [];
 
+  /// The manager only supplies state to the statistics service; calculations
+  /// remain in the service so every screen reads the same live values.
+  StudyStatistics get statistics => StatisticsService.instance.calculate(
+        studyPlan: studyPlan,
+        completedTasks: completedTasks,
+        studyEvents: studyEvents,
+        plannerHoursPerDay: plannerHoursPerDay,
+        isTimerActive: isTimerActive,
+        timerDurationMinutes: timerDurationMinutes,
+        timerSecondsRemaining: timerSecondsRemaining,
+      );
+
   Future<void> init() async {
     if (_initialized) return;
+
+    // Initialize Persistence/Hive
+    await PersistenceService.instance.init();
+
     _prefs = await SharedPreferences.getInstance();
+
+    // Copy / migrate data from SharedPreferences to Hive if not already present
+    final statisticsBox = PersistenceService.instance.getBox('study_statistics');
+    if (!statisticsBox.containsKey('streakDays')) {
+      await statisticsBox.put('streakDays', _prefs!.getInt("streak_days") ?? 0);
+      await statisticsBox.put('todayEnergy', _prefs!.getInt("today_energy") ?? 0);
+      await statisticsBox.put('weeklyEnergy', _prefs!.getInt("weekly_energy") ?? 0);
+      await statisticsBox.put('sessionsCompleted', _prefs!.getInt("sessions_completed") ?? 0);
+      await statisticsBox.put('sessionsGoal', _prefs!.getInt("sessions_goal") ?? 0);
+      
+      final progStr = _prefs!.getString("weeklyProgressHours");
+      if (progStr != null) {
+        try {
+          final Map<String, dynamic> decoded = jsonDecode(progStr);
+          await statisticsBox.put('weeklyProgress', decoded.map((k, v) => MapEntry(k.toString(), (v as num).toDouble())));
+        } catch (_) {}
+      }
+    }
+
+    final plannerBox = PersistenceService.instance.getBox('planner_settings');
+    if (!plannerBox.containsKey('breakDuration')) {
+      await plannerBox.put('breakDuration', _prefs!.getInt("planner_break_duration") ?? 10);
+      await plannerBox.put('studyStyle', _prefs!.getString("planner_study_style") ?? "Balanced");
+      await plannerBox.put('difficultyPref', _prefs!.getString("planner_difficulty_pref") ?? "Moderate");
+      final examDateStr = _prefs!.getString("examDate");
+      if (examDateStr != null) {
+        await plannerBox.put('examDate', examDateStr);
+      }
+    }
+
+    final crystalBox = PersistenceService.instance.getBox('crystal_progress');
+    if (!crystalBox.containsKey('focusProgress')) {
+      await crystalBox.put('focusProgress', 0.0);
+      await crystalBox.put('wisdomProgress', 0.0);
+      await crystalBox.put('masteryProgress', 0.0);
+    }
+    
     _loadFromPrefs();
+    await _refreshCrystalProgress();
+    
+    // Check if a timer was running in the background and completed while app was closed
+    if (isTimerActive && !isTimerPaused && timerEndTimestamp != null) {
+      final now = DateTime.now();
+      final diff = timerEndTimestamp!.difference(now).inSeconds;
+      if (diff > 0) {
+        timerSecondsRemaining = diff;
+      } else {
+        // Completed while app was closed!
+        final double completedHours = timerDurationMinutes / 60.0;
+        await completeFocusSession(completedHours, timerSelectedSubject, timerDurationMinutes);
+        if (timerTaskIndex >= 0 && timerTaskIndex < studyPlan.length) {
+          completedTasks[timerTaskIndex] = true;
+        }
+        isTimerActive = false;
+        isTimerPaused = false;
+        timerSecondsRemaining = 0;
+        await saveData();
+      }
+    }
+    
     _initialized = true;
   }
 
@@ -138,6 +272,19 @@ class StudyStateManager extends ChangeNotifier {
     studyRoomDurationMinutes = _prefs!.getInt("sr_duration_minutes") ?? 25;
     studyRoomActiveTopic = _prefs!.getString("sr_active_topic") ?? "Focus Session";
 
+    isTimerActive = _prefs!.getBool("timer_is_active") ?? false;
+    isTimerPaused = _prefs!.getBool("timer_is_paused") ?? false;
+    timerSecondsRemaining = _prefs!.getInt("timer_seconds_remaining") ?? 0;
+    timerDurationMinutes = _prefs!.getInt("timer_duration_minutes") ?? 25;
+    timerSelectedSubject = _prefs!.getString("timer_selected_subject") ?? "General Study";
+    timerActiveChapter = _prefs!.getString("timer_active_chapter") ?? "";
+    timerActiveTopic = _prefs!.getString("timer_active_topic") ?? "";
+    timerTaskIndex = _prefs!.getInt("timer_task_index") ?? -1;
+    final endTimestampStr = _prefs!.getString("timer_end_timestamp");
+    if (endTimestampStr != null) {
+      timerEndTimestamp = DateTime.tryParse(endTimestampStr);
+    }
+
     streakDays = _prefs!.getInt("streak_days") ?? 14;
     todayEnergyValue = _prefs!.getInt("today_energy") ?? 1860;
     weeklyEnergyValue = _prefs!.getInt("weekly_energy") ?? 12450;
@@ -193,6 +340,20 @@ class StudyStateManager extends ChangeNotifier {
     await _prefs!.setString("sr_selected_subject", studyRoomSelectedSubject);
     await _prefs!.setInt("sr_duration_minutes", studyRoomDurationMinutes);
     await _prefs!.setString("sr_active_topic", studyRoomActiveTopic);
+
+    await _prefs!.setBool("timer_is_active", isTimerActive);
+    await _prefs!.setBool("timer_is_paused", isTimerPaused);
+    await _prefs!.setInt("timer_seconds_remaining", timerSecondsRemaining);
+    await _prefs!.setInt("timer_duration_minutes", timerDurationMinutes);
+    await _prefs!.setString("timer_selected_subject", timerSelectedSubject);
+    await _prefs!.setString("timer_active_chapter", timerActiveChapter);
+    await _prefs!.setString("timer_active_topic", timerActiveTopic);
+    await _prefs!.setInt("timer_task_index", timerTaskIndex);
+    if (timerEndTimestamp != null) {
+      await _prefs!.setString("timer_end_timestamp", timerEndTimestamp!.toIso8601String());
+    } else {
+      await _prefs!.remove("timer_end_timestamp");
+    }
 
     await _prefs!.setInt("streak_days", streakDays);
     await _prefs!.setInt("today_energy", todayEnergyValue);
@@ -309,6 +470,7 @@ class StudyStateManager extends ChangeNotifier {
         }
       }
     }
+    await _refreshCrystalProgress();
     await saveData();
     notifyListeners();
   }
@@ -320,6 +482,7 @@ class StudyStateManager extends ChangeNotifier {
         break;
       }
     }
+    await _refreshCrystalProgress();
     await saveData();
     notifyListeners();
   }
@@ -328,30 +491,27 @@ class StudyStateManager extends ChangeNotifier {
     if (index >= 0 && index < studyPlan.length) {
       completedTasks[index] = value;
 
-      // Extract duration/hours from plan item
-      final parsed = _parsePlanItem(studyPlan[index]);
-      final hoursStr = parsed['hours'] ?? '';
-      double taskHours = 0.0;
-      final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
-      if (hoursMatch != null) {
-        taskHours = double.tryParse(hoursMatch.group(1)!) ?? 0.0;
-      }
+      final taskMinutes = StatisticsService.instance.durationMinutes(studyPlan[index]);
 
       final String day = dayKey ?? _getCurrentDayKey();
+      final Map<String, double> progress = Map<String, double>.from(weeklyProgressHours);
       if (value) {
-        weeklyProgressHours[day] = (weeklyProgressHours[day] ?? 0.0) + taskHours;
+        progress[day] = (progress[day] ?? 0.0) + taskMinutes / 60.0;
+        weeklyProgressHours = progress;
         todayEnergyValue += 100;
         weeklyEnergyValue += 100;
-        _logEvent('task', taskHours);
+        _logEvent('task', taskMinutes.toDouble());
       } else {
-        weeklyProgressHours[day] = (weeklyProgressHours[day] ?? 0.0) - taskHours;
-        if (weeklyProgressHours[day]! < 0) weeklyProgressHours[day] = 0.0;
+        progress[day] = (progress[day] ?? 0.0) - taskMinutes / 60.0;
+        if (progress[day]! < 0) progress[day] = 0.0;
+        weeklyProgressHours = progress;
         todayEnergyValue -= 100;
         weeklyEnergyValue -= 100;
         if (todayEnergyValue < 0) todayEnergyValue = 0;
         if (weeklyEnergyValue < 0) weeklyEnergyValue = 0;
       }
 
+      await _refreshCrystalProgress();
       await saveData();
       notifyListeners();
     }
@@ -384,7 +544,9 @@ class StudyStateManager extends ChangeNotifier {
 
   Future<void> completeFocusSession(double hours, String subject, int durationMinutes) async {
     final String dayKey = _getCurrentDayKey();
-    weeklyProgressHours[dayKey] = (weeklyProgressHours[dayKey] ?? 0.0) + hours;
+    final Map<String, double> progress = Map<String, double>.from(weeklyProgressHours);
+    progress[dayKey] = (progress[dayKey] ?? 0.0) + hours;
+    weeklyProgressHours = progress;
     
     // Increment energy points
     todayEnergyValue += 300;
@@ -397,8 +559,147 @@ class StudyStateManager extends ChangeNotifier {
     // Log study event
     _logEvent('session', durationMinutes.toDouble(), subject: subject);
 
+    // Mark active chapter as completed
+    if (timerActiveChapter.isNotEmpty) {
+      for (var s in subjects) {
+        if (s.name.toLowerCase() == subject.toLowerCase()) {
+          for (var t in s.topics) {
+            if (t.name.toLowerCase() == timerActiveChapter.toLowerCase()) {
+              t.isCompleted = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    await _refreshCrystalProgress();
     await saveData();
     notifyListeners();
+  }
+
+  List<StudyAvailability> getAvailability() {
+    return PlannerService.instance.getAvailability();
+  }
+
+  Future<void> addAvailabilityWindow(StudyAvailability window) async {
+    await PlannerService.instance.addWindow(window);
+    notifyListeners();
+  }
+
+  Future<void> deleteAvailabilityWindow(int index) async {
+    await PlannerService.instance.deleteWindow(index);
+    notifyListeners();
+  }
+
+  Future<void> editAvailabilityWindow(int index, StudyAvailability window) async {
+    await PlannerService.instance.editWindow(index, window);
+    notifyListeners();
+  }
+
+  double calculateAverageHoursPerDay() {
+    final list = getAvailability();
+    if (list.isEmpty) return 4.0;
+    
+    double totalMins = 0.0;
+    for (final window in list) {
+      final startParts = window.startTime.split(':');
+      final endParts = window.endTime.split(':');
+      if (startParts.length < 2 || endParts.length < 2) continue;
+      
+      final startHr = int.tryParse(startParts[0]) ?? 0;
+      final startMin = int.tryParse(startParts[1]) ?? 0;
+      final endHr = int.tryParse(endParts[0]) ?? 0;
+      final endMin = int.tryParse(endParts[1]) ?? 0;
+      
+      final startTotal = startHr * 60 + startMin;
+      final endTotal = endHr * 60 + endMin;
+      
+      if (endTotal > startTotal) {
+        totalMins += (endTotal - startTotal);
+      }
+    }
+    return (totalMins / 60.0) / 7.0;
+  }
+
+  Future<void> generatePlanFromAvailability() async {
+    final List<Subject> currentSubjects = subjects;
+    if (currentSubjects.isEmpty) return;
+    
+    final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    final List<String> newPlan = [];
+    final availability = getAvailability();
+    
+    // Sort availability windows by day and start time
+    final Map<String, List<StudyAvailability>> grouped = {};
+    for (final day in weekdays) {
+      grouped[day] = availability.where((w) => w.weekday == day).toList()
+        ..sort((a, b) => a.startTime.compareTo(b.startTime));
+    }
+    
+    int subjectIdx = 0;
+    
+    for (int dayIdx = 0; dayIdx < 7; dayIdx++) {
+      final dayName = weekdays[dayIdx];
+      final List<StudyAvailability> windows = grouped[dayName] ?? [];
+      
+      for (final window in windows) {
+        final startParts = window.startTime.split(':');
+        final endParts = window.endTime.split(':');
+        if (startParts.length < 2 || endParts.length < 2) continue;
+        
+        final startHr = int.tryParse(startParts[0]) ?? 0;
+        final startMin = int.tryParse(startParts[1]) ?? 0;
+        final endHr = int.tryParse(endParts[0]) ?? 0;
+        final endMin = int.tryParse(endParts[1]) ?? 0;
+        
+        int currentTotalMins = startHr * 60 + startMin;
+        final endTotalMins = endHr * 60 + endMin;
+        
+        while (currentTotalMins < endTotalMins) {
+          final remainingMins = endTotalMins - currentTotalMins;
+          if (remainingMins < 15) {
+            break;
+          }
+          
+          final subject = currentSubjects[subjectIdx % currentSubjects.length];
+          subjectIdx++;
+          
+          int sessionLength = 45;
+          switch (subject.difficulty.toLowerCase()) {
+            case 'hard':
+              sessionLength = 60;
+              break;
+            case 'easy':
+              sessionLength = 30;
+              break;
+            default:
+              sessionLength = 45;
+          }
+          
+          if (sessionLength > remainingMins) {
+            sessionLength = remainingMins;
+          }
+          
+          final sessionStartStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
+          currentTotalMins += sessionLength;
+          final sessionEndStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
+          
+          newPlan.add("${subject.name} (${subject.difficulty}) - $sessionLength mins | $sessionStartStr - $sessionEndStr | $dayIdx");
+          
+          final nextRemainingMins = endTotalMins - currentTotalMins;
+          if (nextRemainingMins >= (plannerBreakDuration + 15)) {
+            final breakStartStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
+            currentTotalMins += plannerBreakDuration;
+            final breakEndStr = "${(currentTotalMins ~/ 60).toString().padLeft(2, '0')}:${(currentTotalMins % 60).toString().padLeft(2, '0')}";
+            
+            newPlan.add("Break (Easy) - $plannerBreakDuration mins | $breakStartStr - $breakEndStr | $dayIdx");
+          }
+        }
+      }
+    }
+    
+    await saveStudyPlan(newPlan);
   }
 
   Future<void> updatePlannerSettings({
@@ -445,42 +746,30 @@ class StudyStateManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Dynamic Focus Indicators
-
-  double get focusCharge {
-    if (studyPlan.isEmpty) return 59.0;
-    int completed = completedTasks.where((t) => t).length;
-    return (completed / studyPlan.length) * 100.0;
+  /// Updates plan strings in-place without resetting completedTasks or
+  /// weekly progress.  Used when adjusting session start/end times after
+  /// a duration override.
+  Future<void> updateStudyPlanInPlace(List<String> newPlan) async {
+    studyPlan = newPlan;
+    // Reconcile completedTasks length
+    while (completedTasks.length < studyPlan.length) {
+      completedTasks.add(false);
+    }
+    if (completedTasks.length > studyPlan.length) {
+      completedTasks = completedTasks.sublist(0, studyPlan.length);
+    }
+    await saveData();
+    notifyListeners();
   }
 
-  double get wisdomCharge {
-    int total = 0;
-    int completed = 0;
-    for (var s in subjects) {
-      total += s.topics.length;
-      completed += s.topics.where((t) => t.isCompleted).length;
-    }
-    if (total == 0) return 34.0;
-    return (completed / total) * 100.0;
-  }
+  double get focusCharge => CrystalProgressService.instance.focusProgress;
+  double get wisdomCharge => CrystalProgressService.instance.wisdomProgress;
+  double get masteryCharge => CrystalProgressService.instance.masteryProgress;
 
-  double get masteryCharge {
-    int totalHard = 0;
-    int completedHard = 0;
-    for (var s in subjects) {
-      for (var t in s.topics) {
-        if (t.difficulty.toLowerCase() == 'hard') {
-          totalHard++;
-          if (t.isCompleted) completedHard++;
-        }
-      }
-    }
-    if (totalHard == 0) {
-      if (studyPlan.isEmpty) return 14.0;
-      return (completedTasks.where((t) => t).length / studyPlan.length) * 100.0;
-    }
-    return (completedHard / totalHard) * 100.0;
-  }
+  Future<void> _refreshCrystalProgress() => CrystalProgressService.instance.update(
+        subjects: subjects,
+        statistics: statistics,
+      );
 
   // Helpers
 
@@ -532,20 +821,46 @@ class StudyStateManager extends ChangeNotifier {
     _prefs?.setString("last_active_day", todayStr);
   }
 
-  Map<String, String> _parsePlanItem(String planStr) {
+  Map<String, String> parsePlanItem(String planStr) {
+    final parts = planStr.split('|');
+    final mainPlan = parts[0].trim();
+    
     final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
-    final match = regex.firstMatch(planStr);
+    final match = regex.firstMatch(mainPlan);
+    
+    String subject = mainPlan;
+    String difficulty = 'Medium';
+    String hours = '60 mins';
+    
     if (match != null) {
-      return {
-        'subject': match.group(1)!,
-        'difficulty': match.group(2)!,
-        'hours': match.group(3)!,
-      };
+      subject = match.group(1)!.trim();
+      difficulty = match.group(2)!.trim();
+      hours = match.group(3)!.trim();
     }
+    
+    String startTime = "";
+    String endTime = "";
+    String dayIndex = "";
+    
+    if (parts.length >= 2) {
+      final times = parts[1].split('-');
+      if (times.length >= 2) {
+        startTime = times[0].trim();
+        endTime = times[1].trim();
+      }
+    }
+    
+    if (parts.length >= 3) {
+      dayIndex = parts[2].trim();
+    }
+    
     return {
-      'subject': planStr,
-      'difficulty': '',
-      'hours': '',
+      'subject': subject,
+      'difficulty': difficulty,
+      'hours': hours,
+      'startTime': startTime,
+      'endTime': endTime,
+      'dayIndex': dayIndex,
     };
   }
 }
