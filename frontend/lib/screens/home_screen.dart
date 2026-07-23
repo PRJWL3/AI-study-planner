@@ -4901,3 +4901,99 @@ class _AnimatedGlassButtonState extends State<AnimatedGlassButton> with SingleTi
     );
   }
 }
+
+class _PlannerGenerateButton extends StatefulWidget {
+  final bool canGenerate;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _PlannerGenerateButton({
+    required this.canGenerate,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  State<_PlannerGenerateButton> createState() => _PlannerGenerateButtonState();
+}
+
+class _PlannerGenerateButtonState extends State<_PlannerGenerateButton> {
+  double _scale = 1.0;
+
+  void _setPressed(bool pressed) {
+    if (!widget.canGenerate || widget.isLoading) return;
+    setState(() => _scale = pressed ? 0.97 : 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool enabled = widget.canGenerate && !widget.isLoading;
+
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      onTap: enabled ? widget.onTap : null,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          height: 58,
+          decoration: BoxDecoration(
+            gradient: enabled
+                ? const LinearGradient(
+                    colors: [Color(0xFFFF5C77), Color(0xFF006A63)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  )
+                : LinearGradient(
+                    colors: [Colors.grey.shade300, Colors.grey.shade400],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withOpacity(0.45), width: 1.4),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF5C77).withOpacity(0.24),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Center(
+            child: widget.isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.4,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Generate My AI Plan',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
