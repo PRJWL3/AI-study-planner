@@ -171,7 +171,8 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
               ),
             );
           }
-          debugPrint("APP_START: Route selection: always launch to LoginScreen");
+          // TEMPORARY: Bypassing session check to test the login screen
+          debugPrint("APP_START: Route selection: temporarily forcing LoginScreen");
           return const LoginScreen();
         },
       ),
