@@ -28,24 +28,17 @@ class _LoginScreenState extends State<LoginScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       await StudyStateManager.instance.login(true);
-      final bool isProfileSetup = StudyStateManager.instance.isProfileSetup;
 
       setState(() {
         _isLoading = false;
       });
 
       if (mounted) {
-        if (isProfileSetup) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-          );
-        }
+        // TEMPORARY: Force navigation to ProfileSetupScreen for testing
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+        );
       }
     }
   }
