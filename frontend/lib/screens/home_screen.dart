@@ -148,13 +148,22 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _updateSettings({int? hours, String? style, int? breakDuration, String? difficulty, String? preferredTime}) {
+  void _updateSettings({
+    int? hours,
+    String? style,
+    int? breakDuration,
+    String? difficulty,
+    String? preferredTime,
+  }) {
     StudyStateManager.instance.updatePlannerSettings(
       hours: hours ?? StudyStateManager.instance.plannerHoursPerDay,
       style: style ?? StudyStateManager.instance.plannerStudyStyle,
-      breakDuration: breakDuration ?? StudyStateManager.instance.plannerBreakDuration,
-      difficulty: difficulty ?? StudyStateManager.instance.plannerDifficultyPref,
-      preferredTime: preferredTime ?? StudyStateManager.instance.plannerPreferredTime,
+      breakDuration:
+          breakDuration ?? StudyStateManager.instance.plannerBreakDuration,
+      difficulty:
+          difficulty ?? StudyStateManager.instance.plannerDifficultyPref,
+      preferredTime:
+          preferredTime ?? StudyStateManager.instance.plannerPreferredTime,
     );
   }
 
@@ -204,8 +213,18 @@ class _HomeScreenState extends State<HomeScreen> {
     await StudyStateManager.instance.deleteSubject(index);
   }
 
-  void _addTask(String subject, String difficulty, int duration, {int? dayIndex}) {
-    StudyStateManager.instance.addTask(subject, difficulty, duration, dayIndex: dayIndex);
+  void _addTask(
+    String subject,
+    String difficulty,
+    int duration, {
+    int? dayIndex,
+  }) {
+    StudyStateManager.instance.addTask(
+      subject,
+      difficulty,
+      duration,
+      dayIndex: dayIndex,
+    );
   }
 
   void _deleteTask(int index) {
@@ -348,7 +367,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // 5. Weekly progress
     double onTrackPct = 82.0;
     if (stats.weeklyGoalMinutes > 0) {
-      onTrackPct = ((stats.weeklyCompletedMinutes / stats.weeklyGoalMinutes) * 100).clamp(0.0, 100.0);
+      onTrackPct =
+          ((stats.weeklyCompletedMinutes / stats.weeklyGoalMinutes) * 100)
+              .clamp(0.0, 100.0);
     }
     list.add({
       'type': 'progress',
@@ -370,12 +391,15 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.lightbulb_rounded,
       'iconColor': const Color(0xFFF59E0B),
       'title': 'AI Tip',
-      'content': 'Complete $remSessions more study session${remSessions > 1 ? 's' : ''} today to unlock your next achievement.',
+      'content':
+          'Complete $remSessions more study session${remSessions > 1 ? 's' : ''} today to unlock your next achievement.',
     });
 
     // 7. Crystal Goal
-    int currentCrystals = stats.sessionsCompleted * 2 + (stats.totalStudyMinutes ~/ 20);
-    String crystalGoalMsg = "Study for 45 minutes to earn another Wisdom Crystal.";
+    int currentCrystals =
+        stats.sessionsCompleted * 2 + (stats.totalStudyMinutes ~/ 20);
+    String crystalGoalMsg =
+        "Study for 45 minutes to earn another Wisdom Crystal.";
     if (currentCrystals % 3 == 0) {
       crystalGoalMsg = "Complete 1 focus session to earn a Focus Crystal.";
     } else if (currentCrystals % 3 == 1) {
@@ -398,19 +422,33 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFFFFFDF6).withOpacity(0.95),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           title: Text(
             "AI Smart Recommendations",
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF1A1C1E)),
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1A1C1E),
+            ),
           ),
           content: Text(
             "These tips are automatically tailored to your availability windows, exam deadlines, topic mastery progress, focus patterns, and crystal collection milestones to keep your learning optimal.",
-            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.grey.shade700),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Got it", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF006A63))),
+              child: Text(
+                "Got it",
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF006A63),
+                ),
+              ),
             ),
           ],
         );
@@ -424,29 +462,56 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFFFFFDF6).withOpacity(0.95),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           title: Text(
             "All Achievements & Badges",
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF1A1C1E)),
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1A1C1E),
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildAchievementDialogRow("🛡️", "Crystal Guardian Badge", "Complete your Next Achievement to unlock this premium badge."),
+                _buildAchievementDialogRow(
+                  "🛡️",
+                  "Crystal Guardian Badge",
+                  "Complete your Next Achievement to unlock this premium badge.",
+                ),
                 const Divider(),
-                _buildAchievementDialogRow("🔥", "Streak Lord", "Maintain a study streak of 7 days. Completed!"),
+                _buildAchievementDialogRow(
+                  "🔥",
+                  "Streak Lord",
+                  "Maintain a study streak of 7 days. Completed!",
+                ),
                 const Divider(),
-                _buildAchievementDialogRow("📚", "Knowledge Seeker", "Complete 20 focus study sessions."),
+                _buildAchievementDialogRow(
+                  "📚",
+                  "Knowledge Seeker",
+                  "Complete 20 focus study sessions.",
+                ),
                 const Divider(),
-                _buildAchievementDialogRow("💎", "Crystal Master", "Earn 100 focus crystals."),
+                _buildAchievementDialogRow(
+                  "💎",
+                  "Crystal Master",
+                  "Earn 100 focus crystals.",
+                ),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Close", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF006A63))),
+              child: Text(
+                "Close",
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF006A63),
+                ),
+              ),
             ),
           ],
         );
@@ -468,12 +533,19 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 13, color: const Color(0xFF1A1C1E)),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: const Color(0xFF1A1C1E),
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   desc,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 10, color: Colors.grey.shade600),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
@@ -489,10 +561,15 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFFF9F9FC),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
             "Weekly Study Report",
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF1A1C1E)),
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1A1C1E),
+            ),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -500,7 +577,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   "Here is your study hours distribution for this week:",
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF594042)),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: const Color(0xFF594042),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 _buildWeeklyProgressCard(getProgress()),
@@ -512,7 +592,10 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 "Close",
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF006A63)),
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF006A63),
+                ),
               ),
             ),
           ],
@@ -565,7 +648,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -582,7 +668,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       spacing: 8.0,
                       runSpacing: 8.0,
                       children: ["Easy", "Medium", "Hard"].map((difficulty) {
-                        final bool isSelected = selectedDifficulty == difficulty;
+                        final bool isSelected =
+                            selectedDifficulty == difficulty;
                         Color color;
                         switch (difficulty) {
                           case "Easy":
@@ -595,12 +682,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             color = const Color(0xFFBA1A1A);
                         }
                         return ChoiceChip(
-                          label: Text(difficulty, style: GoogleFonts.plusJakartaSans()),
+                          label: Text(
+                            difficulty,
+                            style: GoogleFonts.plusJakartaSans(),
+                          ),
                           selected: isSelected,
                           selectedColor: color.withOpacity(0.15),
                           labelStyle: TextStyle(
                             color: isSelected ? color : const Color(0xFF594042),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                           shape: const StadiumBorder(),
                           side: BorderSide(
@@ -636,7 +728,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -656,7 +751,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   onPressed: () {
                     final String title = titleController.text.trim();
-                    final int? duration = int.tryParse(durationController.text.trim());
+                    final int? duration = int.tryParse(
+                      durationController.text.trim(),
+                    );
                     if (title.isNotEmpty && duration != null && duration > 0) {
                       _addTask(title, selectedDifficulty, duration);
                       Navigator.pop(context);
@@ -669,18 +766,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text("Please fill in all fields with valid values"),
+                          content: Text(
+                            "Please fill in all fields with valid values",
+                          ),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5C77), // Rose primary action
+                    backgroundColor: const Color(
+                      0xFFFF5C77,
+                    ), // Rose primary action
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                   child: Text(
                     "Add Task",
@@ -701,13 +805,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void _addSubjectSuggestion(String name) {
     if (name.trim().isEmpty) return;
     if (subjects.any((s) => s.name.toLowerCase() == name.toLowerCase())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Subject already exists!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Subject already exists!")));
       return;
     }
     setState(() {
-      subjects.add(Subject(name: name, difficulty: selectedDifficulty, topics: []));
+      subjects.add(
+        Subject(name: name, difficulty: selectedDifficulty, topics: []),
+      );
       subjectController.clear();
     });
     saveData();
@@ -717,9 +823,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = subjectController.text.trim();
     if (name.isEmpty) return;
     if (subjects.any((s) => s.name.toLowerCase() == name.toLowerCase())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Subject already exists!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Subject already exists!")));
       return;
     }
     setState(() {
@@ -729,7 +835,9 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) {
       setState(() {
-        subjects.add(Subject(name: name, difficulty: selectedDifficulty, topics: []));
+        subjects.add(
+          Subject(name: name, difficulty: selectedDifficulty, topics: []),
+        );
         subjectController.clear();
         _isAddingSubject = false;
       });
@@ -753,9 +861,11 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       completedTasks[index] = value ?? false;
       if (value == true) {
-        weeklyProgressHours[dayKey] = (weeklyProgressHours[dayKey] ?? 0.0) + taskHours;
+        weeklyProgressHours[dayKey] =
+            (weeklyProgressHours[dayKey] ?? 0.0) + taskHours;
       } else {
-        weeklyProgressHours[dayKey] = (weeklyProgressHours[dayKey] ?? 0.0) - taskHours;
+        weeklyProgressHours[dayKey] =
+            (weeklyProgressHours[dayKey] ?? 0.0) - taskHours;
         if (weeklyProgressHours[dayKey]! < 0) weeklyProgressHours[dayKey] = 0.0;
       }
     });
@@ -764,14 +874,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _getCurrentDayKey() {
     switch (DateTime.now().weekday) {
-      case DateTime.monday: return "Mon";
-      case DateTime.tuesday: return "Tue";
-      case DateTime.wednesday: return "Wed";
-      case DateTime.thursday: return "Thu";
-      case DateTime.friday: return "Fri";
-      case DateTime.saturday: return "Sat";
-      case DateTime.sunday: return "Sun";
-      default: return "Mon";
+      case DateTime.monday:
+        return "Mon";
+      case DateTime.tuesday:
+        return "Tue";
+      case DateTime.wednesday:
+        return "Wed";
+      case DateTime.thursday:
+        return "Thu";
+      case DateTime.friday:
+        return "Fri";
+      case DateTime.saturday:
+        return "Sat";
+      case DateTime.sunday:
+        return "Sun";
+      default:
+        return "Mon";
     }
   }
 
@@ -780,10 +898,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StudyTimerSheet(
-        subjectName: subjectName,
-        topicName: topicName,
-      ),
+      builder: (context) =>
+          StudyTimerSheet(subjectName: subjectName, topicName: topicName),
     ).then((durationInSeconds) {
       if (durationInSeconds != null && durationInSeconds > 0) {
         final int secs = durationInSeconds as int;
@@ -791,7 +907,8 @@ class _HomeScreenState extends State<HomeScreen> {
         final String dayKey = _getCurrentDayKey();
 
         setState(() {
-          weeklyProgressHours[dayKey] = (weeklyProgressHours[dayKey] ?? 0.0) + hrs;
+          weeklyProgressHours[dayKey] =
+              (weeklyProgressHours[dayKey] ?? 0.0) + hrs;
         });
         saveData();
 
@@ -831,11 +948,11 @@ class _HomeScreenState extends State<HomeScreen> {
             if (!isBreakTime) {
               completedPomodorosToday++;
               totalFocusHoursToday += pomodoroDurationSeconds / 3600.0;
-              
+
               isBreakTime = true;
               pomodoroDurationSeconds = breakDurationSeconds;
               pomodoroSecondsRemaining = breakDurationSeconds;
-              
+
               _showPomodoroCompletionAlert();
             } else {
               isBreakTime = false;
@@ -851,7 +968,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               }
               pomodoroSecondsRemaining = pomodoroDurationSeconds;
-              
+
               _showPomodoroCompletionAlert();
               pomodoroTimer?.cancel();
               isTimerRunning = false;
@@ -936,8 +1053,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
-
   Widget _buildPresetPill(String label, int minutes, String presetProfile) {
     final bool isSelected = activePresetProfile == presetProfile;
     return GestureDetector(
@@ -981,8 +1096,13 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                isBreakTime ? "Break completed! Ready to focus? ðŸŽ¯" : "Time for a short break! ðŸ§ ",
-                style: GoogleFonts.fredoka(fontWeight: FontWeight.w600, color: Colors.white),
+                isBreakTime
+                    ? "Break completed! Ready to focus? ðŸŽ¯"
+                    : "Time for a short break! ðŸ§ ",
+                style: GoogleFonts.fredoka(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -1000,7 +1120,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Map<String, String> _parsePlanItem(String planStr) {
-    final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
+    final regex = RegExp(
+      r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$',
+      caseSensitive: false,
+    );
     final match = regex.firstMatch(planStr);
     if (match != null) {
       return {
@@ -1009,11 +1132,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'hours': match.group(3)!,
       };
     }
-    return {
-      'subject': planStr,
-      'difficulty': '',
-      'hours': '',
-    };
+    return {'subject': planStr, 'difficulty': '', 'hours': ''};
   }
 
   Widget _buildDifficultyBadge(String difficulty) {
@@ -1084,7 +1203,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return allSuggestions
-        .where((s) => s.toLowerCase().startsWith(query) && !subjects.any((sub) => sub.name.toLowerCase() == s.toLowerCase()))
+        .where(
+          (s) =>
+              s.toLowerCase().startsWith(query) &&
+              !subjects.any((sub) => sub.name.toLowerCase() == s.toLowerCase()),
+        )
         .toList();
   }
 
@@ -1116,21 +1239,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
   Widget _buildWeeklyProgressCard(double progress) {
     final bool isWeekly = selectedPeriod == 'Weekly';
     final int completedCount = completedTasks.where((task) => task).length;
-    final double loggedHoursTotal = weeklyProgressHours.values.fold(0.0, (sum, val) => sum + val);
+    final double loggedHoursTotal = weeklyProgressHours.values.fold(
+      0.0,
+      (sum, val) => sum + val,
+    );
 
     final statistics = StudyStateManager.instance.statistics;
     final int displayLessons = isWeekly ? completedCount : (completedCount * 4);
     final double displayHours = isWeekly
         ? loggedHoursTotal
         : (statistics.monthlyProgress[0] +
-            statistics.monthlyProgress[1] +
-            statistics.monthlyProgress[2] +
-            statistics.monthlyProgress[3]);
+              statistics.monthlyProgress[1] +
+              statistics.monthlyProgress[2] +
+              statistics.monthlyProgress[3]);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -1152,7 +1276,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Color(0xFF2D3142),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 18),
+                child: const Icon(
+                  Icons.bar_chart_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
               // Interactive Toggle Switch UX
               Container(
@@ -1171,15 +1299,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isWeekly ? const Color(0xFF2D3142) : Colors.transparent,
+                          color: isWeekly
+                              ? const Color(0xFF2D3142)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Text(
                           "Weekly",
                           style: GoogleFonts.fredoka(
-                            color: isWeekly ? Colors.white : const Color(0xFF64748B),
+                            color: isWeekly
+                                ? Colors.white
+                                : const Color(0xFF64748B),
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),
@@ -1194,15 +1329,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: !isWeekly ? const Color(0xFF2D3142) : Colors.transparent,
+                          color: !isWeekly
+                              ? const Color(0xFF2D3142)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Text(
                           "Month",
                           style: GoogleFonts.fredoka(
-                            color: !isWeekly ? Colors.white : const Color(0xFF64748B),
+                            color: !isWeekly
+                                ? Colors.white
+                                : const Color(0xFF64748B),
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),
@@ -1225,9 +1367,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     "$displayLessons",
-                    style: GoogleFonts.fredoka(fontSize: 26, fontWeight: FontWeight.bold, color: const Color(0xFF2D3142)),
+                    style: GoogleFonts.fredoka(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2D3142),
+                    ),
                   ),
-                  Text("lessons", style: GoogleFonts.fredoka(color: const Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500)),
+                  Text(
+                    "lessons",
+                    style: GoogleFonts.fredoka(
+                      color: const Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
               Column(
@@ -1235,9 +1388,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     displayHours.toStringAsFixed(1),
-                    style: GoogleFonts.fredoka(fontSize: 26, fontWeight: FontWeight.bold, color: const Color(0xFF2D3142)),
+                    style: GoogleFonts.fredoka(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2D3142),
+                    ),
                   ),
-                  Text("hours completed", style: GoogleFonts.fredoka(color: const Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500)),
+                  Text(
+                    "hours completed",
+                    style: GoogleFonts.fredoka(
+                      color: const Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -1250,11 +1414,31 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildPillBar("Mon", weeklyProgressHours["Mon"] ?? 0.0, maxTarget: 4.0),
-                _buildPillBar("Tue", weeklyProgressHours["Tue"] ?? 0.0, maxTarget: 4.0),
-                _buildPillBar("Wed", weeklyProgressHours["Wed"] ?? 0.0, maxTarget: 4.0),
-                _buildPillBar("Thu", weeklyProgressHours["Thu"] ?? 0.0, maxTarget: 4.0),
-                _buildPillBar("Fri", weeklyProgressHours["Fri"] ?? 0.0, maxTarget: 4.0),
+                _buildPillBar(
+                  "Mon",
+                  weeklyProgressHours["Mon"] ?? 0.0,
+                  maxTarget: 4.0,
+                ),
+                _buildPillBar(
+                  "Tue",
+                  weeklyProgressHours["Tue"] ?? 0.0,
+                  maxTarget: 4.0,
+                ),
+                _buildPillBar(
+                  "Wed",
+                  weeklyProgressHours["Wed"] ?? 0.0,
+                  maxTarget: 4.0,
+                ),
+                _buildPillBar(
+                  "Thu",
+                  weeklyProgressHours["Thu"] ?? 0.0,
+                  maxTarget: 4.0,
+                ),
+                _buildPillBar(
+                  "Fri",
+                  weeklyProgressHours["Fri"] ?? 0.0,
+                  maxTarget: 4.0,
+                ),
               ],
             )
           else
@@ -1265,20 +1449,40 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _buildPillBar("Week 1", statistics.monthlyProgress[0], maxTarget: 12.0),
-                    _buildPillBar("Week 2", statistics.monthlyProgress[1], maxTarget: 12.0),
-                    _buildPillBar("Week 3", statistics.monthlyProgress[2], maxTarget: 12.0),
-                    _buildPillBar("Week 4", statistics.monthlyProgress[3], maxTarget: 12.0),
+                    _buildPillBar(
+                      "Week 1",
+                      statistics.monthlyProgress[0],
+                      maxTarget: 12.0,
+                    ),
+                    _buildPillBar(
+                      "Week 2",
+                      statistics.monthlyProgress[1],
+                      maxTarget: 12.0,
+                    ),
+                    _buildPillBar(
+                      "Week 3",
+                      statistics.monthlyProgress[2],
+                      maxTarget: 12.0,
+                    ),
+                    _buildPillBar(
+                      "Week 4",
+                      statistics.monthlyProgress[3],
+                      maxTarget: 12.0,
+                    ),
                   ],
                 );
-              }
+              },
             ),
         ],
       ),
     );
   }
 
-  Widget _buildPillBar(String day, double hoursLogged, {double maxTarget = 4.0}) {
+  Widget _buildPillBar(
+    String day,
+    double hoursLogged, {
+    double maxTarget = 4.0,
+  }) {
     // Base target factor relative to maxTarget
     double factor = hoursLogged / maxTarget;
     if (factor > 1.0) factor = 1.0;
@@ -1311,7 +1515,9 @@ class _HomeScreenState extends State<HomeScreen> {
               // Bottom Section of the pill representing active progression
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B887C).withOpacity(0.3), // Muted Deep Teal tint
+                  color: const Color(
+                    0xFF3B887C,
+                  ).withOpacity(0.3), // Muted Deep Teal tint
                   borderRadius: BorderRadius.circular(16),
                 ),
                 height: height * (0.3 + (factor * 0.5)),
@@ -1320,7 +1526,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned(
                 top: 4,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                    vertical: 1,
+                  ),
                   decoration: const BoxDecoration(
                     color: Color(0xFF3B887C), // Muted Deep Teal
                     shape: BoxShape.circle,
@@ -1331,7 +1540,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: FittedBox(
                     child: Text(
                       badgeLabel,
-                      style: GoogleFonts.fredoka(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.fredoka(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -1342,16 +1555,19 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 8),
         Text(
           day,
-          style: GoogleFonts.fredoka(fontSize: 11, color: const Color(0xFF64748B), fontWeight: FontWeight.w500),
+          style: GoogleFonts.fredoka(
+            fontSize: 11,
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 
-
-
   String _getDashboardBackdrop() {
-    if (userMascot.contains("mascot_coder.png") || userMascot.contains("mascot_girl_login.png")) {
+    if (userMascot.contains("mascot_coder.png") ||
+        userMascot.contains("mascot_girl_login.png")) {
       return "assets/images/engineering_bg.jpg";
     } else if (userMascot.contains("mascot_traditional.png")) {
       return "assets/images/medical_bg.jpg";
@@ -1368,13 +1584,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final double mascotWidth = (screenWidth * 0.58).clamp(180.0, 300.0);
     final double mascotHeight = mascotWidth * 1.33; // 400 height for 300 width
     final double mascotTop = (screenWidth * 0.11).clamp(30.0, 45.0);
-    final double spacerHeight = (mascotTop + mascotHeight * 0.76).clamp(240.0, 350.0);
+    final double spacerHeight = (mascotTop + mascotHeight * 0.76).clamp(
+      240.0,
+      350.0,
+    );
 
     // Web-specific overrides for mascot size, placement, and scroll offsets
     final double finalMascotWidth = isWeb ? 240.0 : mascotWidth;
     final double finalMascotHeight = isWeb ? 320.0 : mascotHeight;
     final double finalMascotTop = isWeb ? 60.0 : (mascotTop + 90.0);
-    final double finalTranslateOffset = isWeb ? -114.0 : -35.0;
+    final double finalTranslateOffset = isWeb ? -30.0 : -35.0;
 
     final statistics = StudyStateManager.instance.statistics;
     final double progress = statistics.todayGoalTotal == 0
@@ -1386,7 +1605,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Filter up to 3 uncompleted tasks for the dashboard checklist widget
     final List<Map<String, dynamic>> upcomingTasks = [];
-    final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
+    final regex = RegExp(
+      r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$',
+      caseSensitive: false,
+    );
     for (int i = 0; i < studyPlan.length; i++) {
       final parsedItem = StudyStateManager.instance.parsePlanItem(studyPlan[i]);
       final itemDay = int.tryParse(parsedItem['dayIndex'] ?? '');
@@ -1459,7 +1681,9 @@ class _HomeScreenState extends State<HomeScreen> {
         Positioned.fill(
           child: SingleChildScrollView(
             controller: _scrollController,
-            padding: const EdgeInsets.only(bottom: 120), // Clear bottom nav dock padding
+            padding: const EdgeInsets.only(
+              bottom: 120,
+            ), // Clear bottom nav dock padding
             child: Center(
               child: SizedBox(
                 width: screenWidth,
@@ -1467,908 +1691,1319 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Stack(
+                        clipBehavior: Clip.none,
                         children: [
-                // Top Navigation Bar
-                _buildTopNav(),
-                // Hero Greeting Section
-                _buildGreeting(),
-                // Today's Goal Progress Card (Glass Card)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 11, // occupies ~60% width
-                        child: _buildGlassCard(
-                          borderRadius: 32.0,
-                          padding: const EdgeInsets.all(20),
-                          child: Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 68,
-                                        height: 68,
-                                        child: CircularProgressIndicator(
-                                          value: progress,
-                                          strokeWidth: 8,
-                                          backgroundColor: const Color(0xFFEEEEF0),
-                                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
+                              // Top Navigation Bar
+                              _buildTopNav(),
+                              // Hero Greeting Section
+                              _buildGreeting(),
+                              // Today's Goal Progress Card (Glass Card)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 11, // occupies ~60% width
+                                      child: _buildGlassCard(
+                                        borderRadius: 32.0,
+                                        padding: const EdgeInsets.all(20),
+                                        child: Row(
+                                          children: [
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Stack(
+                                                  alignment: Alignment.center,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 68,
+                                                      height: 68,
+                                                      child: CircularProgressIndicator(
+                                                        value: progress,
+                                                        strokeWidth: 8,
+                                                        backgroundColor:
+                                                            const Color(
+                                                              0xFFEEEEF0,
+                                                            ),
+                                                        valueColor:
+                                                            const AlwaysStoppedAnimation<
+                                                              Color
+                                                            >(
+                                                              Color(0xFF006A63),
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      "${(progress * 100).round()}%",
+                                                      style:
+                                                          GoogleFonts.plusJakartaSans(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: const Color(
+                                                              0xFF1A1C1E,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  "Progress",
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 9,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: const Color(
+                                                          0xFF8D7072,
+                                                        ),
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(width: 20),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    "TODAY'S GOAL",
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: const Color(
+                                                            0xFF8D7072,
+                                                          ),
+                                                          letterSpacing: 1.0,
+                                                        ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .baseline,
+                                                    textBaseline:
+                                                        TextBaseline.alphabetic,
+                                                    children: [
+                                                      Text(
+                                                        "$completedCount",
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 22,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF006A63,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                      Text(
+                                                        " / $totalTasks",
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 14,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: Colors
+                                                                  .grey
+                                                                  .shade400,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        "Tasks",
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 11,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF8D7072,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          4,
+                                                        ),
+                                                    child: LinearProgressIndicator(
+                                                      value: progress,
+                                                      minHeight: 8,
+                                                      backgroundColor:
+                                                          const Color(
+                                                            0xFFEEEEF0,
+                                                          ),
+                                                      valueColor:
+                                                          const AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Color(0xFF006A63)),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    "Keep going! \u{1F4AA}",
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 9,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: const Color(
+                                                            0xFF8D7072,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Text(
-                                        "${(progress * 100).round()}%",
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1A1C1E),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Progress",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF8D7072),
                                     ),
-                                  ),
-                                ],
+                                    const Spacer(
+                                      flex: 7,
+                                    ), // leaves ~40% space on the right for the mascot
+                                  ],
+                                ),
                               ),
-                              const SizedBox(width: 20),
-                              Expanded(
+                            ],
+                          ),
+                          // LAYER 2: Middle Layer (2nd Layer) - 3D Character Mascot (Dynamic based on selected profile mascot)
+                          Positioned(
+                            right: -20,
+                            top:
+                                finalMascotTop, // Shifted dynamically on web to achieve exactly 20% overlap under Quick Actions card
+                            child: AnimatedBuilder(
+                              animation: _scrollController,
+                              builder: (context, child) {
+                                double offset = 0.0;
+                                if (_scrollController.hasClients) {
+                                  offset = _scrollController.offset;
+                                }
+                                double pull = offset < 0 ? -offset : 0.0;
+                                double mascotTranslateY = (pull * 0.15).clamp(
+                                  0.0,
+                                  10.0,
+                                );
+
+                                return Transform.translate(
+                                  offset: Offset(0.0, mascotTranslateY),
+                                  child: child,
+                                );
+                              },
+                              child: SizedBox(
+                                width: finalMascotWidth,
+                                height: finalMascotHeight,
+                                child: Image.asset(
+                                  userMascot.isNotEmpty
+                                      ? userMascot
+                                      : "assets/images/mascot_boy.png",
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.person_rounded,
+                                      size: 100,
+                                      color: Color(0xFF006A63),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Transform.translate(
+                        offset: Offset(0.0, finalTranslateOffset),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Quick Actions Card (Glass card)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 8,
+                              ),
+                              child: _buildGlassCard(
+                                padding: const EdgeInsets.all(16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      "TODAY'S GOAL",
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF8D7072),
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
                                     Row(
-                                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                                      textBaseline: TextBaseline.alphabetic,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          "$completedCount",
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF006A63),
-                                          ),
-                                        ),
-                                        Text(
-                                          " / $totalTasks",
+                                          "Quick Actions",
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.grey.shade400,
+                                            color: const Color(0xFF1A1C1E),
                                           ),
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "Tasks",
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF8D7072),
+                                        TextButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _currentTab =
+                                                  4; // Planner setup tab
+                                            });
+                                            EggyController.instance.currentTab =
+                                                3;
+                                          },
+                                          child: Text(
+                                            "Edit",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF006A63),
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: LinearProgressIndicator(
-                                        value: progress,
-                                        minHeight: 8,
-                                        backgroundColor: const Color(0xFFEEEEF0),
-                                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      "Keep going! \u{1F4AA}",
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF8D7072),
-                                      ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Center(
+                                            child: DashboardQuickActionItem(
+                                              icon: Icons
+                                                  .playlist_add_check_rounded,
+                                              label: "New Task",
+                                              bgColor: const Color(0xFFE8F5F1),
+                                              iconColor: const Color(
+                                                0xFF006A63,
+                                              ),
+                                              onTap: () =>
+                                                  _showAddTaskDialogOnDashboard(
+                                                    context,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Center(
+                                            child: DashboardQuickActionItem(
+                                              icon:
+                                                  Icons.calendar_today_rounded,
+                                              label: "Schedule",
+                                              bgColor: const Color(0xFFF3E8FF),
+                                              iconColor: const Color(
+                                                0xFF7C3AED,
+                                              ),
+                                              onTap: () {
+                                                setState(() {
+                                                  _currentTab = 1;
+                                                });
+                                                EggyController
+                                                        .instance
+                                                        .currentTab =
+                                                    1;
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Center(
+                                            child: DashboardQuickActionItem(
+                                              icon: Icons.track_changes_rounded,
+                                              label: "Goals",
+                                              bgColor: const Color(0xFFFFEDD5),
+                                              iconColor: const Color(
+                                                0xFFEA580C,
+                                              ),
+                                              onTap: () {
+                                                setState(() {
+                                                  _currentTab = 4;
+                                                });
+                                                EggyController
+                                                        .instance
+                                                        .currentTab =
+                                                    4;
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Center(
+                                            child: DashboardQuickActionItem(
+                                              icon: Icons.bar_chart_rounded,
+                                              label: "Reports",
+                                              bgColor: const Color(0xFFE0E7FF),
+                                              iconColor: const Color(
+                                                0xFF4F46E5,
+                                              ),
+                                              onTap: _showReportsDialog,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const Spacer(flex: 7), // leaves ~40% space on the right for the mascot
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // LAYER 2: Middle Layer (2nd Layer) - 3D Character Mascot (Dynamic based on selected profile mascot)
-            Positioned(
-              right: -20,
-              top: finalMascotTop, // Shifted dynamically on web to achieve exactly 20% overlap under Quick Actions card
-              child: AnimatedBuilder(
-                animation: _scrollController,
-                builder: (context, child) {
-                  double offset = 0.0;
-                  if (_scrollController.hasClients) {
-                    offset = _scrollController.offset;
-                  }
-                  double pull = offset < 0 ? -offset : 0.0;
-                  double mascotTranslateY = (pull * 0.15).clamp(0.0, 10.0);
-
-                  return Transform.translate(
-                    offset: Offset(0.0, mascotTranslateY),
-                    child: child,
-                  );
-                },
-                child: SizedBox(
-                  width: finalMascotWidth,
-                  height: finalMascotHeight,
-                  child: Image.asset(
-                    userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.person_rounded,
-                        size: 100,
-                        color: Color(0xFF006A63),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Transform.translate(
-          offset: Offset(0.0, finalTranslateOffset),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Quick Actions Card (Glass card)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: _buildGlassCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Quick Actions",
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1A1C1E),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 8,
                               ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _currentTab = 4; // Planner setup tab
-                                });
-                                EggyController.instance.currentTab = 3;
-                              },
-                              child: Text(
-                                "Edit",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF006A63),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Center(
-                                child: DashboardQuickActionItem(
-                                  icon: Icons.playlist_add_check_rounded,
-                                  label: "New Task",
-                                  bgColor: const Color(0xFFE8F5F1),
-                                  iconColor: const Color(0xFF006A63),
-                                  onTap: () => _showAddTaskDialogOnDashboard(context),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: DashboardQuickActionItem(
-                                  icon: Icons.calendar_today_rounded,
-                                  label: "Schedule",
-                                  bgColor: const Color(0xFFF3E8FF),
-                                  iconColor: const Color(0xFF7C3AED),
-                                  onTap: () {
-                                    setState(() {
-                                      _currentTab = 1;
-                                    });
-                                    EggyController.instance.currentTab = 1;
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: DashboardQuickActionItem(
-                                  icon: Icons.track_changes_rounded,
-                                  label: "Goals",
-                                  bgColor: const Color(0xFFFFEDD5),
-                                  iconColor: const Color(0xFFEA580C),
-                                  onTap: () {
-                                    setState(() {
-                                      _currentTab = 4;
-                                    });
-                                    EggyController.instance.currentTab = 4;
-                                  },
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: DashboardQuickActionItem(
-                                  icon: Icons.bar_chart_rounded,
-                                  label: "Reports",
-                                  bgColor: const Color(0xFFE0E7FF),
-                                  iconColor: const Color(0xFF4F46E5),
-                                  onTap: _showReportsDialog,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: _buildGlassCard(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: _DashboardMetric(
-                            value: '${statistics.weeklyCompletedMinutes}/${statistics.weeklyGoalMinutes}m',
-                            label: 'Weekly Goal',
-                          ),
-                        ),
-                        Expanded(
-                          child: _DashboardMetric(
-                            value: '${statistics.todayStudyMinutes}m',
-                            label: 'Study Hours',
-                          ),
-                        ),
-                        Expanded(
-                          child: _DashboardMetric(
-                            value: '${statistics.streakDays}',
-                            label: 'Current Streak',
-                          ),
-                        ),
-                        Expanded(
-                          child: _DashboardMetric(
-                            value: '${statistics.sessionsToday}',
-                            label: 'Sessions',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: _buildGlassCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const Text("🔥", style: TextStyle(fontSize: 16)),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      "Learning Streak & Achievements",
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF1A1C1E),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                _showAchievementsDialog();
-                              },
-                              child: Text(
-                                "See all",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF006A63),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Stats row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildPremiumStatItem(
-                              icon: Icons.local_fire_department_rounded,
-                              iconColor: const Color(0xFFF97316),
-                              value: "${statistics.streakDays}",
-                              label: "Day Streak",
-                            ),
-                            _buildPremiumStatItem(
-                              icon: Icons.star_rounded,
-                              iconColor: const Color(0xFFFBBF24),
-                              value: "${(statistics.totalStudyMinutes * 15 + statistics.sessionsCompleted * 100 + statistics.streakDays * 50).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}",
-                              label: "XP Earned",
-                            ),
-                            _buildPremiumStatItem(
-                              icon: Icons.menu_book_rounded,
-                              iconColor: const Color(0xFF3B82F6),
-                              value: "${statistics.sessionsCompleted}",
-                              label: "Sessions",
-                            ),
-                            _buildPremiumStatItem(
-                              icon: Icons.watch_later_rounded,
-                              iconColor: const Color(0xFF10B981),
-                              value: "${(statistics.totalStudyMinutes / 60.0).toStringAsFixed(1)}",
-                              label: "Focus Hours",
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Crystal Collection Section
-                        Builder(
-                          builder: (context) {
-                            int completedTopics = 0;
-                            for (final subject in subjects) {
-                              completedTopics += subject.topics.where((t) => t.isCompleted).length;
-                            }
-                            int completedSubjects = subjects.where((subject) =>
-                              subject.topics.isNotEmpty && subject.topics.every((t) => t.isCompleted)
-                            ).length;
-
-                            final int focusCrystals = statistics.sessionsCompleted * 2 + (statistics.totalStudyMinutes ~/ 20);
-                            final int wisdomCrystals = completedTopics * 5;
-                            final int masteryCrystals = completedSubjects * 10 + (completedTopics ~/ 2);
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Crystal Collection",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              child: _buildGlassCard(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.4),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Text("💙", style: TextStyle(fontSize: 14)),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    "$focusCrystals",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF1A1C1E),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    "Focus",
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 8,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                      child: _DashboardMetric(
+                                        value:
+                                            '${statistics.weeklyCompletedMinutes}/${statistics.weeklyGoalMinutes}m',
+                                        label: 'Weekly Goal',
                                       ),
                                     ),
                                     Expanded(
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.4),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Text("🟣", style: TextStyle(fontSize: 14)),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    "$wisdomCrystals",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF1A1C1E),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    "Wisdom",
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 8,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                      child: _DashboardMetric(
+                                        value:
+                                            '${statistics.todayStudyMinutes}m',
+                                        label: 'Study Hours',
                                       ),
                                     ),
                                     Expanded(
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.4),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Text("🟡", style: TextStyle(fontSize: 14)),
-                                            const SizedBox(width: 4),
-                                            Flexible(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    "$masteryCrystals",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: const Color(0xFF1A1C1E),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    "Mastery",
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 8,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                      child: _DashboardMetric(
+                                        value: '${statistics.streakDays}',
+                                        label: 'Current Streak',
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _DashboardMetric(
+                                        value: '${statistics.sessionsToday}',
+                                        label: 'Sessions',
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Next Achievement Section
-                        Builder(
-                          builder: (context) {
-                            int targetSessions = 10;
-                            int completed = statistics.sessionsCompleted;
-                            while (completed >= targetSessions) {
-                              targetSessions += 10; // Next tier
-                            }
-                            int remaining = targetSessions - completed;
-                            double progressPct = (completed / targetSessions).clamp(0.0, 1.0);
-                            int progressPctInt = (progressPct * 100).round();
-
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6366F1).withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.15), width: 1),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFEEF2F6),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Text("🏆", style: TextStyle(fontSize: 16)),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "Next Achievement",
-                                              style: GoogleFonts.plusJakartaSans(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.grey.shade500,
-                                              ),
-                                            ),
-                                            Text(
-                                              "Focus Master",
-                                              style: GoogleFonts.plusJakartaSans(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                                color: const Color(0xFF1A1C1E),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            "$progressPctInt%",
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: const Color(0xFF6366F1),
-                                            ),
-                                          ),
-                                          Text(
-                                            "$remaining study sessions remaining",
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.grey.shade500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  // Progress bar
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: progressPct,
-                                      backgroundColor: const Color(0xFFE2E8F0),
-                                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                                      minHeight: 8,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        "Next Unlock",
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                      ),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.shield_rounded, color: Color(0xFFF59E0B), size: 12),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            "Crystal Guardian Badge",
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: const Color(0xFF1A1C1E),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: _buildGlassCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Text("🤖", style: TextStyle(fontSize: 16)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "Smart Recommendations",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF1A1C1E),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                _showRecommendationsInfoDialog();
-                              },
-                              child: Text(
-                                "See all",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF006A63),
-                                ),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Builder(
-                          builder: (context) {
-                            final recommendations = _generateRecommendations();
-                            return Column(
-                              children: List.generate(recommendations.length, (idx) {
-                                final rec = recommendations[idx];
-                                final isLast = idx == recommendations.length - 1;
-                                return Column(
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              child: _buildGlassCard(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(rec['icon'] as IconData, color: rec['iconColor'] as Color, size: 18),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                    // Title row
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Row(
+                                            children: [
+                                              const Text(
+                                                "🔥",
+                                                style: TextStyle(fontSize: 16),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  "Learning Streak & Achievements",
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: const Color(
+                                                          0xFF1A1C1E,
+                                                        ),
+                                                      ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            _showAchievementsDialog();
+                                          },
+                                          child: Text(
+                                            "See all",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF006A63),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // Stats row
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        _buildPremiumStatItem(
+                                          icon: Icons
+                                              .local_fire_department_rounded,
+                                          iconColor: const Color(0xFFF97316),
+                                          value: "${statistics.streakDays}",
+                                          label: "Day Streak",
+                                        ),
+                                        _buildPremiumStatItem(
+                                          icon: Icons.star_rounded,
+                                          iconColor: const Color(0xFFFBBF24),
+                                          value:
+                                              "${(statistics.totalStudyMinutes * 15 + statistics.sessionsCompleted * 100 + statistics.streakDays * 50).toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}",
+                                          label: "XP Earned",
+                                        ),
+                                        _buildPremiumStatItem(
+                                          icon: Icons.menu_book_rounded,
+                                          iconColor: const Color(0xFF3B82F6),
+                                          value:
+                                              "${statistics.sessionsCompleted}",
+                                          label: "Sessions",
+                                        ),
+                                        _buildPremiumStatItem(
+                                          icon: Icons.watch_later_rounded,
+                                          iconColor: const Color(0xFF10B981),
+                                          value:
+                                              "${(statistics.totalStudyMinutes / 60.0).toStringAsFixed(1)}",
+                                          label: "Focus Hours",
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Crystal Collection Section
+                                    Builder(
+                                      builder: (context) {
+                                        int completedTopics = 0;
+                                        for (final subject in subjects) {
+                                          completedTopics += subject.topics
+                                              .where((t) => t.isCompleted)
+                                              .length;
+                                        }
+                                        int completedSubjects = subjects
+                                            .where(
+                                              (subject) =>
+                                                  subject.topics.isNotEmpty &&
+                                                  subject.topics.every(
+                                                    (t) => t.isCompleted,
+                                                  ),
+                                            )
+                                            .length;
+
+                                        final int focusCrystals =
+                                            statistics.sessionsCompleted * 2 +
+                                            (statistics.totalStudyMinutes ~/
+                                                20);
+                                        final int wisdomCrystals =
+                                            completedTopics * 5;
+                                        final int masteryCrystals =
+                                            completedSubjects * 10 +
+                                            (completedTopics ~/ 2);
+
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Crystal Collection",
+                                              style:
+                                                  GoogleFonts.plusJakartaSans(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.grey.shade700,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
-                                                Text(
-                                                  rec['title'] as String,
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.grey.shade500,
+                                                Expanded(
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 4,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 8,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withOpacity(0.4),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withOpacity(0.6),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Text(
+                                                          "💙",
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Flexible(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              Text(
+                                                                "$focusCrystals",
+                                                                style: GoogleFonts.plusJakartaSans(
+                                                                  fontSize: 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color: const Color(
+                                                                    0xFF1A1C1E,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                "Focus",
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: GoogleFonts.plusJakartaSans(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade600,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  rec['content'] as String,
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: const Color(0xFF1A1C1E),
+                                                Expanded(
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 4,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 8,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withOpacity(0.4),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withOpacity(0.6),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Text(
+                                                          "🟣",
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Flexible(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              Text(
+                                                                "$wisdomCrystals",
+                                                                style: GoogleFonts.plusJakartaSans(
+                                                                  fontSize: 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color: const Color(
+                                                                    0xFF1A1C1E,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                "Wisdom",
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: GoogleFonts.plusJakartaSans(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade600,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 4,
+                                                        ),
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 8,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withOpacity(0.4),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            16,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withOpacity(0.6),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        const Text(
+                                                          "🟡",
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Flexible(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              Text(
+                                                                "$masteryCrystals",
+                                                                style: GoogleFonts.plusJakartaSans(
+                                                                  fontSize: 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color: const Color(
+                                                                    0xFF1A1C1E,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                "Mastery",
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: GoogleFonts.plusJakartaSans(
+                                                                  fontSize: 8,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade600,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // Next Achievement Section
+                                    Builder(
+                                      builder: (context) {
+                                        int targetSessions = 10;
+                                        int completed =
+                                            statistics.sessionsCompleted;
+                                        while (completed >= targetSessions) {
+                                          targetSessions += 10; // Next tier
+                                        }
+                                        int remaining =
+                                            targetSessions - completed;
+                                        double progressPct =
+                                            (completed / targetSessions).clamp(
+                                              0.0,
+                                              1.0,
+                                            );
+                                        int progressPctInt = (progressPct * 100)
+                                            .round();
+
+                                        return Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: const Color(
+                                              0xFF6366F1,
+                                            ).withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(
+                                                0xFF6366F1,
+                                              ).withOpacity(0.15),
+                                              width: 1,
+                                            ),
                                           ),
-                                        ],
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.all(8),
+                                                    decoration:
+                                                        const BoxDecoration(
+                                                          color: Color(
+                                                            0xFFEEF2F6,
+                                                          ),
+                                                          shape:
+                                                              BoxShape.circle,
+                                                        ),
+                                                    child: const Text(
+                                                      "🏆",
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "Next Achievement",
+                                                          style:
+                                                              GoogleFonts.plusJakartaSans(
+                                                                fontSize: 10,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade500,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          "Focus Master",
+                                                          style:
+                                                              GoogleFonts.plusJakartaSans(
+                                                                fontSize: 13,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color:
+                                                                    const Color(
+                                                                      0xFF1A1C1E,
+                                                                    ),
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.end,
+                                                    children: [
+                                                      Text(
+                                                        "$progressPctInt%",
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 13,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF6366F1,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                      Text(
+                                                        "$remaining study sessions remaining",
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 9,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: Colors
+                                                                  .grey
+                                                                  .shade500,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 10),
+                                              // Progress bar
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                child: LinearProgressIndicator(
+                                                  value: progressPct,
+                                                  backgroundColor: const Color(
+                                                    0xFFE2E8F0,
+                                                  ),
+                                                  valueColor:
+                                                      const AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Color(0xFF6366F1)),
+                                                  minHeight: 8,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    "Next Unlock",
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 9,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors
+                                                              .grey
+                                                              .shade500,
+                                                        ),
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.shield_rounded,
+                                                        color: Color(
+                                                          0xFFF59E0B,
+                                                        ),
+                                                        size: 12,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        "Crystal Guardian Badge",
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 9,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF1A1C1E,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              child: _buildGlassCard(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Text(
+                                              "🤖",
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              "Smart Recommendations",
+                                              style:
+                                                  GoogleFonts.plusJakartaSans(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: const Color(
+                                                      0xFF1A1C1E,
+                                                    ),
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            _showRecommendationsInfoDialog();
+                                          },
+                                          child: Text(
+                                            "See all",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF006A63),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Builder(
+                                      builder: (context) {
+                                        final recommendations =
+                                            _generateRecommendations();
+                                        return Column(
+                                          children: List.generate(recommendations.length, (
+                                            idx,
+                                          ) {
+                                            final rec = recommendations[idx];
+                                            final isLast =
+                                                idx ==
+                                                recommendations.length - 1;
+                                            return Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 8.0,
+                                                      ),
+                                                  child: Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Icon(
+                                                        rec['icon'] as IconData,
+                                                        color:
+                                                            rec['iconColor']
+                                                                as Color,
+                                                        size: 18,
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              rec['title']
+                                                                  as String,
+                                                              style: GoogleFonts.plusJakartaSans(
+                                                                fontSize: 10,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade500,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                              height: 2,
+                                                            ),
+                                                            Text(
+                                                              rec['content']
+                                                                  as String,
+                                                              style: GoogleFonts.plusJakartaSans(
+                                                                fontSize: 12,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color:
+                                                                    const Color(
+                                                                      0xFF1A1C1E,
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                if (!isLast)
+                                                  Divider(
+                                                    color: Colors.grey.shade300,
+                                                    height: 16,
+                                                  ),
+                                              ],
+                                            );
+                                          }),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Weather & Quote side-by-side
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 110,
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFFE8F5F1,
+                                        ).withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(28),
+                                        border: Border.all(
+                                          color: const Color(0xFFE8F5F1),
+                                        ),
+                                      ),
+                                      child: Builder(
+                                        builder: (context) {
+                                          final weather = _getDynamicWeather();
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    weather['temp'] as String,
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: const Color(
+                                                            0xFF1A1C1E,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                  Icon(
+                                                    weather['icon'] as IconData,
+                                                    color:
+                                                        weather['iconColor']
+                                                            as Color,
+                                                    size: 20,
+                                                  ),
+                                                ],
+                                              ),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    weather['status'] as String,
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: const Color(
+                                                            0xFF594042,
+                                                          ),
+                                                        ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Row(
+                                                    children: [
+                                                      const Icon(
+                                                        Icons
+                                                            .location_on_rounded,
+                                                        color: Colors.grey,
+                                                        size: 10,
+                                                      ),
+                                                      const SizedBox(width: 2),
+                                                      Text(
+                                                        weather['location']
+                                                            as String,
+                                                        style:
+                                                            GoogleFonts.plusJakartaSans(
+                                                              fontSize: 8,
+                                                              color: Colors
+                                                                  .grey
+                                                                  .shade500,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       ),
                                     ),
-                                    if (!isLast)
-                                      Divider(color: Colors.grey.shade300, height: 16),
-                                  ],
-                                );
-                              }),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Weather & Quote side-by-side
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 110,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5F1).withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: const Color(0xFFE8F5F1)),
-                          ),
-                          child: Builder(
-                            builder: (context) {
-                              final weather = _getDynamicWeather();
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        weather['temp'] as String,
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF1A1C1E),
-                                        ),
-                                      ),
-                                      Icon(weather['icon'] as IconData, color: weather['iconColor'] as Color, size: 20),
-                                    ],
                                   ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        weather['status'] as String,
-                                        style: GoogleFonts.plusJakartaSans(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF594042),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Container(
+                                      height: 110,
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          colors: [
+                                            Color(0xFF064E3B),
+                                            Color(0xFF022C22),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                         ),
+                                        borderRadius: BorderRadius.circular(28),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Row(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
-                                          const Icon(Icons.location_on_rounded, color: Colors.grey, size: 10),
-                                          const SizedBox(width: 2),
+                                          const Icon(
+                                            Icons.format_quote_rounded,
+                                            color: Color(0xFF34D399),
+                                            size: 20,
+                                          ),
+                                          const SizedBox(height: 4),
                                           Text(
-                                            weather['location'] as String,
+                                            "Small progress every day adds up to big results.",
                                             style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 8,
-                                              color: Colors.grey.shade500,
+                                              fontSize: 10,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              height: 1.3,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ],
-                              );
-                            }
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Container(
-                          height: 110,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF064E3B), Color(0xFF022C22)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(28),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.format_quote_rounded, color: Color(0xFF34D399), size: 20),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Small progress every day adds up to big results.",
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.3,
-                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
         ),
       ],
-    ),
-  ),
-),
-),
-),
-),
-],
-);
-}
+    );
+  }
 
   Widget _buildStudyRoomTab() {
     final List<String> subjectNames = subjects.map((s) => s.name).toList();
@@ -2392,7 +3027,8 @@ class _HomeScreenState extends State<HomeScreen> {
         onSessionComplete: (double hours, String subject) {
           setState(() {
             final String dayKey = _getCurrentDayKey();
-            weeklyProgressHours[dayKey] = (weeklyProgressHours[dayKey] ?? 0.0) + hours;
+            weeklyProgressHours[dayKey] =
+                (weeklyProgressHours[dayKey] ?? 0.0) + hours;
           });
           saveData();
         },
@@ -2420,12 +3056,15 @@ class _HomeScreenState extends State<HomeScreen> {
             // Log progress
             final double hrs = _studyRoomDurationMinutes / 60.0;
             final String dayKey = _getCurrentDayKey();
-            weeklyProgressHours[dayKey] = (weeklyProgressHours[dayKey] ?? 0.0) + hrs;
+            weeklyProgressHours[dayKey] =
+                (weeklyProgressHours[dayKey] ?? 0.0) + hrs;
             saveData();
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("\u{1F389} Focus session completed: $_studyRoomDurationMinutes mins of $_studyRoomSelectedSubject!"),
+                content: Text(
+                  "\u{1F389} Focus session completed: $_studyRoomDurationMinutes mins of $_studyRoomSelectedSubject!",
+                ),
                 behavior: SnackBarBehavior.floating,
               ),
             );
@@ -2455,143 +3094,161 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          GestureDetector(
-            onTap: () {
-              _scaffoldKey.currentState?.openDrawer();
-            },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.menu_rounded, color: Color(0xFF1A1C1E), size: 22),
-            ),
-          ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: _showReportsDialog,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF1A1C1E), size: 22),
-                    ),
-                    Positioned(
-                      top: 2,
-                      right: 2,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEA580C),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          "2",
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+          children: [
+            GestureDetector(
+              onTap: () {
+                _scaffoldKey.currentState?.openDrawer();
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
+                child: const Icon(
+                  Icons.menu_rounded,
+                  color: Color(0xFF1A1C1E),
+                  size: 22,
+                ),
               ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => EditProfileScreen(
-                        currentName: userName,
-                        currentCourse: userCourse,
-                        currentYear: userYear,
+            ),
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _showReportsDialog,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: Color(0xFF1A1C1E),
+                          size: 22,
+                        ),
                       ),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(0.0, 1.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOutCubic;
-                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                    ),
-                  );
-                  if (result != null && result is Map<String, String>) {
-                    final prefs = await SharedPreferences.getInstance();
-                    setState(() {
-                      userName = result['name'] ?? "";
-                      userCourse = result['course'] ?? "";
-                      userYear = result['year'] ?? "";
-                    });
-                    EggyController.instance.userCourse = userCourse;
-                    EggyController.instance.triggerJoyBounce();
-                    await prefs.setString("user_name", userName);
-                    await prefs.setString("user_course", userCourse);
-                    await prefs.setString("user_year", userYear);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEA580C),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            "2",
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.transparent,
-                    backgroundImage: AssetImage(userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png"),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            EditProfileScreen(
+                              currentName: userName,
+                              currentCourse: userCourse,
+                              currentYear: userYear,
+                            ),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                              const begin = Offset(0.0, 1.0);
+                              const end = Offset.zero;
+                              const curve = Curves.easeInOutCubic;
+                              var tween = Tween(
+                                begin: begin,
+                                end: end,
+                              ).chain(CurveTween(curve: curve));
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                      ),
+                    );
+                    if (result != null && result is Map<String, String>) {
+                      final prefs = await SharedPreferences.getInstance();
+                      setState(() {
+                        userName = result['name'] ?? "";
+                        userCourse = result['course'] ?? "";
+                        userYear = result['year'] ?? "";
+                      });
+                      EggyController.instance.userCourse = userCourse;
+                      EggyController.instance.triggerJoyBounce();
+                      await prefs.setString("user_name", userName);
+                      await prefs.setString("user_course", userCourse);
+                      await prefs.setString("user_year", userYear);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.transparent,
+                      backgroundImage: AssetImage(
+                        userMascot.isNotEmpty
+                            ? userMascot
+                            : "assets/images/mascot_boy.png",
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   // Premium navigation drawer
   Widget _buildDrawer() {
     final double screenWidth = MediaQuery.of(context).size.width;
     final statistics = StudyStateManager.instance.statistics;
-    
+
     return Drawer(
       width: (screenWidth * 0.82).clamp(280.0, 360.0),
       backgroundColor: Colors.transparent,
@@ -2620,32 +3277,79 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Scrollable Sections
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       children: [
                         _buildDrawerSectionTitle("Account"),
-                        _buildDrawerItem(Icons.person_outline_rounded, "My Profile", () => _openProfileEdit()),
-                        _buildDrawerItem(Icons.face_retouching_natural_rounded, "Edit Avatar", () => _openProfileEdit()),
+                        _buildDrawerItem(
+                          Icons.person_outline_rounded,
+                          "My Profile",
+                          () => _openProfileEdit(),
+                        ),
+                        _buildDrawerItem(
+                          Icons.face_retouching_natural_rounded,
+                          "Edit Avatar",
+                          () => _openProfileEdit(),
+                        ),
                         const SizedBox(height: 18),
-                        
+
                         _buildDrawerSectionTitle("Progress"),
-                        _buildDrawerItem(Icons.emoji_events_outlined, "Achievements", () => _showNotImplemented("Achievements")),
-                        _buildDrawerItem(Icons.star_outline_rounded, "Crystal Vault", () => _showNotImplemented("Crystal Vault")),
-                        _buildDrawerItem(Icons.insights_rounded, "Statistics", () => _showNotImplemented("Statistics")),
+                        _buildDrawerItem(
+                          Icons.emoji_events_outlined,
+                          "Achievements",
+                          () => _showNotImplemented("Achievements"),
+                        ),
+                        _buildDrawerItem(
+                          Icons.star_outline_rounded,
+                          "Crystal Vault",
+                          () => _showNotImplemented("Crystal Vault"),
+                        ),
+                        _buildDrawerItem(
+                          Icons.insights_rounded,
+                          "Statistics",
+                          () => _showNotImplemented("Statistics"),
+                        ),
                         const SizedBox(height: 18),
-                        
+
                         _buildDrawerSectionTitle("Customization"),
-                        _buildDrawerItem(Icons.palette_outlined, "Themes & Appearance", () => _showNotImplemented("Themes & Appearance")),
-                        _buildDrawerItem(Icons.notifications_none_rounded, "Notifications", () => _showNotImplemented("Notifications")),
+                        _buildDrawerItem(
+                          Icons.palette_outlined,
+                          "Themes & Appearance",
+                          () => _showNotImplemented("Themes & Appearance"),
+                        ),
+                        _buildDrawerItem(
+                          Icons.notifications_none_rounded,
+                          "Notifications",
+                          () => _showNotImplemented("Notifications"),
+                        ),
                         const SizedBox(height: 18),
-                        
+
                         _buildDrawerSectionTitle("Cloud"),
-                        _buildDrawerItem(Icons.cloud_queue_rounded, "Backup & Sync", () => _showNotImplemented("Backup & Sync")),
+                        _buildDrawerItem(
+                          Icons.cloud_queue_rounded,
+                          "Backup & Sync",
+                          () => _showNotImplemented("Backup & Sync"),
+                        ),
                         const SizedBox(height: 18),
-                        
+
                         _buildDrawerSectionTitle("Support"),
-                        _buildDrawerItem(Icons.help_outline_rounded, "Help & Support", () => _showNotImplemented("Help & Support")),
-                        _buildDrawerItem(Icons.gpp_maybe_outlined, "Privacy Policy", () => _showNotImplemented("Privacy & Policy")),
-                        _buildDrawerItem(Icons.info_outline_rounded, "About Lumina", () => _showNotImplemented("About Lumina")),
+                        _buildDrawerItem(
+                          Icons.help_outline_rounded,
+                          "Help & Support",
+                          () => _showNotImplemented("Help & Support"),
+                        ),
+                        _buildDrawerItem(
+                          Icons.gpp_maybe_outlined,
+                          "Privacy Policy",
+                          () => _showNotImplemented("Privacy & Policy"),
+                        ),
+                        _buildDrawerItem(
+                          Icons.info_outline_rounded,
+                          "About Lumina",
+                          () => _showNotImplemented("About Lumina"),
+                        ),
                       ],
                     ),
                   ),
@@ -2655,13 +3359,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        _buildDrawerItem(Icons.settings_outlined, "Settings", () {
-                          setState(() {
-                            _currentTab = 4; // settings tab
-                          });
-                          EggyController.instance.currentTab = 3;
-                        }),
-                        _buildDrawerItem(Icons.logout_rounded, "Logout", () => _handleLogout(), isDestructive: true),
+                        _buildDrawerItem(
+                          Icons.settings_outlined,
+                          "Settings",
+                          () {
+                            setState(() {
+                              _currentTab = 4; // settings tab
+                            });
+                            EggyController.instance.currentTab = 3;
+                          },
+                        ),
+                        _buildDrawerItem(
+                          Icons.logout_rounded,
+                          "Logout",
+                          () => _handleLogout(),
+                          isDestructive: true,
+                        ),
                       ],
                     ),
                   ),
@@ -2698,9 +3411,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF006A63).withOpacity(0.3), width: 2),
+                  border: Border.all(
+                    color: const Color(0xFF006A63).withOpacity(0.3),
+                    width: 2,
+                  ),
                   image: DecorationImage(
-                    image: AssetImage(userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png"),
+                    image: AssetImage(
+                      userMascot.isNotEmpty
+                          ? userMascot
+                          : "assets/images/mascot_boy.png",
+                    ),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -2732,7 +3452,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Streak Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(16),
@@ -2859,7 +3582,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Icon(
                       icon,
                       size: 18,
-                      color: isDestructive ? Colors.red.shade700 : const Color(0xFF006A63),
+                      color: isDestructive
+                          ? Colors.red.shade700
+                          : const Color(0xFF006A63),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -2869,14 +3594,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isDestructive ? Colors.red.shade700 : const Color(0xFF1A1C1E),
+                        color: isDestructive
+                            ? Colors.red.shade700
+                            : const Color(0xFF1A1C1E),
                       ),
                     ),
                   ),
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: isDestructive ? Colors.red.withOpacity(0.4) : const Color(0xFF8D7072).withOpacity(0.5),
+                    color: isDestructive
+                        ? Colors.red.withOpacity(0.4)
+                        : const Color(0xFF8D7072).withOpacity(0.5),
                   ),
                 ],
               ),
@@ -2901,16 +3630,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => EditProfileScreen(
-          currentName: userName,
-          currentCourse: userCourse,
-          currentYear: userYear,
-        ),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            EditProfileScreen(
+              currentName: userName,
+              currentCourse: userCourse,
+              currentYear: userYear,
+            ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(0.0, 1.0);
           const end = Offset.zero;
           const curve = Curves.easeInOutCubic;
-          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
           return SlideTransition(
             position: animation.drive(tween),
             child: child,
@@ -3045,10 +3778,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(
-              color: bgColor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
             child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(height: 6),
@@ -3082,7 +3812,10 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.6),
               borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.4),
+                width: 1.5,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.03),
@@ -3099,22 +3832,65 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-    List<String> _getDefaultTopics(String subjectName) {
+  List<String> _getDefaultTopics(String subjectName) {
     final query = subjectName.toLowerCase();
-    if (query.contains("data structure") || query.contains("algorithm") || query.contains("dsa")) {
+    if (query.contains("data structure") ||
+        query.contains("algorithm") ||
+        query.contains("dsa")) {
       return ["Arrays", "Linked Lists", "Stacks", "Queues", "Trees", "Graphs"];
     } else if (query.contains("physics")) {
-      return ["Mechanics", "Thermodynamics", "Electromagnetism", "Optics", "Modern Physics"];
+      return [
+        "Mechanics",
+        "Thermodynamics",
+        "Electromagnetism",
+        "Optics",
+        "Modern Physics",
+      ];
     } else if (query.contains("chemistry")) {
-      return ["Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Biochemistry"];
-    } else if (query.contains("math") || query.contains("calculus") || query.contains("algebra")) {
-      return ["Algebra", "Calculus", "Probability", "Linear Algebra", "Geometry"];
-    } else if (query.contains("database") || query.contains("dbms") || query.contains("sql")) {
-      return ["Introduction to DBMS", "Entity-Relationship Model", "Relational Database Design", "SQL Queries", "Indexing & Hashing", "Transactions"];
+      return [
+        "Organic Chemistry",
+        "Inorganic Chemistry",
+        "Physical Chemistry",
+        "Biochemistry",
+      ];
+    } else if (query.contains("math") ||
+        query.contains("calculus") ||
+        query.contains("algebra")) {
+      return [
+        "Algebra",
+        "Calculus",
+        "Probability",
+        "Linear Algebra",
+        "Geometry",
+      ];
+    } else if (query.contains("database") ||
+        query.contains("dbms") ||
+        query.contains("sql")) {
+      return [
+        "Introduction to DBMS",
+        "Entity-Relationship Model",
+        "Relational Database Design",
+        "SQL Queries",
+        "Indexing & Hashing",
+        "Transactions",
+      ];
     } else if (query.contains("network")) {
-      return ["Physical Layer", "Data Link Layer", "Network Layer", "Transport Layer", "Application Layer"];
+      return [
+        "Physical Layer",
+        "Data Link Layer",
+        "Network Layer",
+        "Transport Layer",
+        "Application Layer",
+      ];
     } else {
-      return ["Introduction", "Fundamentals", "Core Concepts", "Advanced Topics", "Practical Applications", "Revision"];
+      return [
+        "Introduction",
+        "Fundamentals",
+        "Core Concepts",
+        "Advanced Topics",
+        "Practical Applications",
+        "Revision",
+      ];
     }
   }
 
@@ -3131,7 +3907,9 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+            final double keyboardHeight = MediaQuery.of(
+              context,
+            ).viewInsets.bottom;
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               margin: EdgeInsets.only(bottom: keyboardHeight),
@@ -3140,7 +3918,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -3157,7 +3938,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF8D7072)),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Color(0xFF8D7072),
+                          ),
                         ),
                       ],
                     ),
@@ -3185,11 +3969,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             localSubjectName = val;
                           });
                         },
-                        style: GoogleFonts.plusJakartaSans(fontSize: 15, color: const Color(0xFF1A1C1E)),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 15,
+                          color: const Color(0xFF1A1C1E),
+                        ),
                         decoration: InputDecoration(
                           hintText: "e.g., Data Structures & Algorithms",
-                          hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          hintStyle: GoogleFonts.plusJakartaSans(
+                            color: Colors.grey.shade400,
+                            fontSize: 14,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           border: InputBorder.none,
                         ),
                       ),
@@ -3235,12 +4028,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(16),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isSel ? activeBg : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSel ? badgeColor : const Color(0xFFE2E8F0),
+                                    color: isSel
+                                        ? badgeColor
+                                        : const Color(0xFFE2E8F0),
                                     width: isSel ? 1.5 : 1.0,
                                   ),
                                 ),
@@ -3250,7 +4047,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
-                                      color: isSel ? badgeColor : const Color(0xFF594042),
+                                      color: isSel
+                                          ? badgeColor
+                                          : const Color(0xFF594042),
                                     ),
                                   ),
                                 ),
@@ -3262,7 +4061,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 28),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0FDFA),
                         borderRadius: BorderRadius.circular(20),
@@ -3270,27 +4072,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0D9488), size: 22),
+                          const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: Color(0xFF0D9488),
+                            size: 22,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                  Text(
-                                    "AI Syllabus Generator",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF0F766E),
-                                    ),
+                                Text(
+                                  "AI Syllabus Generator",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF0F766E),
                                   ),
-                                  Text(
-                                    "Automatically populate with standard core chapters",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 10,
-                                      color: const Color(0xFF0D9488),
-                                    ),
+                                ),
+                                Text(
+                                  "Automatically populate with standard core chapters",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 10,
+                                    color: const Color(0xFF0D9488),
                                   ),
+                                ),
                               ],
                             ),
                           ),
@@ -3314,35 +4120,51 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? null
                             : () async {
                                 final name = localSubjectName.trim();
-                                if (subjects.any((s) => s.name.toLowerCase() == name.toLowerCase())) {
+                                if (subjects.any(
+                                  (s) =>
+                                      s.name.toLowerCase() ==
+                                      name.toLowerCase(),
+                                )) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Subject already exists!")),
+                                    const SnackBar(
+                                      content: Text("Subject already exists!"),
+                                    ),
                                   );
                                   return;
                                 }
-                                
+
                                 Navigator.pop(context);
-                                
+
                                 setState(() {
                                   _isLoading = true;
                                 });
-                                
-                                await Future.delayed(const Duration(milliseconds: 650));
-                                
+
+                                await Future.delayed(
+                                  const Duration(milliseconds: 650),
+                                );
+
                                 final List<Topic> generatedTopics = [];
                                 if (aiGenerateSyllabus) {
                                   final defaultNames = _getDefaultTopics(name);
                                   for (final topicName in defaultNames) {
-                                    generatedTopics.add(Topic(name: topicName, difficulty: localDifficulty, isCompleted: false));
+                                    generatedTopics.add(
+                                      Topic(
+                                        name: topicName,
+                                        difficulty: localDifficulty,
+                                        isCompleted: false,
+                                      ),
+                                    );
                                   }
                                 }
-                                
+
                                 setState(() {
-                                  subjects.add(Subject(
-                                    name: name,
-                                    difficulty: localDifficulty,
-                                    topics: generatedTopics,
-                                  ));
+                                  subjects.add(
+                                    Subject(
+                                      name: name,
+                                      difficulty: localDifficulty,
+                                      topics: generatedTopics,
+                                    ),
+                                  );
                                   _isLoading = false;
                                 });
                                 await saveData();
@@ -3388,7 +4210,9 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final double keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+            final double keyboardHeight = MediaQuery.of(
+              context,
+            ).viewInsets.bottom;
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               margin: EdgeInsets.only(bottom: keyboardHeight),
@@ -3397,7 +4221,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -3414,7 +4241,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close_rounded, color: Color(0xFF8D7072)),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Color(0xFF8D7072),
+                          ),
                         ),
                       ],
                     ),
@@ -3442,11 +4272,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             localSubjectName = val;
                           });
                         },
-                        style: GoogleFonts.plusJakartaSans(fontSize: 15, color: const Color(0xFF1A1C1E)),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 15,
+                          color: const Color(0xFF1A1C1E),
+                        ),
                         decoration: InputDecoration(
-                          hintText: "e.g., Relational Database Management System",
-                          hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          hintText:
+                              "e.g., Relational Database Management System",
+                          hintStyle: GoogleFonts.plusJakartaSans(
+                            color: Colors.grey.shade400,
+                            fontSize: 14,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           border: InputBorder.none,
                         ),
                       ),
@@ -3478,10 +4318,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               syllabusText = val;
                             });
                           },
-                          style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            color: const Color(0xFF1A1C1E),
+                          ),
                           decoration: InputDecoration(
-                            hintText: "Paste chapters here, one per line:\n- Chapter 1: Introduction to DBMS\n- Chapter 2: Relational Model\n- Chapter 3: SQL Queries",
-                            hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
+                            hintText:
+                                "Paste chapters here, one per line:\n- Chapter 1: Introduction to DBMS\n- Chapter 2: Relational Model\n- Chapter 3: SQL Queries",
+                            hintStyle: GoogleFonts.plusJakartaSans(
+                              color: Colors.grey.shade400,
+                              fontSize: 13,
+                            ),
                             contentPadding: const EdgeInsets.all(16),
                             border: InputBorder.none,
                           ),
@@ -3492,13 +4339,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: localSubjectName.trim().isEmpty || syllabusText.trim().isEmpty
+                        onPressed:
+                            localSubjectName.trim().isEmpty ||
+                                syllabusText.trim().isEmpty
                             ? null
                             : () async {
                                 final name = localSubjectName.trim();
-                                if (subjects.any((s) => s.name.toLowerCase() == name.toLowerCase())) {
+                                if (subjects.any(
+                                  (s) =>
+                                      s.name.toLowerCase() ==
+                                      name.toLowerCase(),
+                                )) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Subject already exists!")),
+                                    const SnackBar(
+                                      content: Text("Subject already exists!"),
+                                    ),
                                   );
                                   return;
                                 }
@@ -3509,26 +4364,38 @@ class _HomeScreenState extends State<HomeScreen> {
                                   _isLoading = true;
                                 });
 
-                                await Future.delayed(const Duration(milliseconds: 800));
+                                await Future.delayed(
+                                  const Duration(milliseconds: 800),
+                                );
 
                                 final List<Topic> importedTopics = [];
                                 final lines = syllabusText.split('\n');
                                 for (var line in lines) {
                                   var cleanLine = line.trim();
-                                  if (cleanLine.startsWith('-') || cleanLine.startsWith('*') || cleanLine.startsWith('•')) {
+                                  if (cleanLine.startsWith('-') ||
+                                      cleanLine.startsWith('*') ||
+                                      cleanLine.startsWith('•')) {
                                     cleanLine = cleanLine.substring(1).trim();
                                   }
                                   if (cleanLine.isNotEmpty) {
-                                    importedTopics.add(Topic(name: cleanLine, difficulty: "Medium", isCompleted: false));
+                                    importedTopics.add(
+                                      Topic(
+                                        name: cleanLine,
+                                        difficulty: "Medium",
+                                        isCompleted: false,
+                                      ),
+                                    );
                                   }
                                 }
 
                                 setState(() {
-                                  subjects.add(Subject(
-                                    name: name,
-                                    difficulty: "Medium",
-                                    topics: importedTopics,
-                                  ));
+                                  subjects.add(
+                                    Subject(
+                                      name: name,
+                                      difficulty: "Medium",
+                                      topics: importedTopics,
+                                    ),
+                                  );
                                   _isLoading = false;
                                 });
                                 await saveData();
@@ -3564,25 +4431,60 @@ class _HomeScreenState extends State<HomeScreen> {
   List<String> getSubTopicsForChapter(String chapterName) {
     final nameLower = chapterName.toLowerCase();
     if (nameLower.contains("organic")) {
-      return ["Basics & Nomenclature", "Reaction Mechanisms", "Functional Groups", "Spectroscopy & Analysis"];
+      return [
+        "Basics & Nomenclature",
+        "Reaction Mechanisms",
+        "Functional Groups",
+        "Spectroscopy & Analysis",
+      ];
     } else if (nameLower.contains("biomolecule")) {
-      return ["Amino Acids & Proteins", "Nucleic Acids (DNA/RNA)", "Enzyme Kinetics", "Lipids & Membranes"];
+      return [
+        "Amino Acids & Proteins",
+        "Nucleic Acids (DNA/RNA)",
+        "Enzyme Kinetics",
+        "Lipids & Membranes",
+      ];
     } else if (nameLower.contains("carbohydrate")) {
-      return ["Monosaccharides", "Disaccharides & Polysaccharides", "Glycolysis Pathway", "Glycoproteins"];
+      return [
+        "Monosaccharides",
+        "Disaccharides & Polysaccharides",
+        "Glycolysis Pathway",
+        "Glycoproteins",
+      ];
     } else if (nameLower.contains("lipid")) {
-      return ["Fatty Acids", "Triacylglycerols", "Phospholipids", "Cholesterol & Steroids"];
+      return [
+        "Fatty Acids",
+        "Triacylglycerols",
+        "Phospholipids",
+        "Cholesterol & Steroids",
+      ];
     } else if (nameLower.contains("mechanic")) {
-      return ["Newton's Laws", "Work, Energy & Power", "Rotational Dynamics", "Gravitation"];
+      return [
+        "Newton's Laws",
+        "Work, Energy & Power",
+        "Rotational Dynamics",
+        "Gravitation",
+      ];
     } else if (nameLower.contains("algebra")) {
-      return ["Linear Equations", "Matrices & Determinants", "Vector Spaces", "Eigenvalues & Eigenvectors"];
+      return [
+        "Linear Equations",
+        "Matrices & Determinants",
+        "Vector Spaces",
+        "Eigenvalues & Eigenvectors",
+      ];
     } else if (nameLower.contains("thermo")) {
-      return ["Laws of Thermodynamics", "Entropy & Free Energy", "Thermodynamic Cycles", "Heat Transfer"];
+      return [
+        "Laws of Thermodynamics",
+        "Entropy & Free Energy",
+        "Thermodynamic Cycles",
+        "Heat Transfer",
+      ];
     } else {
       return [
         "Fundamentals & Definitions",
         "Core Theories & Models",
         "Key Applications & Examples",
-        "Self-Assessment & Review"
+        "Self-Assessment & Review",
       ];
     }
   }
@@ -3626,9 +4528,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.5,
                 ),
-                child: SingleChildScrollView(
-                  child: content,
-                ),
+                child: SingleChildScrollView(child: content),
               ),
             ],
           ),
@@ -3644,7 +4544,9 @@ class _HomeScreenState extends State<HomeScreen> {
       icon: "📚",
       content: Column(
         children: subjects.map((s) {
-          final double prog = s.topics.isEmpty ? 0.0 : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
+          final double prog = s.topics.isEmpty
+              ? 0.0
+              : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Container(
@@ -3733,13 +4635,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 else
                   ...s.topics.map((t) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: Row(
                         children: [
                           Icon(
-                            t.isCompleted ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                            t.isCompleted
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
                             size: 16,
-                            color: t.isCompleted ? const Color(0xFF059669) : Colors.grey.shade400,
+                            color: t.isCompleted
+                                ? const Color(0xFF059669)
+                                : Colors.grey.shade400,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -3768,10 +4677,7 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final s in subjects) {
       for (final t in s.topics) {
         if (t.isCompleted) {
-          completedList.add({
-            "chapter": t.name,
-            "subject": s.name,
-          });
+          completedList.add({"chapter": t.name, "subject": s.name});
         }
       }
     }
@@ -3811,7 +4717,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 18),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF16A34A),
+                    size: 18,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -3859,8 +4769,12 @@ class _HomeScreenState extends State<HomeScreen> {
       icon: "🎯",
       content: Column(
         children: subjects.map((s) {
-          final double prog = s.topics.isEmpty ? 0.0 : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
-          final int completedCount = s.topics.where((t) => t.isCompleted).length;
+          final double prog = s.topics.isEmpty
+              ? 0.0
+              : (s.topics.where((t) => t.isCompleted).length / s.topics.length);
+          final int completedCount = s.topics
+              .where((t) => t.isCompleted)
+              .length;
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Column(
@@ -3894,7 +4808,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     value: prog,
                     minHeight: 6,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF006A63),
+                    ),
                   ),
                 ),
               ],
@@ -3911,8 +4827,13 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Add Chapter", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Add Chapter",
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             onChanged: (val) => newTopicName = val,
             decoration: const InputDecoration(hintText: "Enter chapter name"),
@@ -3926,7 +4847,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 if (newTopicName.trim().isNotEmpty) {
                   setState(() {
-                    subjects[actualIndex].topics.add(Topic(name: newTopicName.trim(), difficulty: subjects[actualIndex].difficulty, isCompleted: false));
+                    subjects[actualIndex].topics.add(
+                      Topic(
+                        name: newTopicName.trim(),
+                        difficulty: subjects[actualIndex].difficulty,
+                        isCompleted: false,
+                      ),
+                    );
                   });
                   await saveData();
                 }
@@ -3947,12 +4874,19 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Edit Subject Name", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Edit Subject Name",
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+          ),
           content: TextField(
             controller: controller,
             onChanged: (val) => newName = val,
-            decoration: const InputDecoration(hintText: "Enter new subject name"),
+            decoration: const InputDecoration(
+              hintText: "Enter new subject name",
+            ),
           ),
           actions: [
             TextButton(
@@ -3982,12 +4916,17 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Row(
             children: [
               const Icon(Icons.auto_awesome_rounded, color: Color(0xFF006A63)),
               const SizedBox(width: 8),
-              Text("AI Syllabus Summary", style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+              Text(
+                "AI Syllabus Summary",
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           content: Text(
@@ -4026,10 +4965,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               child: Text(iconEmoji, style: const TextStyle(fontSize: 16)),
             ),
             const SizedBox(height: 8),
@@ -4079,8 +5015,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 1. Filter by search query
     var filtered = subjects.where((s) {
-      final matchesSearch = s.name.toLowerCase().contains(_subjectSearchQuery.toLowerCase()) ||
-                            s.topics.any((t) => t.name.toLowerCase().contains(_subjectSearchQuery.toLowerCase()));
+      final matchesSearch =
+          s.name.toLowerCase().contains(_subjectSearchQuery.toLowerCase()) ||
+          s.topics.any(
+            (t) => t.name.toLowerCase().contains(
+              _subjectSearchQuery.toLowerCase(),
+            ),
+          );
       return matchesSearch;
     }).toList();
 
@@ -4100,7 +5041,9 @@ class _HomeScreenState extends State<HomeScreen> {
         }).toList();
       } else {
         // Difficulty filter ("Easy", "Medium", "Hard")
-        filtered = filtered.where((s) => s.difficulty == _subjectsFilter).toList();
+        filtered = filtered
+            .where((s) => s.difficulty == _subjectsFilter)
+            .toList();
       }
     }
 
@@ -4111,8 +5054,12 @@ class _HomeScreenState extends State<HomeScreen> {
       filtered.sort((a, b) => b.topics.length.compareTo(a.topics.length));
     } else if (_subjectsSort == "Progress") {
       filtered.sort((a, b) {
-        final double progressA = a.topics.isEmpty ? 0.0 : (a.topics.where((t) => t.isCompleted).length / a.topics.length);
-        final double progressB = b.topics.isEmpty ? 0.0 : (b.topics.where((t) => t.isCompleted).length / b.topics.length);
+        final double progressA = a.topics.isEmpty
+            ? 0.0
+            : (a.topics.where((t) => t.isCompleted).length / a.topics.length);
+        final double progressB = b.topics.isEmpty
+            ? 0.0
+            : (b.topics.where((t) => t.isCompleted).length / b.topics.length);
         return progressB.compareTo(progressA);
       });
     } else {
@@ -4151,7 +5098,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(height: MediaQuery.of(context).padding.top + 16),
-              
+
               // 1. Header Row (Title & Notification capsule)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -4186,9 +5133,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.6),
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.4),
+                        width: 1.5,
+                      ),
                     ),
-                    child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF006A63), size: 20),
+                    child: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Color(0xFF006A63),
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -4272,18 +5226,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: _buildGlassCard(
                     borderRadius: 20,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), // taller
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ), // taller
                     child: TextField(
                       onChanged: (val) {
                         setState(() {
                           _subjectSearchQuery = val;
                         });
                       },
-                      style: GoogleFonts.plusJakartaSans(fontSize: 14, color: const Color(0xFF1A1C1E)),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        color: const Color(0xFF1A1C1E),
+                      ),
                       decoration: InputDecoration(
                         hintText: "Search subjects, chapters or topics...",
-                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 13),
-                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF006A63)),
+                        hintStyle: GoogleFonts.plusJakartaSans(
+                          color: Colors.grey.shade400,
+                          fontSize: 13,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF006A63),
+                        ),
                         border: InputBorder.none,
                       ),
                     ),
@@ -4291,80 +5257,106 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20), // Increased spacing
-
               // 5. Horizontal Filter Chips (Rounded glass pills with color dots)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: ["All", "In Progress", "Completed", "Easy", "Medium", "Hard"].map((filter) {
-                    final bool isSelected = _subjectsFilter == filter;
-                    
-                    Widget dotIndicator = Container();
-                    if (filter == "Easy") {
-                      dotIndicator = Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle),
-                      );
-                    } else if (filter == "Medium") {
-                      dotIndicator = Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(color: Color(0xFFF59E0B), shape: BoxShape.circle),
-                      );
-                    } else if (filter == "Hard") {
-                      dotIndicator = Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                      );
-                    }
+                  children:
+                      [
+                        "All",
+                        "In Progress",
+                        "Completed",
+                        "Easy",
+                        "Medium",
+                        "Hard",
+                      ].map((filter) {
+                        final bool isSelected = _subjectsFilter == filter;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12), // Increased spacing
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _subjectsFilter = filter;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF006A63) : Colors.white.withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected ? const Color(0xFF006A63) : Colors.white.withOpacity(0.3),
-                              width: 1.0,
+                        Widget dotIndicator = Container();
+                        if (filter == "Easy") {
+                          dotIndicator = Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              dotIndicator,
-                              Text(
-                                filter,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.white : const Color(0xFF594042),
+                          );
+                        } else if (filter == "Medium") {
+                          dotIndicator = Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF59E0B),
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        } else if (filter == "Hard") {
+                          dotIndicator = Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                            right: 12,
+                          ), // Increased spacing
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _subjectsFilter = filter;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFF006A63)
+                                    : Colors.white.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF006A63)
+                                      : Colors.white.withOpacity(0.3),
+                                  width: 1.0,
                                 ),
                               ),
-                            ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  dotIndicator,
+                                  Text(
+                                    filter,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : const Color(0xFF594042),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
               ),
               const SizedBox(height: 24), // Increased spacing
-
               // 6. Subject Library Section Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -4395,14 +5387,30 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF006A63), size: 16),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Color(0xFF006A63),
+                          size: 16,
+                        ),
                       ],
                     ),
                     itemBuilder: (context) => [
-                      const PopupMenuItem(value: "Recent", child: Text("Recent")),
-                      const PopupMenuItem(value: "Alphabetical", child: Text("Alphabetical")),
-                      const PopupMenuItem(value: "Chapters", child: Text("Chapters")),
-                      const PopupMenuItem(value: "Progress", child: Text("Progress")),
+                      const PopupMenuItem(
+                        value: "Recent",
+                        child: Text("Recent"),
+                      ),
+                      const PopupMenuItem(
+                        value: "Alphabetical",
+                        child: Text("Alphabetical"),
+                      ),
+                      const PopupMenuItem(
+                        value: "Chapters",
+                        child: Text("Chapters"),
+                      ),
+                      const PopupMenuItem(
+                        value: "Progress",
+                        child: Text("Progress"),
+                      ),
                     ],
                   ),
                 ],
@@ -4449,24 +5457,38 @@ class _HomeScreenState extends State<HomeScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 ElevatedButton(
-                                  onPressed: () => _showAddSubjectModal(context),
+                                  onPressed: () =>
+                                      _showAddSubjectModal(context),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF006A63),
                                     foregroundColor: Colors.white,
                                     elevation: 0,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
                                   ),
                                   child: const Text("Add Subject"),
                                 ),
                                 const SizedBox(width: 12),
                                 OutlinedButton(
-                                  onPressed: () => _showImportSyllabusModal(context),
+                                  onPressed: () =>
+                                      _showImportSyllabusModal(context),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: const Color(0xFF006A63),
-                                    side: const BorderSide(color: Color(0xFF006A63)),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    side: const BorderSide(
+                                      color: Color(0xFF006A63),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
                                   ),
                                   child: const Text("Import PDF"),
                                 ),
@@ -4486,19 +5508,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         final int actualIndex = subjects.indexOf(subject);
                         final colorIndex = actualIndex % bgColors.length;
                         final textColor = textColors[colorIndex];
-                        final bool isExpanded = _expandedSubjectIndices.contains(actualIndex);
+                        final bool isExpanded = _expandedSubjectIndices
+                            .contains(actualIndex);
 
                         final double progressPercent = subject.topics.isEmpty
                             ? 0.0
-                            : (subject.topics.where((t) => t.isCompleted).length / subject.topics.length);
+                            : (subject.topics
+                                      .where((t) => t.isCompleted)
+                                      .length /
+                                  subject.topics.length);
 
                         // Find the first pending chapter dynamically!
                         final firstPending = subject.topics.firstWhere(
                           (t) => !t.isCompleted,
-                          orElse: () => Topic(name: "", difficulty: "Medium", isCompleted: true),
+                          orElse: () => Topic(
+                            name: "",
+                            difficulty: "Medium",
+                            isCompleted: true,
+                          ),
                         );
-                        final String nextTopicText = firstPending.name.isNotEmpty 
-                            ? "Next: ${firstPending.name}" 
+                        final String nextTopicText =
+                            firstPending.name.isNotEmpty
+                            ? "Next: ${firstPending.name}"
                             : "All chapters completed! 🎉";
 
                         Color diffColor;
@@ -4525,13 +5556,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             ic = Icons.blur_on_rounded;
                           } else if (nameLower.contains("chem")) {
                             ic = Icons.science_rounded;
-                          } else if (nameLower.contains("math") || nameLower.contains("discret")) {
+                          } else if (nameLower.contains("math") ||
+                              nameLower.contains("discret")) {
                             ic = Icons.functions_rounded;
-                          } else if (nameLower.contains("database") || nameLower.contains("dbms")) {
+                          } else if (nameLower.contains("database") ||
+                              nameLower.contains("dbms")) {
                             ic = Icons.storage_rounded;
-                          } else if (nameLower.contains("algorithm") || nameLower.contains("structure") || nameLower.contains("dsa")) {
+                          } else if (nameLower.contains("algorithm") ||
+                              nameLower.contains("structure") ||
+                              nameLower.contains("dsa")) {
                             ic = Icons.code_rounded;
-                          } else if (nameLower.contains("operating") || nameLower.contains("system")) {
+                          } else if (nameLower.contains("operating") ||
+                              nameLower.contains("system")) {
                             ic = Icons.terminal_rounded;
                           }
                           return Icon(ic, color: textColor, size: 24);
@@ -4562,9 +5598,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onTap: () {
                                       setState(() {
                                         if (isExpanded) {
-                                          _expandedSubjectIndices.remove(actualIndex);
+                                          _expandedSubjectIndices.remove(
+                                            actualIndex,
+                                          );
                                         } else {
-                                          _expandedSubjectIndices.add(actualIndex);
+                                          _expandedSubjectIndices.add(
+                                            actualIndex,
+                                          );
                                         }
                                       });
                                     },
@@ -4576,9 +5616,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Container(
                                             padding: const EdgeInsets.all(12),
                                             decoration: BoxDecoration(
-                                              color: textColor.withOpacity(0.08),
-                                              borderRadius: BorderRadius.circular(16),
-                                              border: Border.all(color: textColor.withOpacity(0.15)),
+                                              color: textColor.withOpacity(
+                                                0.08,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: textColor.withOpacity(
+                                                  0.15,
+                                                ),
+                                              ),
                                             ),
                                             child: getSubjectIconWidget(),
                                           ),
@@ -4586,51 +5633,79 @@ class _HomeScreenState extends State<HomeScreen> {
                                           // Middle: Subject details
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   subject.name,
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: const Color(0xFF1A1C1E),
-                                                    fontSize: 15,
-                                                  ),
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: const Color(
+                                                          0xFF1A1C1E,
+                                                        ),
+                                                        fontSize: 15,
+                                                      ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
                                                   "${subject.topics.length} Chapters • ${progressPercent == 1.0 ? 'Completed' : 'In Progress'}",
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 11,
-                                                    color: progressPercent == 1.0 ? const Color(0xFF10B981) : Colors.grey.shade500,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 11,
+                                                        color:
+                                                            progressPercent ==
+                                                                1.0
+                                                            ? const Color(
+                                                                0xFF10B981,
+                                                              )
+                                                            : Colors
+                                                                  .grey
+                                                                  .shade500,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 8),
                                                 // Linear progress bar
                                                 ClipRRect(
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
                                                   child: LinearProgressIndicator(
                                                     value: progressPercent,
                                                     minHeight: 6,
-                                                    backgroundColor: Colors.white.withOpacity(0.35),
-                                                    valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                                                    backgroundColor: Colors
+                                                        .white
+                                                        .withOpacity(0.35),
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(textColor),
                                                   ),
                                                 ),
                                                 const SizedBox(height: 8),
                                                 // Next topic text
                                                 Text(
                                                   nextTopicText,
-                                                  style: GoogleFonts.plusJakartaSans(
-                                                    fontSize: 11,
-                                                    color: Colors.grey.shade500,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 11,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade500,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ],
                                             ),
@@ -4649,219 +5724,368 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     child: CircularProgressIndicator(
                                                       value: progressPercent,
                                                       strokeWidth: 3.5,
-                                                      backgroundColor: Colors.white.withOpacity(0.3),
-                                                      valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                                                      backgroundColor: Colors
+                                                          .white
+                                                          .withOpacity(0.3),
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(textColor),
                                                     ),
                                                   ),
                                                   Text(
                                                     "${(progressPercent * 100).round()}%",
-                                                    style: GoogleFonts.plusJakartaSans(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w800,
-                                                      color: const Color(0xFF1A1C1E),
+                                                    style:
+                                                        GoogleFonts.plusJakartaSans(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                          color: const Color(
+                                                            0xFF1A1C1E,
+                                                          ),
+                                                        ),
                                                   ),
+                                                ],
+                                              ),
+                                              const SizedBox(width: 8),
+                                              PopupMenuButton<String>(
+                                                icon: const Icon(
+                                                  Icons.more_vert_rounded,
+                                                  color: Color(0xFF006A63),
                                                 ),
-                                              ],
-                                            ),
-                                            const SizedBox(width: 8),
-                                            PopupMenuButton<String>(
-                                              icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF006A63)),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                              onSelected: (val) {
-                                                if (val == 'delete') {
-                                                  _deleteSubject(actualIndex);
-                                                } else if (val == 'edit') {
-                                                  _showEditSubjectDialog(context, actualIndex);
-                                                }
-                                              },
-                                              itemBuilder: (context) => [
-                                                const PopupMenuItem(value: 'edit', child: Text("Edit Name")),
-                                                const PopupMenuItem(value: 'delete', child: Text("Delete Subject", style: TextStyle(color: Colors.red))),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                                onSelected: (val) {
+                                                  if (val == 'delete') {
+                                                    _deleteSubject(actualIndex);
+                                                  } else if (val == 'edit') {
+                                                    _showEditSubjectDialog(
+                                                      context,
+                                                      actualIndex,
+                                                    );
+                                                  }
+                                                },
+                                                itemBuilder: (context) => [
+                                                  const PopupMenuItem(
+                                                    value: 'edit',
+                                                    child: Text("Edit Name"),
+                                                  ),
+                                                  const PopupMenuItem(
+                                                    value: 'delete',
+                                                    child: Text(
+                                                      "Delete Subject",
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                AnimatedCrossFade(
-                                  firstChild: Container(),
-                                  secondChild: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      const Divider(height: 1, color: Colors.white24),
-                                      Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            if (subject.topics.isEmpty) ...[
-                                              Text(
-                                                "No chapters added yet.",
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontSize: 11,
-                                                  color: const Color(0xFF8D7072),
-                                                  fontStyle: FontStyle.italic,
+                                  AnimatedCrossFade(
+                                    firstChild: Container(),
+                                    secondChild: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        const Divider(
+                                          height: 1,
+                                          color: Colors.white24,
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              if (subject.topics.isEmpty) ...[
+                                                Text(
+                                                  "No chapters added yet.",
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 11,
+                                                        color: const Color(
+                                                          0xFF8D7072,
+                                                        ),
+                                                        fontStyle:
+                                                            FontStyle.italic,
+                                                      ),
                                                 ),
-                                              ),
-                                            ] else ...[
-                                              Text(
-                                                "Syllabus Topics",
-                                                style: GoogleFonts.plusJakartaSans(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF8D7072),
+                                              ] else ...[
+                                                Text(
+                                                  "Syllabus Topics",
+                                                  style:
+                                                      GoogleFonts.plusJakartaSans(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: const Color(
+                                                          0xFF8D7072,
+                                                        ),
+                                                      ),
                                                 ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              ...List.generate(subject.topics.length, (topicIdx) {
-                                                final topic = subject.topics[topicIdx];
-                                                final String chapterKey = "$actualIndex-$topicIdx";
-                                                final bool isChapterExpanded = _expandedChapterKeys.contains(chapterKey);
-                                                return Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Padding(
-                                                      padding: const EdgeInsets.symmetric(vertical: 2),
-                                                      child: Row(
-                                                        children: [
-                                                          Checkbox(
-                                                            value: topic.isCompleted,
-                                                            activeColor: const Color(0xFF006A63),
-                                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                                            onChanged: (val) async {
-                                                              await StudyStateManager.instance.toggleTopicCompletion(
-                                                                subject.name,
-                                                                topic.name,
-                                                                val ?? false,
-                                                              );
-                                                            },
-                                                          ),
-                                                          Expanded(
-                                                            child: InkWell(
-                                                              onTap: () {
-                                                                setState(() {
-                                                                  if (isChapterExpanded) {
-                                                                    _expandedChapterKeys.remove(chapterKey);
-                                                                  } else {
-                                                                    _expandedChapterKeys.add(chapterKey);
-                                                                  }
-                                                                });
+                                                const SizedBox(height: 8),
+                                                ...List.generate(subject.topics.length, (
+                                                  topicIdx,
+                                                ) {
+                                                  final topic =
+                                                      subject.topics[topicIdx];
+                                                  final String chapterKey =
+                                                      "$actualIndex-$topicIdx";
+                                                  final bool isChapterExpanded =
+                                                      _expandedChapterKeys
+                                                          .contains(chapterKey);
+                                                  return Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 2,
+                                                            ),
+                                                        child: Row(
+                                                          children: [
+                                                            Checkbox(
+                                                              value: topic
+                                                                  .isCompleted,
+                                                              activeColor:
+                                                                  const Color(
+                                                                    0xFF006A63,
+                                                                  ),
+                                                              shape: RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      4,
+                                                                    ),
+                                                              ),
+                                                              onChanged: (val) async {
+                                                                await StudyStateManager
+                                                                    .instance
+                                                                    .toggleTopicCompletion(
+                                                                      subject
+                                                                          .name,
+                                                                      topic
+                                                                          .name,
+                                                                      val ??
+                                                                          false,
+                                                                    );
                                                               },
-                                                              child: Padding(
-                                                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                                                child: Row(
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child: Text(
-                                                                        topic.name,
-                                                                        style: GoogleFonts.plusJakartaSans(
-                                                                          fontSize: 13,
-                                                                          fontWeight: FontWeight.bold,
-                                                                          color: const Color(0xFF1A1C1E),
-                                                                          decoration: topic.isCompleted
-                                                                              ? TextDecoration.lineThrough
-                                                                              : null,
+                                                            ),
+                                                            Expanded(
+                                                              child: InkWell(
+                                                                onTap: () {
+                                                                  setState(() {
+                                                                    if (isChapterExpanded) {
+                                                                      _expandedChapterKeys
+                                                                          .remove(
+                                                                            chapterKey,
+                                                                          );
+                                                                    } else {
+                                                                      _expandedChapterKeys
+                                                                          .add(
+                                                                            chapterKey,
+                                                                          );
+                                                                    }
+                                                                  });
+                                                                },
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.symmetric(
+                                                                        vertical:
+                                                                            8,
+                                                                      ),
+                                                                  child: Row(
+                                                                    children: [
+                                                                      Expanded(
+                                                                        child: Text(
+                                                                          topic
+                                                                              .name,
+                                                                          style: GoogleFonts.plusJakartaSans(
+                                                                            fontSize:
+                                                                                13,
+                                                                            fontWeight:
+                                                                                FontWeight.bold,
+                                                                            color: const Color(
+                                                                              0xFF1A1C1E,
+                                                                            ),
+                                                                            decoration:
+                                                                                topic.isCompleted
+                                                                                ? TextDecoration.lineThrough
+                                                                                : null,
+                                                                          ),
                                                                         ),
                                                                       ),
-                                                                    ),
-                                                                    Icon(
-                                                                      isChapterExpanded
-                                                                          ? Icons.keyboard_arrow_up_rounded
-                                                                          : Icons.keyboard_arrow_down_rounded,
-                                                                      size: 18,
-                                                                      color: Colors.grey.shade400,
-                                                                    ),
-                                                                  ],
+                                                                      Icon(
+                                                                        isChapterExpanded
+                                                                            ? Icons.keyboard_arrow_up_rounded
+                                                                            : Icons.keyboard_arrow_down_rounded,
+                                                                        size:
+                                                                            18,
+                                                                        color: Colors
+                                                                            .grey
+                                                                            .shade400,
+                                                                      ),
+                                                                    ],
+                                                                  ),
                                                                 ),
                                                               ),
                                                             ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    if (isChapterExpanded)
-                                                      Padding(
-                                                        padding: const EdgeInsets.only(left: 48, top: 4, bottom: 8),
-                                                        child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          children: getSubTopicsForChapter(topic.name).map((subTopic) {
-                                                            return Padding(
-                                                              padding: const EdgeInsets.symmetric(vertical: 2),
-                                                              child: Row(
-                                                                children: [
-                                                                  Container(
-                                                                    width: 5,
-                                                                    height: 5,
-                                                                    decoration: const BoxDecoration(
-                                                                      color: Color(0xFF006A63),
-                                                                      shape: BoxShape.circle,
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(width: 8),
-                                                                  Expanded(
-                                                                    child: Text(
-                                                                      subTopic,
-                                                                      style: GoogleFonts.plusJakartaSans(
-                                                                        fontSize: 12,
-                                                                        color: const Color(0xFF594042).withOpacity(0.8),
-                                                                        fontWeight: FontWeight.w500,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            );
-                                                          }).toList(),
+                                                          ],
                                                         ),
                                                       ),
-                                                  ],
-                                                );
-                                              }),
-                                            ],
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    IconButton(
-                                                      onPressed: () => _showEditSubjectDialog(context, actualIndex),
-                                                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF006A63), size: 20),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () => _showAddTopicDialog(context, actualIndex),
-                                                      icon: const Icon(Icons.add_task_rounded, color: Color(0xFF006A63), size: 20),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () => _showAiSummaryDialog(context, subject),
-                                                      icon: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C3AED), size: 20),
-                                                    ),
-                                                  ],
-                                                ),
-                                                IconButton(
-                                                  onPressed: () => _deleteSubject(actualIndex),
-                                                  icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFBA1A1A)),
-                                                ),
+                                                      if (isChapterExpanded)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                left: 48,
+                                                                top: 4,
+                                                                bottom: 8,
+                                                              ),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: getSubTopicsForChapter(topic.name).map((
+                                                              subTopic,
+                                                            ) {
+                                                              return Padding(
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      vertical:
+                                                                          2,
+                                                                    ),
+                                                                child: Row(
+                                                                  children: [
+                                                                    Container(
+                                                                      width: 5,
+                                                                      height: 5,
+                                                                      decoration: const BoxDecoration(
+                                                                        color: Color(
+                                                                          0xFF006A63,
+                                                                        ),
+                                                                        shape: BoxShape
+                                                                            .circle,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      width: 8,
+                                                                    ),
+                                                                    Expanded(
+                                                                      child: Text(
+                                                                        subTopic,
+                                                                        style: GoogleFonts.plusJakartaSans(
+                                                                          fontSize:
+                                                                              12,
+                                                                          color: const Color(
+                                                                            0xFF594042,
+                                                                          ).withOpacity(0.8),
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              );
+                                                            }).toList(),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  );
+                                                }),
                                               ],
-                                            ),
-                                          ],
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      IconButton(
+                                                        onPressed: () =>
+                                                            _showEditSubjectDialog(
+                                                              context,
+                                                              actualIndex,
+                                                            ),
+                                                        icon: const Icon(
+                                                          Icons.edit_outlined,
+                                                          color: Color(
+                                                            0xFF006A63,
+                                                          ),
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                      IconButton(
+                                                        onPressed: () =>
+                                                            _showAddTopicDialog(
+                                                              context,
+                                                              actualIndex,
+                                                            ),
+                                                        icon: const Icon(
+                                                          Icons
+                                                              .add_task_rounded,
+                                                          color: Color(
+                                                            0xFF006A63,
+                                                          ),
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                      IconButton(
+                                                        onPressed: () =>
+                                                            _showAiSummaryDialog(
+                                                              context,
+                                                              subject,
+                                                            ),
+                                                        icon: const Icon(
+                                                          Icons
+                                                              .auto_awesome_rounded,
+                                                          color: Color(
+                                                            0xFF7C3AED,
+                                                          ),
+                                                          size: 20,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  IconButton(
+                                                    onPressed: () =>
+                                                        _deleteSubject(
+                                                          actualIndex,
+                                                        ),
+                                                    icon: const Icon(
+                                                      Icons
+                                                          .delete_outline_rounded,
+                                                      color: Color(0xFFBA1A1A),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
+                                    crossFadeState: isExpanded
+                                        ? CrossFadeState.showSecond
+                                        : CrossFadeState.showFirst,
+                                    duration: const Duration(milliseconds: 250),
                                   ),
-                                  crossFadeState: isExpanded
-                                      ? CrossFadeState.showSecond
-                                      : CrossFadeState.showFirst,
-                                      duration: const Duration(milliseconds: 250),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
                     ),
               const SizedBox(height: 24),
 
@@ -4869,7 +6093,10 @@ class _HomeScreenState extends State<HomeScreen> {
               if (subjects.isNotEmpty)
                 _buildGlassCard(
                   borderRadius: 24,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
                   child: Row(
                     children: [
                       // 3D open book illustration on left
@@ -4932,21 +6159,26 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   Widget _buildSettingsTab() {
     // -- computed summary values --------------------------------------------------
-    final int daysLeft     = getDaysLeft() > 0 ? getDaysLeft() : 0;
-    final int hoursPerDay  = _plannerHoursPerDay;
+    final int daysLeft = getDaysLeft() > 0 ? getDaysLeft() : 0;
+    final int hoursPerDay = _plannerHoursPerDay;
     final statistics = StudyStateManager.instance.statistics;
     final bool hasGeneratedPlan = studyPlan.isNotEmpty;
     final int totalHours = (statistics.weeklyGoalMinutes / 60).ceil();
-    final int remainingHours = ((statistics.weeklyGoalMinutes - statistics.weeklyCompletedMinutes).clamp(0, statistics.weeklyGoalMinutes) / 60).ceil();
+    final int remainingHours =
+        ((statistics.weeklyGoalMinutes - statistics.weeklyCompletedMinutes)
+                    .clamp(0, statistics.weeklyGoalMinutes) /
+                60)
+            .ceil();
     final int subjectsCount = subjects.length;
 
     // -- option lists -------------------------------------------------------------
-    const studyStyles      = ["Balanced", "Intensive", "Revision Focused"];
-    const breakOptions     = [5, 10, 15, 20, 30];
+    const studyStyles = ["Balanced", "Intensive", "Revision Focused"];
+    const breakOptions = [5, 10, 15, 20, 30];
     const difficultyOptions = ["Easy", "Moderate", "Hard"];
-    const timeOptions      = ["Morning", "Afternoon", "Evening", "Night"];
+    const timeOptions = ["Morning", "Afternoon", "Evening", "Night"];
 
     final bool canGenerate =
         _plannerHoursPerDay > 0 && selectedDate != null && subjects.isNotEmpty;
@@ -5061,7 +6293,10 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: bg,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.7), width: 1.5),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.7),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.03),
@@ -5206,12 +6441,16 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    Future<void> _showAddEditWindowDialog(BuildContext context, int? index, StudyAvailability? window) async {
+    Future<void> _showAddEditWindowDialog(
+      BuildContext context,
+      int? index,
+      StudyAvailability? window,
+    ) async {
       final bool isEdit = index != null && window != null;
-      
+
       TimeOfDay startTime = const TimeOfDay(hour: 14, minute: 0);
       TimeOfDay endTime = const TimeOfDay(hour: 16, minute: 0);
-      
+
       if (isEdit) {
         final startParts = window.startTime.split(':');
         final endParts = window.endTime.split(':');
@@ -5228,13 +6467,13 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       }
-      
+
       showDialog(
         context: context,
         builder: (context) {
           TimeOfDay selectedStart = startTime;
           TimeOfDay selectedEnd = endTime;
-          
+
           return StatefulBuilder(
             builder: (context, setDialogState) {
               String formatTimeOfDay(TimeOfDay tod) {
@@ -5242,12 +6481,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 final min = tod.minute.toString().padLeft(2, '0');
                 return "$hr:$min";
               }
-              
+
               return AlertDialog(
                 backgroundColor: const Color(0xFFF9F9FC),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 title: Text(
-                  isEdit ? "Edit Availability Window" : "Add Availability Window",
+                  isEdit
+                      ? "Edit Availability Window"
+                      : "Add Availability Window",
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF1A1C1E),
@@ -5259,13 +6502,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ListTile(
                       title: Text(
                         "Start Time",
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       subtitle: Text(
                         formatTimeOfDay(selectedStart),
-                        style: GoogleFonts.plusJakartaSans(color: const Color(0xFF006A63), fontWeight: FontWeight.bold, fontSize: 16),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFF006A63),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                      trailing: const Icon(Icons.access_time_rounded, color: Color(0xFF006A63)),
+                      trailing: const Icon(
+                        Icons.access_time_rounded,
+                        color: Color(0xFF006A63),
+                      ),
                       onTap: () async {
                         final picked = await showTimePicker(
                           context: context,
@@ -5282,13 +6535,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ListTile(
                       title: Text(
                         "End Time",
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       subtitle: Text(
                         formatTimeOfDay(selectedEnd),
-                        style: GoogleFonts.plusJakartaSans(color: const Color(0xFF006A63), fontWeight: FontWeight.bold, fontSize: 16),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFF006A63),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                      trailing: const Icon(Icons.access_time_rounded, color: Color(0xFF006A63)),
+                      trailing: const Icon(
+                        Icons.access_time_rounded,
+                        color: Color(0xFF006A63),
+                      ),
                       onTap: () async {
                         final picked = await showTimePicker(
                           context: context,
@@ -5308,7 +6571,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       "Cancel",
-                      style: GoogleFonts.plusJakartaSans(color: const Color(0xFF594042), fontWeight: FontWeight.bold),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: const Color(0xFF594042),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   ElevatedButton(
@@ -5318,23 +6584,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         startTime: formatTimeOfDay(selectedStart),
                         endTime: formatTimeOfDay(selectedEnd),
                       );
-                      
+
                       if (isEdit) {
-                        StudyStateManager.instance.editAvailabilityWindow(index, windowObj);
+                        StudyStateManager.instance.editAvailabilityWindow(
+                          index,
+                          windowObj,
+                        );
                       } else {
-                        StudyStateManager.instance.addAvailabilityWindow(windowObj);
+                        StudyStateManager.instance.addAvailabilityWindow(
+                          windowObj,
+                        );
                       }
-                      
+
                       Navigator.pop(context);
                       setState(() {});
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF006A63),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     child: Text(
                       isEdit ? "Save" : "Add",
-                      style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -5348,10 +6624,12 @@ class _HomeScreenState extends State<HomeScreen> {
     Widget availabilityPlanner() {
       final state = StudyStateManager.instance;
       final availability = state.getAvailability();
-      
-      final dayWindows = availability.where((w) => w.weekday == _selectedPlannerDay).toList();
+
+      final dayWindows = availability
+          .where((w) => w.weekday == _selectedPlannerDay)
+          .toList();
       final weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -5360,7 +6638,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: weekdays.map((day) {
                 final bool isSelected = _selectedPlannerDay == day;
-                final int windowCount = availability.where((w) => w.weekday == day).length;
+                final int windowCount = availability
+                    .where((w) => w.weekday == day)
+                    .length;
                 return GestureDetector(
                   onTap: () {
                     setState(() {
@@ -5370,7 +6650,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.only(right: 8, bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFF006A63)
@@ -5387,7 +6670,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: const Color(0xFF006A63).withOpacity(0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
-                              )
+                              ),
                             ]
                           : [],
                     ),
@@ -5398,7 +6681,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : const Color(0xFF1A1C1E),
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF1A1C1E),
                           ),
                         ),
                         if (windowCount > 0) ...[
@@ -5406,7 +6691,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: isSelected ? Colors.white.withOpacity(0.25) : const Color(0xFFE8F5F1),
+                              color: isSelected
+                                  ? Colors.white.withOpacity(0.25)
+                                  : const Color(0xFFE8F5F1),
                               shape: BoxShape.circle,
                             ),
                             child: Text(
@@ -5414,7 +6701,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : const Color(0xFF006A63),
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF006A63),
                               ),
                             ),
                           ),
@@ -5427,7 +6716,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           if (dayWindows.isEmpty)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -5438,7 +6727,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Column(
                 children: [
-                  Icon(Icons.event_busy_rounded, color: Colors.grey.shade400, size: 36),
+                  Icon(
+                    Icons.event_busy_rounded,
+                    color: Colors.grey.shade400,
+                    size: 36,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     "No study availability defined for $_selectedPlannerDay",
@@ -5460,10 +6753,13 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final window = dayWindows[index];
                 final actualIdx = availability.indexOf(window);
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(16),
@@ -5475,7 +6771,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time_rounded, color: Color(0xFF006A63), size: 18),
+                            const Icon(
+                              Icons.access_time_rounded,
+                              color: Color(0xFF006A63),
+                              size: 18,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -5496,21 +6796,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           GestureDetector(
-                            onTap: () => _showAddEditWindowDialog(context, actualIdx, window),
+                            onTap: () => _showAddEditWindowDialog(
+                              context,
+                              actualIdx,
+                              window,
+                            ),
                             child: const Padding(
                               padding: EdgeInsets.all(8),
-                              child: Icon(Icons.edit_rounded, color: Color(0xFF006A63), size: 18),
+                              child: Icon(
+                                Icons.edit_rounded,
+                                color: Color(0xFF006A63),
+                                size: 18,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 4),
                           GestureDetector(
                             onTap: () {
-                              StudyStateManager.instance.deleteAvailabilityWindow(actualIdx);
+                              StudyStateManager.instance
+                                  .deleteAvailabilityWindow(actualIdx);
                               setState(() {});
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(8),
-                              child: Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                              child: Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.red,
+                                size: 18,
+                              ),
                             ),
                           ),
                         ],
@@ -5521,7 +6834,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           const SizedBox(height: 8),
-          
+
           GestureDetector(
             onTap: () => _showAddEditWindowDialog(context, null, null),
             child: Container(
@@ -5529,12 +6842,18 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFE8F5F1),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF006A63).withOpacity(0.3)),
+                border: Border.all(
+                  color: const Color(0xFF006A63).withOpacity(0.3),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.add_rounded, color: Color(0xFF006A63), size: 18),
+                  const Icon(
+                    Icons.add_rounded,
+                    color: Color(0xFF006A63),
+                    size: 18,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     "Add Window",
@@ -5574,7 +6893,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // -- Hero card ----------------------------------------------------------
           fadeIn(
             delayMs: 0,
@@ -5645,7 +6963,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF5C77).withOpacity(0.18),
+                                  color: const Color(
+                                    0xFFFF5C77,
+                                  ).withOpacity(0.18),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),
@@ -5711,7 +7031,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF5C77).withOpacity(0.18),
+                                  color: const Color(
+                                    0xFFFF5C77,
+                                  ).withOpacity(0.18),
                                   blurRadius: 10,
                                   offset: const Offset(0, 5),
                                 ),
@@ -5727,12 +7049,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         Positioned(
                           left: 13,
                           bottom: 22,
-                          child: Icon(Icons.circle, size: 8, color: const Color(0xFF006A63).withOpacity(0.35)),
+                          child: Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: const Color(0xFF006A63).withOpacity(0.35),
+                          ),
                         ),
                         Positioned(
                           right: 13,
                           bottom: 22,
-                          child: Icon(Icons.circle, size: 8, color: const Color(0xFFFF5C77).withOpacity(0.35)),
+                          child: Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: const Color(0xFFFF5C77).withOpacity(0.35),
+                          ),
                         ),
                       ],
                     ),
@@ -5781,7 +7111,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => _selectDate(context),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.6),
                           borderRadius: BorderRadius.circular(14),
@@ -5898,8 +7231,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: const Color(0xFFFF5C77).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(11),
                         ),
-                        child: const Icon(Icons.auto_awesome_rounded,
-                            color: Color(0xFFFF5C77), size: 17),
+                        child: const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Color(0xFFFF5C77),
+                          size: 17,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -5929,58 +7265,60 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )
                   else ...[
-                  Row(
-                    children: [
-                      summaryTile(
-                        icon: Icons.calendar_month_rounded,
-                        iconColor: const Color(0xFF7C3AED),
-                        iconBg: const Color(0xFFF3E8FF),
-                        value: daysLeft > 0 ? "$daysLeft" : "--",
-                        label: "Days Left",
-                        bg: const Color(0xFFF3E8FF).withOpacity(0.4),
-                      ),
-                      const SizedBox(width: 10),
-                      summaryTile(
-                        icon: Icons.access_time_rounded,
-                        iconColor: const Color(0xFF006A63),
-                        iconBg: const Color(0xFFE8F5F1),
-                        value: totalHours > 0 ? "$totalHours hrs" : "--",
-                        label: "Study Hours",
-                        bg: const Color(0xFFE8F5F1).withOpacity(0.4),
-                      ),
-                      const SizedBox(width: 10),
-                      summaryTile(
-                        icon: Icons.local_fire_department_rounded,
-                        iconColor: const Color(0xFFEA580C),
-                        iconBg: const Color(0xFFFFEDD5),
-                        value: remainingHours > 0 ? "$remainingHours hrs" : "0 hrs",
-                        label: "Remaining",
-                        bg: const Color(0xFFFFEDD5).withOpacity(0.4),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      summaryTile(
-                        icon: Icons.book_rounded,
-                        iconColor: const Color(0xFF4F46E5),
-                        iconBg: const Color(0xFFE0E7FF),
-                        value: subjectsCount > 0 ? "$subjectsCount" : "--",
-                        label: "Subjects",
-                        bg: const Color(0xFFE0E7FF).withOpacity(0.4),
-                      ),
-                      const SizedBox(width: 10),
-                      summaryTile(
-                        icon: Icons.track_changes_rounded,
-                        iconColor: const Color(0xFFFF5C77),
-                        iconBg: const Color(0xFFFFE4E8),
-                        value: _plannerDifficultyPref,
-                        label: "Difficulty",
-                        bg: const Color(0xFFFFE4E8).withOpacity(0.4),
-                      ),
-                    ],
-                  ),
+                    Row(
+                      children: [
+                        summaryTile(
+                          icon: Icons.calendar_month_rounded,
+                          iconColor: const Color(0xFF7C3AED),
+                          iconBg: const Color(0xFFF3E8FF),
+                          value: daysLeft > 0 ? "$daysLeft" : "--",
+                          label: "Days Left",
+                          bg: const Color(0xFFF3E8FF).withOpacity(0.4),
+                        ),
+                        const SizedBox(width: 10),
+                        summaryTile(
+                          icon: Icons.access_time_rounded,
+                          iconColor: const Color(0xFF006A63),
+                          iconBg: const Color(0xFFE8F5F1),
+                          value: totalHours > 0 ? "$totalHours hrs" : "--",
+                          label: "Study Hours",
+                          bg: const Color(0xFFE8F5F1).withOpacity(0.4),
+                        ),
+                        const SizedBox(width: 10),
+                        summaryTile(
+                          icon: Icons.local_fire_department_rounded,
+                          iconColor: const Color(0xFFEA580C),
+                          iconBg: const Color(0xFFFFEDD5),
+                          value: remainingHours > 0
+                              ? "$remainingHours hrs"
+                              : "0 hrs",
+                          label: "Remaining",
+                          bg: const Color(0xFFFFEDD5).withOpacity(0.4),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        summaryTile(
+                          icon: Icons.book_rounded,
+                          iconColor: const Color(0xFF4F46E5),
+                          iconBg: const Color(0xFFE0E7FF),
+                          value: subjectsCount > 0 ? "$subjectsCount" : "--",
+                          label: "Subjects",
+                          bg: const Color(0xFFE0E7FF).withOpacity(0.4),
+                        ),
+                        const SizedBox(width: 10),
+                        summaryTile(
+                          icon: Icons.track_changes_rounded,
+                          iconColor: const Color(0xFFFF5C77),
+                          iconBg: const Color(0xFFFFE4E8),
+                          value: _plannerDifficultyPref,
+                          label: "Difficulty",
+                          bg: const Color(0xFFFFE4E8).withOpacity(0.4),
+                        ),
+                      ],
+                    ),
                   ],
                 ],
               ),
@@ -5994,7 +7332,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _PlannerGenerateButton(
               canGenerate: canGenerate,
               isLoading: _isLoading,
-              onTap: () { if (canGenerate && !_isLoading) generateStudyPlan(); },
+              onTap: () {
+                if (canGenerate && !_isLoading) generateStudyPlan();
+              },
             ),
           ),
 
@@ -6005,8 +7345,8 @@ class _HomeScreenState extends State<HomeScreen> {
               subjects.isEmpty
                   ? "Add subjects in the Subjects tab first."
                   : hoursPerDay == 0
-                      ? "Set your daily study hours above."
-                      : "Select an exam date to enable generation.",
+                  ? "Set your daily study hours above."
+                  : "Select an exam date to enable generation.",
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 12,
@@ -6018,6 +7358,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   Future<void> generateStudyPlan() async {
     if (subjects.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -6040,13 +7381,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("AI Study Plan generated successfully from availability windows!")),
+        const SnackBar(
+          content: Text(
+            "AI Study Plan generated successfully from availability windows!",
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to generate plan: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to generate plan: $e")));
     } finally {
       setState(() {
         _isLoading = false;
@@ -6112,10 +7457,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: _buildDrawer(),
-      appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2 || _currentTab == 3)
+      appBar:
+          (_currentTab == 0 ||
+              _currentTab == 1 ||
+              _currentTab == 2 ||
+              _currentTab == 3)
           ? null
           : AppBar(
-              title: Text(tabTitle, style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
+              title: Text(
+                tabTitle,
+                style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
+              ),
               backgroundColor: const Color(0xFFFFFDF6),
               elevation: 0,
             ),
@@ -6128,7 +7480,8 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_currentTab == 2)
             Positioned(
               right: 24,
-              bottom: 100, // Elevated above bottom navigation bar, matching Tasks tab exactly
+              bottom:
+                  100, // Elevated above bottom navigation bar, matching Tasks tab exactly
               child: GestureDetector(
                 onTap: () => _showAddSubjectModal(context),
                 child: ClipRRect(
@@ -6139,7 +7492,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF006A63).withOpacity(0.20), // Translucent teal tint glass
+                        color: const Color(
+                          0xFF006A63,
+                        ).withOpacity(0.20), // Translucent teal tint glass
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: Colors.white.withOpacity(0.35),
@@ -6150,7 +7505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: const Color(0xFF006A63).withOpacity(0.12),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       child: const Center(
@@ -6172,7 +7527,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Container(
               height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E2130).withOpacity(0.85), // Soft dark glass capsule
+                color: const Color(
+                  0xFF1E2130,
+                ).withOpacity(0.85), // Soft dark glass capsule
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.08),
@@ -6200,7 +7557,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: SizedBox(
                             width: 92, // Premium width between 88-96px
                             height: 48, // Reduced to 48px for visual balance
-                            child: LiquidGlassIndicator(currentTab: _currentTab),
+                            child: LiquidGlassIndicator(
+                              currentTab: _currentTab,
+                            ),
                           ),
                         ),
                       ),
@@ -6210,11 +7569,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   Positioned.fill(
                     child: Row(
                       children: [
-                        Expanded(child: _buildFloatingNavItem(0, Icons.dashboard_rounded, "Dashboard")),
-                        Expanded(child: _buildFloatingNavItem(1, Icons.assignment_rounded, "Tasks")),
-                        Expanded(child: _buildFloatingNavItem(2, Icons.book_rounded, "Subjects")),
-                        Expanded(child: _buildFloatingNavItem(3, Icons.hourglass_empty_rounded, "Study Room")),
-                        Expanded(child: _buildFloatingNavItem(4, Icons.settings_suggest_rounded, "Setup")),
+                        Expanded(
+                          child: _buildFloatingNavItem(
+                            0,
+                            Icons.dashboard_rounded,
+                            "Dashboard",
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(
+                            1,
+                            Icons.assignment_rounded,
+                            "Tasks",
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(
+                            2,
+                            Icons.book_rounded,
+                            "Subjects",
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(
+                            3,
+                            Icons.hourglass_empty_rounded,
+                            "Study Room",
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(
+                            4,
+                            Icons.settings_suggest_rounded,
+                            "Setup",
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -6232,12 +7621,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 32,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B887C)),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF3B887C),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         Text(
@@ -6292,7 +7686,9 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                color: isSelected
+                    ? Colors.white
+                    : Colors.white.withOpacity(0.5),
                 size: 20,
               ),
               const SizedBox(height: 3),
@@ -6326,7 +7722,8 @@ class LiquidGlassIndicator extends StatefulWidget {
   State<LiquidGlassIndicator> createState() => _LiquidGlassIndicatorState();
 }
 
-class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with SingleTickerProviderStateMixin {
+class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator>
+    with SingleTickerProviderStateMixin {
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
 
@@ -6337,19 +7734,28 @@ class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with Single
       vsync: this,
       duration: const Duration(milliseconds: 350),
     );
-    
+
     // Scale bounce sequence during dynamic transit: 1.0 -> 0.96 -> 1.04 -> 1.0
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.96).chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 1.0,
+          end: 0.96,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0.96, end: 1.04).chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0.96,
+          end: 1.04,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.04, end: 1.0).chain(CurveTween(curve: Curves.easeIn)),
+        tween: Tween<double>(
+          begin: 1.04,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
         weight: 30,
       ),
     ]).animate(_scaleController);
@@ -6374,10 +7780,7 @@ class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with Single
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
-        return ScaleTransition(
-          scale: _scaleAnimation,
-          child: child,
-        );
+        return ScaleTransition(scale: _scaleAnimation, child: child);
       },
       child: Container(
         height: 48,
@@ -6433,7 +7836,8 @@ class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with Single
                   child: AnimatedBuilder(
                     animation: _scaleController,
                     builder: (context, child) {
-                      final double offset = -1.5 + (_scaleController.value * 3.0);
+                      final double offset =
+                          -1.5 + (_scaleController.value * 3.0);
                       return Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
@@ -6460,6 +7864,7 @@ class _LiquidGlassIndicatorState extends State<LiquidGlassIndicator> with Single
     );
   }
 }
+
 class DashboardQuickActionItem extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -6476,7 +7881,8 @@ class DashboardQuickActionItem extends StatefulWidget {
   });
 
   @override
-  State<DashboardQuickActionItem> createState() => _DashboardQuickActionItemState();
+  State<DashboardQuickActionItem> createState() =>
+      _DashboardQuickActionItemState();
 }
 
 class _DashboardQuickActionItemState extends State<DashboardQuickActionItem> {
@@ -6531,10 +7937,7 @@ class _DashboardMetric extends StatelessWidget {
   final String value;
   final String label;
 
-  const _DashboardMetric({
-    required this.value,
-    required this.label,
-  });
+  const _DashboardMetric({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -6611,7 +8014,9 @@ class _PremiumTaskCardState extends State<PremiumTaskCard> {
     } else if (subLower.contains("database") || subLower.contains("dbms")) {
       subjectIcon = Icons.storage_rounded;
       iconColor = const Color(0xFF4F46E5);
-    } else if (subLower.contains("algorithm") || subLower.contains("structure") || subLower.contains("dsa")) {
+    } else if (subLower.contains("algorithm") ||
+        subLower.contains("structure") ||
+        subLower.contains("dsa")) {
       subjectIcon = Icons.code_rounded;
       iconColor = const Color(0xFF2563EB);
     } else {
@@ -6631,9 +8036,18 @@ class _PremiumTaskCardState extends State<PremiumTaskCard> {
     }
 
     return GestureDetector(
-      onTapDown: (_) => setState(() { _scale = 0.97; _isHovered = true; }),
-      onTapUp: (_) => setState(() { _scale = 1.0; _isHovered = false; }),
-      onTapCancel: () => setState(() { _scale = 1.0; _isHovered = false; }),
+      onTapDown: (_) => setState(() {
+        _scale = 0.97;
+        _isHovered = true;
+      }),
+      onTapUp: (_) => setState(() {
+        _scale = 1.0;
+        _isHovered = false;
+      }),
+      onTapCancel: () => setState(() {
+        _scale = 1.0;
+        _isHovered = false;
+      }),
       child: AnimatedScale(
         scale: _scale,
         duration: const Duration(milliseconds: 150),
@@ -6645,12 +8059,16 @@ class _PremiumTaskCardState extends State<PremiumTaskCard> {
             color: Colors.white.withOpacity(_isHovered ? 0.8 : 0.55),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _isHovered ? iconColor.withOpacity(0.4) : Colors.white.withOpacity(0.35),
+              color: _isHovered
+                  ? iconColor.withOpacity(0.4)
+                  : Colors.white.withOpacity(0.35),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: _isHovered ? iconColor.withOpacity(0.08) : Colors.black.withOpacity(0.02),
+                color: _isHovered
+                    ? iconColor.withOpacity(0.08)
+                    : Colors.black.withOpacity(0.02),
                 blurRadius: _isHovered ? 16 : 8,
                 offset: const Offset(0, 4),
               ),
@@ -6751,7 +8169,8 @@ class SubjectHeroCard extends StatefulWidget {
   State<SubjectHeroCard> createState() => _SubjectHeroCardState();
 }
 
-class _SubjectHeroCardState extends State<SubjectHeroCard> with SingleTickerProviderStateMixin {
+class _SubjectHeroCardState extends State<SubjectHeroCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -6864,7 +8283,11 @@ class _SubjectHeroCardState extends State<SubjectHeroCard> with SingleTickerProv
                     child: Image.asset(
                       "assets/images/books_3d.png",
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 48, color: Color(0xFF6366F1)),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.book_rounded,
+                        size: 48,
+                        color: Color(0xFF6366F1),
+                      ),
                     ),
                   ),
                 ],
@@ -6892,7 +8315,8 @@ class FloatingAsset extends StatefulWidget {
   State<FloatingAsset> createState() => _FloatingAssetState();
 }
 
-class _FloatingAssetState extends State<FloatingAsset> with SingleTickerProviderStateMixin {
+class _FloatingAssetState extends State<FloatingAsset>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -6915,7 +8339,8 @@ class _FloatingAssetState extends State<FloatingAsset> with SingleTickerProvider
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final double offset = 10 * Curves.easeInOut.transform(_controller.value);
+        final double offset =
+            10 * Curves.easeInOut.transform(_controller.value);
         return Transform.translate(
           offset: Offset(0, -5 + offset),
           child: child,
@@ -6927,7 +8352,11 @@ class _FloatingAssetState extends State<FloatingAsset> with SingleTickerProvider
         child: Image.asset(
           widget.assetPath,
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => const Icon(Icons.book_rounded, size: 48, color: Color(0xFF6366F1)),
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            Icons.book_rounded,
+            size: 48,
+            color: Color(0xFF6366F1),
+          ),
         ),
       ),
     );
@@ -6951,7 +8380,8 @@ class AnimatedGlassButton extends StatefulWidget {
   State<AnimatedGlassButton> createState() => _AnimatedGlassButtonState();
 }
 
-class _AnimatedGlassButtonState extends State<AnimatedGlassButton> with SingleTickerProviderStateMixin {
+class _AnimatedGlassButtonState extends State<AnimatedGlassButton>
+    with SingleTickerProviderStateMixin {
   double _scale = 1.0;
 
   void _onTapDown(TapDownDetails details) {
@@ -6985,10 +8415,14 @@ class _AnimatedGlassButtonState extends State<AnimatedGlassButton> with SingleTi
         child: Container(
           height: 44,
           decoration: BoxDecoration(
-            color: widget.isPrimary ? const Color(0xFF006A63) : Colors.white.withOpacity(0.45),
+            color: widget.isPrimary
+                ? const Color(0xFF006A63)
+                : Colors.white.withOpacity(0.45),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: widget.isPrimary ? const Color(0xFF006A63) : const Color(0xFF006A63).withOpacity(0.3),
+              color: widget.isPrimary
+                  ? const Color(0xFF006A63)
+                  : const Color(0xFF006A63).withOpacity(0.3),
               width: 1.2,
             ),
             boxShadow: [
@@ -7005,14 +8439,22 @@ class _AnimatedGlassButtonState extends State<AnimatedGlassButton> with SingleTi
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(widget.icon, size: 16, color: widget.isPrimary ? Colors.white : const Color(0xFF006A63)),
+              Icon(
+                widget.icon,
+                size: 16,
+                color: widget.isPrimary
+                    ? Colors.white
+                    : const Color(0xFF006A63),
+              ),
               const SizedBox(width: 6),
               Text(
                 widget.text,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: widget.isPrimary ? Colors.white : const Color(0xFF006A63),
+                  color: widget.isPrimary
+                      ? Colors.white
+                      : const Color(0xFF006A63),
                 ),
               ),
             ],
@@ -7075,7 +8517,10 @@ class _PlannerGenerateButtonState extends State<_PlannerGenerateButton> {
                     end: Alignment.centerRight,
                   ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.45), width: 1.4),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.45),
+              width: 1.4,
+            ),
             boxShadow: enabled
                 ? [
                     BoxShadow(
@@ -7099,7 +8544,11 @@ class _PlannerGenerateButtonState extends State<_PlannerGenerateButton> {
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
+                      const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                       const SizedBox(width: 10),
                       Text(
                         'Generate My AI Plan',
