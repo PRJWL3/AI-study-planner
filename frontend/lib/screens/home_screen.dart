@@ -1362,12 +1362,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDashboardTab() {
     final double actualWidth = MediaQuery.of(context).size.width;
-    final double screenWidth = actualWidth > 600 ? 500.0 : actualWidth;
+    final bool isWeb = actualWidth > 600;
+    final double screenWidth = isWeb ? 680.0 : actualWidth;
     // Scale mascot size based on screen width
     final double mascotWidth = (screenWidth * 0.58).clamp(180.0, 300.0);
     final double mascotHeight = mascotWidth * 1.33; // 400 height for 300 width
     final double mascotTop = (screenWidth * 0.11).clamp(30.0, 45.0);
     final double spacerHeight = (mascotTop + mascotHeight * 0.76).clamp(240.0, 350.0);
+
+    // Web-specific overrides for mascot size, placement, and scroll offsets
+    final double finalMascotWidth = isWeb ? 240.0 : mascotWidth;
+    final double finalMascotHeight = isWeb ? 320.0 : mascotHeight;
+    final double finalMascotTop = isWeb ? 60.0 : (mascotTop + 90.0);
+    final double finalTranslateOffset = isWeb ? 15.0 : -35.0;
 
     final statistics = StudyStateManager.instance.statistics;
     final double progress = statistics.todayGoalTotal == 0
@@ -1600,7 +1607,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // LAYER 2: Middle Layer (2nd Layer) - 3D Character Mascot (Dynamic based on selected profile mascot)
             Positioned(
               right: -20,
-              top: mascotTop + 90.0, // Shifted lower to increase overlap with the translucent Quick Actions glass card
+              top: finalMascotTop, // Shifted dynamically on web to achieve exactly 20% overlap under Quick Actions card
               child: AnimatedBuilder(
                 animation: _scrollController,
                 builder: (context, child) {
@@ -1617,8 +1624,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 child: SizedBox(
-                  width: mascotWidth,
-                  height: mascotHeight,
+                  width: finalMascotWidth,
+                  height: finalMascotHeight,
                   child: Image.asset(
                     userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
                     fit: BoxFit.contain,
@@ -1636,7 +1643,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         Transform.translate(
-          offset: const Offset(0.0, -35.0),
+          offset: Offset(0.0, finalTranslateOffset),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
