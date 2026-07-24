@@ -5671,42 +5671,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      floatingActionButton: _currentTab == 2
-          ? Container(
-              margin: const EdgeInsets.only(bottom: 74),
-              width: 56,
-              height: 56,
-              child: ClipOval(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF006A63).withOpacity(0.85),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF006A63).withOpacity(0.35),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showAddSubjectModal(context),
-                        child: const Center(
-                          child: Icon(Icons.add_rounded, color: Colors.white, size: 28),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ) : null,
-
       appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2)
           ? null
           : AppBar(
@@ -5720,6 +5684,46 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(bottom: 96),
             child: currentTabWidget,
           ),
+          if (_currentTab == 2)
+            Positioned(
+              right: 24,
+              bottom: 100, // Elevated above bottom navigation bar, matching Tasks tab exactly
+              child: GestureDetector(
+                onTap: () => _showAddSubjectModal(context),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF006A63).withOpacity(0.20), // Translucent teal tint glass
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.35),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF006A63).withOpacity(0.12),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.add_rounded,
+                          color: Color(0xFF006A63),
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             bottom: 20,
             left: 20,
