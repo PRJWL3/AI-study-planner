@@ -1393,24 +1393,49 @@ class _HomeScreenState extends State<HomeScreen> {
       if (upcomingTasks.length >= 3) break;
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(_getDashboardBackdrop()),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.white.withOpacity(0.85),
-            BlendMode.lighten,
+    return Stack(
+      children: [
+        // Background layer with subtle parallax
+        Positioned.fill(
+          child: AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              double offset = 0.0;
+              if (_scrollController.hasClients) {
+                offset = _scrollController.offset;
+              }
+              double pull = offset < 0 ? -offset : 0.0;
+              double bgTranslateY = (pull * 0.08).clamp(0.0, 8.0);
+              double bgScale = 1.05 + (pull * 0.0005).clamp(0.0, 0.02);
+
+              return Transform(
+                transform: Matrix4.translationValues(0.0, bgTranslateY, 0.0)
+                  ..scale(bgScale),
+                alignment: Alignment.center,
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage(_getDashboardBackdrop()),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.white.withOpacity(0.85),
+                        BlendMode.lighten,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
-      ),
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 120), // Clear bottom nav dock padding
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
+        // Scrollable Content
+        Positioned.fill(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.only(bottom: 120), // Clear bottom nav dock padding
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
             // LAYER 1: Lowest Layer (1st Layer) - Progress Card column
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1550,19 +1575,35 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               right: -20,
               top: 45, // overlays the Progress Card from above, pushed higher
-              child: SizedBox(
-                width: 300,
-                height: 400,
-                child: Image.asset(
-                  userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.person_rounded,
-                      size: 100,
-                      color: Color(0xFF006A63),
-                    );
-                  },
+              child: AnimatedBuilder(
+                animation: _scrollController,
+                builder: (context, child) {
+                  double offset = 0.0;
+                  if (_scrollController.hasClients) {
+                    offset = _scrollController.offset;
+                  }
+                  double pull = offset < 0 ? -offset : 0.0;
+                  double mascotTranslateY = (pull * 0.15).clamp(0.0, 10.0);
+
+                  return Transform.translate(
+                    offset: Offset(0.0, mascotTranslateY),
+                    child: child,
+                  );
+                },
+                child: SizedBox(
+                  width: 300,
+                  height: 400,
+                  child: Image.asset(
+                    userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.person_rounded,
+                        size: 100,
+                        color: Color(0xFF006A63),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -2244,8 +2285,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ],
+);
+}
 
   Widget _buildStudyRoomTab() {
     final List<String> subjectNames = subjects.map((s) => s.name).toList();
@@ -3153,7 +3196,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxHeight: MediaQuery.of(context).size.height * 0.5,
                 ),
                 child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
                   child: content,
                 ),
               ),
@@ -3671,7 +3713,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 140),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -3823,7 +3864,6 @@ class _HomeScreenState extends State<HomeScreen> {
               // 5. Horizontal Filter Chips (Rounded glass pills with color dots)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const ClampingScrollPhysics(),
                 child: Row(
                   children: ["All", "In Progress", "Completed", "Easy", "Medium", "Hard"].map((filter) {
                     final bool isSelected = _subjectsFilter == filter;
@@ -4892,7 +4932,6 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            physics: const ClampingScrollPhysics(),
             child: Row(
               children: weekdays.map((day) {
                 final bool isSelected = _selectedPlannerDay == day;
@@ -5092,7 +5131,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 48),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -204,12 +204,34 @@ class GlobalScrollBehavior extends ScrollBehavior {
 
   @override
   ScrollPhysics getScrollPhysics(BuildContext context) {
-    return const ClampingScrollPhysics();
+    switch (getPlatform(context)) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        );
+      case TargetPlatform.android:
+      default:
+        return const ClampingScrollPhysics(
+          parent: RangeMaintainingScrollPhysics(),
+        );
+    }
   }
 
   @override
   Widget buildOverscrollIndicator(
       BuildContext context, Widget child, ScrollableDetails details) {
-    return child;
+    switch (getPlatform(context)) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return child;
+      case TargetPlatform.android:
+      default:
+        return GlowingOverscrollIndicator(
+          axisDirection: details.direction,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+          child: child,
+        );
+    }
   }
 }

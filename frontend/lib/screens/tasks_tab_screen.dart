@@ -858,7 +858,6 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
         children: [
           // Scrollable UI Tree
           SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
             padding: EdgeInsets.fromLTRB(24, topPadding, 24, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
