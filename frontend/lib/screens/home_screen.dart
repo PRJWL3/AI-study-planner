@@ -1374,7 +1374,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final double finalMascotWidth = isWeb ? 240.0 : mascotWidth;
     final double finalMascotHeight = isWeb ? 320.0 : mascotHeight;
     final double finalMascotTop = isWeb ? 60.0 : (mascotTop + 90.0);
-    final double finalTranslateOffset = isWeb ? 15.0 : -35.0;
+    final double finalTranslateOffset = isWeb ? -114.0 : -35.0;
 
     final statistics = StudyStateManager.instance.statistics;
     final double progress = statistics.todayGoalTotal == 0
