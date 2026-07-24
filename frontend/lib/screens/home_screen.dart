@@ -3153,7 +3153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   maxHeight: MediaQuery.of(context).size.height * 0.5,
                 ),
                 child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const ClampingScrollPhysics(),
                   child: content,
                 ),
               ),
@@ -3823,7 +3823,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // 5. Horizontal Filter Chips (Rounded glass pills with color dots)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
+                physics: const ClampingScrollPhysics(),
                 child: Row(
                   children: ["All", "In Progress", "Completed", "Easy", "Medium", "Hard"].map((filter) {
                     final bool isSelected = _subjectsFilter == filter;
@@ -4892,7 +4892,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
+            physics: const ClampingScrollPhysics(),
             child: Row(
               children: weekdays.map((day) {
                 final bool isSelected = _selectedPlannerDay == day;
@@ -5092,7 +5092,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 48),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -36,6 +36,7 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
   Widget build(BuildContext context) {
     debugPrint("APP_START: StudyPlannerApp build() called");
     return MaterialApp(
+      scrollBehavior: const GlobalScrollBehavior(),
       debugShowCheckedModeBanner: false,
       title: 'Lumina Study',
       theme: ThemeData(
@@ -195,5 +196,20 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
         },
       ),
     );
+  }
+}
+
+class GlobalScrollBehavior extends ScrollBehavior {
+  const GlobalScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics();
+  }
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
   }
 }
