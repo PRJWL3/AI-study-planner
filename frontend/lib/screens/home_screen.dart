@@ -1375,13 +1375,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Filter up to 3 uncompleted tasks for the dashboard checklist widget
     final List<Map<String, dynamic>> upcomingTasks = [];
+    final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
     for (int i = 0; i < studyPlan.length; i++) {
       final parsedItem = StudyStateManager.instance.parsePlanItem(studyPlan[i]);
       final itemDay = int.tryParse(parsedItem['dayIndex'] ?? '');
       final isBreak = (parsedItem['subject'] ?? '').toLowerCase() == 'break';
       if (!isBreak && itemDay == todayIndex && !completedTasks[i]) {
         final planItem = studyPlan[i];
-        final regex = RegExp(r'^(.+)\s+\((Easy|Medium|Hard)\)\s+-\s+(.+)$', caseSensitive: false);
         final match = regex.firstMatch(planItem);
         if (match != null) {
           upcomingTasks.add({
@@ -1410,35 +1410,38 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         // Background layer with subtle parallax
         Positioned.fill(
-          child: AnimatedBuilder(
-            animation: _scrollController,
-            builder: (context, child) {
-              double offset = 0.0;
-              if (_scrollController.hasClients) {
-                offset = _scrollController.offset;
-              }
-              double pull = offset < 0 ? -offset : 0.0;
-              double bgTranslateY = (pull * 0.08).clamp(0.0, 8.0);
-              double bgScale = 1.05 + (pull * 0.0005).clamp(0.0, 0.02);
-
-              return Transform(
-                transform: Matrix4.translationValues(0.0, bgTranslateY, 0.0)
-                  ..scale(bgScale),
-                alignment: Alignment.center,
-                child: Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(_getDashboardBackdrop()),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.white.withOpacity(0.85),
-                        BlendMode.lighten,
-                      ),
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _scrollController,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(_getDashboardBackdrop()),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.white.withOpacity(0.85),
+                      BlendMode.lighten,
                     ),
                   ),
                 ),
-              );
-            },
+              ),
+              builder: (context, child) {
+                double offset = 0.0;
+                if (_scrollController.hasClients) {
+                  offset = _scrollController.offset;
+                }
+                double pull = offset < 0 ? -offset : 0.0;
+                double bgTranslateY = (pull * 0.08).clamp(0.0, 8.0);
+                double bgScale = 1.05 + (pull * 0.0005).clamp(0.0, 0.02);
+
+                return Transform(
+                  transform: Matrix4.translationValues(0.0, bgTranslateY, 0.0)
+                    ..scale(bgScale),
+                  alignment: Alignment.center,
+                  child: child,
+                );
+              },
+            ),
           ),
         ),
         // Scrollable Content
@@ -1446,13 +1449,16 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             controller: _scrollController,
             padding: const EdgeInsets.only(bottom: 120), // Clear bottom nav dock padding
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-            // LAYER 1: Lowest Layer (1st Layer) - Progress Card column
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            child: RepaintBoundary(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                 // Top Navigation Bar
                 _buildTopNav(),
                 // Hero Greeting Section
@@ -1588,44 +1594,43 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               right: -20,
               top: mascotTop, // overlays the Progress Card from above, pushed higher
-              child: AnimatedBuilder(
-                animation: _scrollController,
-                builder: (context, child) {
-                  double offset = 0.0;
-                  if (_scrollController.hasClients) {
-                    offset = _scrollController.offset;
-                  }
-                  double pull = offset < 0 ? -offset : 0.0;
-                  double mascotTranslateY = (pull * 0.15).clamp(0.0, 10.0);
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _scrollController,
+                  builder: (context, child) {
+                    double offset = 0.0;
+                    if (_scrollController.hasClients) {
+                      offset = _scrollController.offset;
+                    }
+                    double pull = offset < 0 ? -offset : 0.0;
+                    double mascotTranslateY = (pull * 0.15).clamp(0.0, 10.0);
 
-                  return Transform.translate(
-                    offset: Offset(0.0, mascotTranslateY),
-                    child: child,
-                  );
-                },
-                child: SizedBox(
-                  width: mascotWidth,
-                  height: mascotHeight,
-                  child: Image.asset(
-                    userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.person_rounded,
-                        size: 100,
-                        color: Color(0xFF006A63),
-                      );
-                    },
+                    return Transform.translate(
+                      offset: Offset(0.0, mascotTranslateY),
+                      child: child,
+                    );
+                  },
+                  child: SizedBox(
+                    width: mascotWidth,
+                    height: mascotHeight,
+                    child: Image.asset(
+                      userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.person_rounded,
+                          size: 100,
+                          color: Color(0xFF006A63),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
-            // LAYER 3: Top Layer (3rd Layer) - Quick Actions & Remaining widgets Column
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Push below the Progress card so it overlays the Mascot waist/torso area
-                SizedBox(height: spacerHeight),
+          ],
+        ),
+        const SizedBox(height: 16),
                 // Quick Actions Card (Glass card)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -2337,12 +2342,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
-    ),
-  ],
-);
+    ],
+  );
 }
 
   Widget _buildStudyRoomTab() {
