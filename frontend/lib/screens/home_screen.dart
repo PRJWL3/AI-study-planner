@@ -5671,7 +5671,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2)
+      appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2 || _currentTab == 3)
           ? null
           : AppBar(
               title: Text(tabTitle, style: GoogleFonts.fredoka(fontWeight: FontWeight.bold)),
