@@ -171,23 +171,8 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
               ),
             );
           }
-          final state = StudyStateManager.instance;
-          final bool isLoggedIn = state.isLoggedIn;
-          final bool isProfileSetup = state.isProfileSetup;
-          debugPrint("APP_START: Route selection: isLoggedIn = $isLoggedIn, isProfileSetup = $isProfileSetup");
-
-          if (isLoggedIn) {
-            if (isProfileSetup) {
-              debugPrint("APP_START: Returning HomeScreen");
-              return const HomeScreen();
-            } else {
-              debugPrint("APP_START: Returning ProfileSetupScreen");
-              return const ProfileSetupScreen();
-            }
-          } else {
-            debugPrint("APP_START: Returning LoginScreen");
-            return const LoginScreen();
-          }
+          debugPrint("APP_START: Route selection: always launch to LoginScreen");
+          return const LoginScreen();
         },
       ),
     );
