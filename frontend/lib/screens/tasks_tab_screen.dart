@@ -850,6 +850,69 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       }
     }
 
+    final weekdaysKeysList = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    final Map<String, double> completedHoursPerDay = {
+      "Mon": 0.0, "Tue": 0.0, "Wed": 0.0, "Thu": 0.0, "Fri": 0.0, "Sat": 0.0, "Sun": 0.0
+    };
+    final Map<String, double> plannedHoursPerDay = {
+      "Mon": 0.0, "Tue": 0.0, "Wed": 0.0, "Thu": 0.0, "Fri": 0.0, "Sat": 0.0, "Sun": 0.0
+    };
+
+    double totalWeeklyCompletedMinutes = 0;
+    double totalWeeklyPlannedMinutes = 0;
+
+    for (int i = 0; i < studyPlan.length; i++) {
+      final parsed = _parsePlanItem(studyPlan[i]);
+      final isBreak = (parsed['subject'] ?? '').toLowerCase() == 'break';
+      if (isBreak) continue;
+
+      final hoursStr = parsed['hours'] ?? '';
+      double durationMins = 60.0;
+      final hoursMatch = RegExp(r'([\d.]+)').firstMatch(hoursStr);
+      if (hoursMatch != null) {
+        final val = double.tryParse(hoursMatch.group(1)!) ?? 1.0;
+        if (hoursStr.contains('min')) {
+          durationMins = val;
+        } else {
+          durationMins = val * 60.0;
+        }
+      }
+
+      final dayIdx = parsed['dayIndex']!.isNotEmpty
+          ? (int.tryParse(parsed['dayIndex']!) ?? 0)
+          : (i % 7);
+      if (dayIdx >= 0 && dayIdx < 7) {
+        final String dayKey = weekdaysKeysList[dayIdx];
+        plannedHoursPerDay[dayKey] = plannedHoursPerDay[dayKey]! + (durationMins / 60.0);
+        totalWeeklyPlannedMinutes += durationMins;
+
+        if (completedTasks[i]) {
+          completedHoursPerDay[dayKey] = completedHoursPerDay[dayKey]! + (durationMins / 60.0);
+          totalWeeklyCompletedMinutes += durationMins;
+        }
+      }
+    }
+
+    final statistics = StudyStateManager.instance.statistics;
+    for (final dayKey in weekdaysKeysList) {
+      final double extraHours = statistics.weeklyProgress[dayKey] ?? 0.0;
+      completedHoursPerDay[dayKey] = completedHoursPerDay[dayKey]! + extraHours;
+      totalWeeklyCompletedMinutes += extraHours * 60.0;
+    }
+
+    final double overallPlannedHours = totalWeeklyPlannedMinutes / 60.0;
+    final double overallCompletedHours = totalWeeklyCompletedMinutes / 60.0;
+
+    final double weeklyProgressPercent = overallPlannedHours > 0 
+        ? (overallCompletedHours / overallPlannedHours).clamp(0.0, 1.0) 
+        : 0.0;
+    final int percentCompleted = (weeklyProgressPercent * 100).round();
+
+    final double maxDayHoursValue = completedHoursPerDay.values.fold(0.0, (maxVal, val) => val > maxVal ? val : maxVal);
+    final double maxDayHours = maxDayHoursValue > 0.0 ? maxDayHoursValue : 1.0;
+
+    final int todayIndex = DateTime.now().weekday - 1; // 0 = Mon, 6 = Sun
+
     final double topPadding = MediaQuery.of(context).padding.top + 16;
 
     return Scaffold(
@@ -1957,7 +2020,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                   ),
                                 ),
                                 Text(
-                                  "18 / 24 hrs",
+                                  "${overallCompletedHours.toStringAsFixed(overallCompletedHours % 1 == 0 ? 0 : 1)} / ${overallPlannedHours > 0 ? overallPlannedHours.toStringAsFixed(overallPlannedHours % 1 == 0 ? 0 : 1) : '24'} hrs",
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -1968,15 +2031,15 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                             ),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(4),
-                              child: const LinearProgressIndicator(
-                                value: 0.75,
+                              child: LinearProgressIndicator(
+                                value: weeklyProgressPercent,
                                 minHeight: 6,
                                 backgroundColor: Colors.white60,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
+                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
                               ),
                             ),
                             Text(
-                              "75% Target completed",
+                              "$percentCompleted% Target completed",
                               style: GoogleFonts.plusJakartaSans(
                                   fontSize: 10,
                                   color: const Color(0xFF594042),
@@ -2016,14 +2079,19 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: List.generate(7, (idx) {
                                   final days = ["M", "T", "W", "T", "F", "S", "S"];
-                                  final heights = [28.0, 42.0, 58.0, 36.0, 50.0, 22.0, 14.0];
-                                  final active = idx == 2;
+                                  final String dayKey = weekdaysKeysList[idx];
+                                  final double dayHours = completedHoursPerDay[dayKey] ?? 0.0;
+                                  
+                                  // Scale height proportionally to a max of 58px, minimum 4px
+                                  final double barHeight = 4.0 + (dayHours / maxDayHours) * 54.0;
+                                  final bool active = idx == todayIndex;
+                                  
                                   return Column(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       Container(
                                         width: 10,
-                                        height: heights[idx],
+                                        height: barHeight,
                                         decoration: BoxDecoration(
                                           color: active ? const Color(0xFF006A63) : const Color(0xFF006A63).withOpacity(0.25),
                                           borderRadius: BorderRadius.circular(4),
