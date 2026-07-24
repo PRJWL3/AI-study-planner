@@ -96,12 +96,7 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
       ),
       builder: (context, child) {
         debugPrint("APP_START: MaterialApp builder called, child is null = ${child == null}");
-        return Stack(
-          children: [
-            if (child != null) child,
-            const GlobalEggyMascot(),
-          ],
-        );
+        return child ?? const SizedBox.shrink();
       },
       home: FutureBuilder<void>(
         future: _initFuture,
