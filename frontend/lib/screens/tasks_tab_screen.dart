@@ -2144,7 +2144,7 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
           // 7. Right-Aligned floating Liquid Glass action button (snaps cleanly above bottom nav capsule)
           Positioned(
             right: 24,
-            bottom: 100, // Elevated above bottom navigation bar
+            bottom: 4, // Elevated above bottom navigation bar (4 + 96 padding = 100)
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
