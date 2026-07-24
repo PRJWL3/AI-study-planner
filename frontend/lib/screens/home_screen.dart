@@ -1654,43 +1654,59 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            DashboardQuickActionItem(
-                              icon: Icons.playlist_add_check_rounded,
-                              label: "New Task",
-                              bgColor: const Color(0xFFE8F5F1),
-                              iconColor: const Color(0xFF006A63),
-                              onTap: () => _showAddTaskDialogOnDashboard(context),
+                            Expanded(
+                              child: Center(
+                                child: DashboardQuickActionItem(
+                                  icon: Icons.playlist_add_check_rounded,
+                                  label: "New Task",
+                                  bgColor: const Color(0xFFE8F5F1),
+                                  iconColor: const Color(0xFF006A63),
+                                  onTap: () => _showAddTaskDialogOnDashboard(context),
+                                ),
+                              ),
                             ),
-                            DashboardQuickActionItem(
-                              icon: Icons.calendar_today_rounded,
-                              label: "Schedule",
-                              bgColor: const Color(0xFFF3E8FF),
-                              iconColor: const Color(0xFF7C3AED),
-                              onTap: () {
-                                setState(() {
-                                  _currentTab = 1;
-                                });
-                                EggyController.instance.currentTab = 1;
-                              },
+                            Expanded(
+                              child: Center(
+                                child: DashboardQuickActionItem(
+                                  icon: Icons.calendar_today_rounded,
+                                  label: "Schedule",
+                                  bgColor: const Color(0xFFF3E8FF),
+                                  iconColor: const Color(0xFF7C3AED),
+                                  onTap: () {
+                                    setState(() {
+                                      _currentTab = 1;
+                                    });
+                                    EggyController.instance.currentTab = 1;
+                                  },
+                                ),
+                              ),
                             ),
-                            DashboardQuickActionItem(
-                              icon: Icons.track_changes_rounded,
-                              label: "Goals",
-                              bgColor: const Color(0xFFFFEDD5),
-                              iconColor: const Color(0xFFEA580C),
-                              onTap: () {
-                                setState(() {
-                                  _currentTab = 4;
-                                });
-                                EggyController.instance.currentTab = 4;
-                              },
+                            Expanded(
+                              child: Center(
+                                child: DashboardQuickActionItem(
+                                  icon: Icons.track_changes_rounded,
+                                  label: "Goals",
+                                  bgColor: const Color(0xFFFFEDD5),
+                                  iconColor: const Color(0xFFEA580C),
+                                  onTap: () {
+                                    setState(() {
+                                      _currentTab = 4;
+                                    });
+                                    EggyController.instance.currentTab = 4;
+                                  },
+                                ),
+                              ),
                             ),
-                            DashboardQuickActionItem(
-                              icon: Icons.bar_chart_rounded,
-                              label: "Reports",
-                              bgColor: const Color(0xFFE0E7FF),
-                              iconColor: const Color(0xFF4F46E5),
-                              onTap: _showReportsDialog,
+                            Expanded(
+                              child: Center(
+                                child: DashboardQuickActionItem(
+                                  icon: Icons.bar_chart_rounded,
+                                  label: "Reports",
+                                  bgColor: const Color(0xFFE0E7FF),
+                                  iconColor: const Color(0xFF4F46E5),
+                                  onTap: _showReportsDialog,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1705,10 +1721,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _DashboardMetric(value: '${statistics.weeklyCompletedMinutes}/${statistics.weeklyGoalMinutes}m', label: 'Weekly Goal'),
-                        _DashboardMetric(value: '${statistics.todayStudyMinutes}m', label: 'Study Hours'),
-                        _DashboardMetric(value: '${statistics.streakDays}', label: 'Current Streak'),
-                        _DashboardMetric(value: '${statistics.sessionsToday}', label: 'Sessions'),
+                        Expanded(
+                          child: _DashboardMetric(
+                            value: '${statistics.weeklyCompletedMinutes}/${statistics.weeklyGoalMinutes}m',
+                            label: 'Weekly Goal',
+                          ),
+                        ),
+                        Expanded(
+                          child: _DashboardMetric(
+                            value: '${statistics.todayStudyMinutes}m',
+                            label: 'Study Hours',
+                          ),
+                        ),
+                        Expanded(
+                          child: _DashboardMetric(
+                            value: '${statistics.streakDays}',
+                            label: 'Current Streak',
+                          ),
+                        ),
+                        Expanded(
+                          child: _DashboardMetric(
+                            value: '${statistics.sessionsToday}',
+                            label: 'Sessions',
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -3780,7 +3816,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 1.35,
+                childAspectRatio: 1.15,
                 children: [
                   _buildStatCard(
                     iconEmoji: "📚",
@@ -6101,21 +6137,27 @@ class _DashboardMetric extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          value,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF1A1C1E),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF1A1C1E),
+            ),
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF8D7072),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF8D7072),
+            ),
           ),
         ),
       ],
