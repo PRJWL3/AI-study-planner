@@ -1630,10 +1630,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-                // Quick Actions Card (Glass card)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        Transform.translate(
+          offset: const Offset(0.0, -35.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quick Actions Card (Glass card)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   child: _buildGlassCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -2340,13 +2344,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    ),
+  ),
+),
+),
+],
+);
 }
 
   Widget _buildStudyRoomTab() {
