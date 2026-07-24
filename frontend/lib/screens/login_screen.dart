@@ -135,10 +135,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(28),
                       child: Container(
                         color: const Color(0xFF006A63),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          size: 100,
-                          color: Colors.white,
+                        child: Image.asset(
+                          "assets/images/mascot_girl_login.png",
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person_rounded,
+                              size: 100,
+                              color: Colors.white,
+                            );
+                          },
                         ),
                       ),
                     ),
