@@ -1406,6 +1406,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: SingleChildScrollView(
         controller: _scrollController,
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 120), // Clear bottom nav dock padding
         child: Stack(
           clipBehavior: Clip.none,
@@ -2325,10 +2326,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTopNav() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
             onTap: () {
@@ -2463,7 +2466,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Map<String, dynamic> _getDynamicWeather() {
@@ -3668,13 +3671,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 140),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 36), // Increased whitespace
+              SizedBox(height: MediaQuery.of(context).padding.top + 16),
               
               // 1. Header Row (Title & Notification capsule)
               Row(
@@ -3735,7 +3739,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 1.6,
+                childAspectRatio: 1.35,
                 children: [
                   _buildStatCard(
                     iconEmoji: "📚",

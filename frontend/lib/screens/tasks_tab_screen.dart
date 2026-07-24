@@ -850,13 +850,16 @@ class _TasksTabScreenState extends State<TasksTabScreen> with SingleTickerProvid
       }
     }
 
+    final double topPadding = MediaQuery.of(context).padding.top + 16;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // Scrollable UI Tree
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 140),
+            physics: const ClampingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(24, topPadding, 24, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
