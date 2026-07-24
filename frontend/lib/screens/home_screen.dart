@@ -9,6 +9,8 @@ import '../models/subject.dart';
 import '../models/study_availability.dart';
 import '../services/api_service.dart';
 import 'edit_profile_screen.dart';
+import 'login_screen.dart';
+import '../models/study_statistics.dart';
 import '../services/study_state_manager.dart';
 import 'tasks_tab_screen.dart';
 import '../widgets/global_eggy.dart';
@@ -73,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double totalFocusHoursToday = 1.5;
   String activePresetProfile = '25m';
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? activeTaskName;
   int breakDurationSeconds = 300; // default 5 mins
   int? activeTaskWorkMinutes;
@@ -1593,7 +1596,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // LAYER 2: Middle Layer (2nd Layer) - 3D Character Mascot (Dynamic based on selected profile mascot)
             Positioned(
               right: -20,
-              top: mascotTop + 65.0, // Shifted lower to increase overlap with the translucent Quick Actions glass card
+              top: mascotTop + 90.0, // Shifted lower to increase overlap with the translucent Quick Actions glass card
               child: AnimatedBuilder(
                 animation: _scrollController,
                 builder: (context, child) {
@@ -2442,12 +2445,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Lumina Study menu drawer toggled"),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              _scaffoldKey.currentState?.openDrawer();
             },
             child: Container(
               width: 40,
@@ -2574,6 +2572,362 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     ));
+  }
+
+  // Premium navigation drawer
+  Widget _buildDrawer() {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final statistics = StudyStateManager.instance.statistics;
+    
+    return Drawer(
+      width: screenWidth * 0.82,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: Colors.white.withOpacity(0.65), // Frosted glass transparency
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Drawer Header (Profile, Level, XP, Streak)
+                  _buildDrawerHeader(statistics),
+                  const Divider(color: Color(0x1F006A63), height: 1),
+                  // Scrollable Sections
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      children: [
+                        _buildDrawerSectionTitle("Account"),
+                        _buildDrawerItem(Icons.person_outline_rounded, "My Profile", () => _openProfileEdit()),
+                        _buildDrawerItem(Icons.face_retouching_natural_rounded, "Edit Avatar", () => _openProfileEdit()),
+                        const SizedBox(height: 18),
+                        
+                        _buildDrawerSectionTitle("Progress"),
+                        _buildDrawerItem(Icons.emoji_events_outlined, "Achievements", () => _showNotImplemented("Achievements")),
+                        _buildDrawerItem(Icons.star_outline_rounded, "Crystal Vault", () => _showNotImplemented("Crystal Vault")),
+                        _buildDrawerItem(Icons.insights_rounded, "Statistics", () => _showNotImplemented("Statistics")),
+                        const SizedBox(height: 18),
+                        
+                        _buildDrawerSectionTitle("Customization"),
+                        _buildDrawerItem(Icons.palette_outlined, "Themes & Appearance", () => _showNotImplemented("Themes & Appearance")),
+                        _buildDrawerItem(Icons.notifications_none_rounded, "Notifications", () => _showNotImplemented("Notifications")),
+                        const SizedBox(height: 18),
+                        
+                        _buildDrawerSectionTitle("Cloud"),
+                        _buildDrawerItem(Icons.cloud_queue_rounded, "Backup & Sync", () => _showNotImplemented("Backup & Sync")),
+                        const SizedBox(height: 18),
+                        
+                        _buildDrawerSectionTitle("Support"),
+                        _buildDrawerItem(Icons.help_outline_rounded, "Help & Support", () => _showNotImplemented("Help & Support")),
+                        _buildDrawerItem(Icons.gpp_maybe_outlined, "Privacy Policy", () => _showNotImplemented("Privacy & Policy")),
+                        _buildDrawerItem(Icons.info_outline_rounded, "About Lumina", () => _showNotImplemented("About Lumina")),
+                      ],
+                    ),
+                  ),
+                  const Divider(color: Color(0x1F006A63), height: 1),
+                  // Bottom Section (Settings & Logout)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        _buildDrawerItem(Icons.settings_outlined, "Settings", () {
+                          setState(() {
+                            _currentTab = 4; // settings tab
+                          });
+                          EggyController.instance.currentTab = 3;
+                        }),
+                        _buildDrawerItem(Icons.logout_rounded, "Logout", () => _handleLogout(), isDestructive: true),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerHeader(StudyStatistics statistics) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFE8F5F1), // Soft teal/green gradient
+            Color(0xFFFFFDF6), // Soft warm cream
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Profile Circle
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF006A63).withOpacity(0.3), width: 2),
+                  image: DecorationImage(
+                    image: AssetImage(userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png"),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      userName.isNotEmpty ? userName : "Student",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1A1C1E),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Level 12 Scholar",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF006A63),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Streak Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFEDD5), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("🔥", style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 4),
+                    Text(
+                      "${statistics.streakDays} Day",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFEA580C),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // XP Progress section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "XP Progress",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF8D7072),
+                ),
+              ),
+              Text(
+                "720 / 1000",
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF006A63),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // XP progress bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: const LinearProgressIndicator(
+              value: 0.72,
+              minHeight: 6,
+              backgroundColor: Color(0xFFEEEEF0),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF006A63)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8, top: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF8D7072),
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(context); // Close drawer first
+              onTap();
+            },
+            splashColor: const Color(0xFF006A63).withOpacity(0.08),
+            highlightColor: const Color(0xFF006A63).withOpacity(0.04),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  // Circular glass icon container
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDestructive
+                          ? Colors.red.withOpacity(0.08)
+                          : const Color(0xFF006A63).withOpacity(0.06),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDestructive
+                            ? Colors.red.withOpacity(0.15)
+                            : Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 18,
+                      color: isDestructive ? Colors.red.shade700 : const Color(0xFF006A63),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDestructive ? Colors.red.shade700 : const Color(0xFF1A1C1E),
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: isDestructive ? Colors.red.withOpacity(0.4) : const Color(0xFF8D7072).withOpacity(0.5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showNotImplemented(String featureName) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("$featureName feature is coming soon!"),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF006A63),
+      ),
+    );
+  }
+
+  Future<void> _openProfileEdit() async {
+    final result = await Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => EditProfileScreen(
+          currentName: userName,
+          currentCourse: userCourse,
+          currentYear: userYear,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+    if (result != null && result is Map<String, String>) {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        userName = result['name'] ?? "";
+        userCourse = result['course'] ?? "";
+        userYear = result['year'] ?? "";
+      });
+      EggyController.instance.userCourse = userCourse;
+      EggyController.instance.triggerJoyBounce();
+      await prefs.setString("user_name", userName);
+      await prefs.setString("user_course", userCourse);
+      await prefs.setString("user_year", userYear);
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    await StudyStateManager.instance.logout();
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   Map<String, dynamic> _getDynamicWeather() {
@@ -5743,6 +6097,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: _buildDrawer(),
       appBar: (_currentTab == 0 || _currentTab == 1 || _currentTab == 2 || _currentTab == 3)
           ? null
           : AppBar(
