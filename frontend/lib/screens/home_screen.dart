@@ -1352,6 +1352,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboardTab() {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    // Scale mascot size based on screen width
+    final double mascotWidth = (screenWidth * 0.58).clamp(180.0, 300.0);
+    final double mascotHeight = mascotWidth * 1.33; // 400 height for 300 width
+    final double mascotTop = (screenWidth * 0.11).clamp(30.0, 45.0);
+    final double spacerHeight = (mascotTop + mascotHeight * 0.76).clamp(240.0, 350.0);
+
     final statistics = StudyStateManager.instance.statistics;
     final double progress = statistics.todayGoalTotal == 0
         ? 0.0
@@ -1574,7 +1581,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // LAYER 2: Middle Layer (2nd Layer) - 3D Character Mascot (Dynamic based on selected profile mascot)
             Positioned(
               right: -20,
-              top: 45, // overlays the Progress Card from above, pushed higher
+              top: mascotTop, // overlays the Progress Card from above, pushed higher
               child: AnimatedBuilder(
                 animation: _scrollController,
                 builder: (context, child) {
@@ -1591,8 +1598,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 child: SizedBox(
-                  width: 300,
-                  height: 400,
+                  width: mascotWidth,
+                  height: mascotHeight,
                   child: Image.asset(
                     userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
                     fit: BoxFit.contain,
@@ -1612,7 +1619,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Push below the Progress card so it overlays the Mascot waist/torso area
-                const SizedBox(height: 350),
+                SizedBox(height: spacerHeight),
                 // Quick Actions Card (Glass card)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
