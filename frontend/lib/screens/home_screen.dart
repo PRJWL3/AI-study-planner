@@ -1361,7 +1361,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboardTab() {
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final double actualWidth = MediaQuery.of(context).size.width;
+    final double screenWidth = actualWidth > 600 ? 500.0 : actualWidth;
     // Scale mascot size based on screen width
     final double mascotWidth = (screenWidth * 0.58).clamp(180.0, 300.0);
     final double mascotHeight = mascotWidth * 1.33; // 400 height for 300 width
@@ -1452,10 +1453,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             controller: _scrollController,
             padding: const EdgeInsets.only(bottom: 120), // Clear bottom nav dock padding
-            child: RepaintBoundary(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            child: Center(
+              child: SizedBox(
+                width: screenWidth,
+                child: RepaintBoundary(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -2353,6 +2357,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ),
 ),
 ),
+),
+),
 ],
 );
 }
@@ -2580,7 +2586,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final statistics = StudyStateManager.instance.statistics;
     
     return Drawer(
-      width: screenWidth * 0.82,
+      width: (screenWidth * 0.82).clamp(280.0, 360.0),
       backgroundColor: Colors.transparent,
       elevation: 0,
       shape: const RoundedRectangleBorder(
