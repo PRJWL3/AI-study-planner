@@ -1594,36 +1594,34 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
               right: -20,
               top: mascotTop, // overlays the Progress Card from above, pushed higher
-              child: RepaintBoundary(
-                child: AnimatedBuilder(
-                  animation: _scrollController,
-                  builder: (context, child) {
-                    double offset = 0.0;
-                    if (_scrollController.hasClients) {
-                      offset = _scrollController.offset;
-                    }
-                    double pull = offset < 0 ? -offset : 0.0;
-                    double mascotTranslateY = (pull * 0.15).clamp(0.0, 10.0);
+              child: AnimatedBuilder(
+                animation: _scrollController,
+                builder: (context, child) {
+                  double offset = 0.0;
+                  if (_scrollController.hasClients) {
+                    offset = _scrollController.offset;
+                  }
+                  double pull = offset < 0 ? -offset : 0.0;
+                  double mascotTranslateY = (pull * 0.15).clamp(0.0, 10.0);
 
-                    return Transform.translate(
-                      offset: Offset(0.0, mascotTranslateY),
-                      child: child,
-                    );
-                  },
-                  child: SizedBox(
-                    width: mascotWidth,
-                    height: mascotHeight,
-                    child: Image.asset(
-                      userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.person_rounded,
-                          size: 100,
-                          color: Color(0xFF006A63),
-                        );
-                      },
-                    ),
+                  return Transform.translate(
+                    offset: Offset(0.0, mascotTranslateY),
+                    child: child,
+                  );
+                },
+                child: SizedBox(
+                  width: mascotWidth,
+                  height: mascotHeight,
+                  child: Image.asset(
+                    userMascot.isNotEmpty ? userMascot : "assets/images/mascot_boy.png",
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.person_rounded,
+                        size: 100,
+                        color: Color(0xFF006A63),
+                      );
+                    },
                   ),
                 ),
               ),
