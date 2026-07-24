@@ -96,7 +96,44 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
       ),
       builder: (context, child) {
         debugPrint("APP_START: MaterialApp builder called, child is null = ${child == null}");
-        return child ?? const SizedBox.shrink();
+        if (child == null) return const SizedBox.shrink();
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final double actualWidth = constraints.maxWidth;
+            final bool isLargeScreen = actualWidth > 600;
+            final double layoutWidth = isLargeScreen ? 450.0 : actualWidth;
+
+            Widget appWidget = child;
+            if (isLargeScreen) {
+              appWidget = Container(
+                color: const Color(0xFFF3F4F6), // Neutral grey web background
+                child: Center(
+                  child: Container(
+                    width: 450,
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 30,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  ),
+                ),
+              );
+            }
+
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                size: Size(layoutWidth, constraints.maxHeight),
+              ),
+              child: appWidget,
+            );
+          },
+        );
       },
       home: FutureBuilder<void>(
         future: _initFuture,
