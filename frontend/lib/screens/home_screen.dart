@@ -224,21 +224,27 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, color: iconColor, size: 20),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1A1C1E),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1C1E),
+              ),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade500,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade500,
+              ),
             ),
           ),
         ],
@@ -1767,19 +1773,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                const Text("🔥", style: TextStyle(fontSize: 16)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "Learning Streak & Achievements",
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF1A1C1E),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Text("🔥", style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      "Learning Streak & Achievements",
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF1A1C1E),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             TextButton(
                               onPressed: () {
@@ -4207,33 +4219,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     color: const Color(0xFF1A1C1E),
                                                     fontSize: 15,
                                                   ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 4),
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      "${subject.topics.length} Chapters",
-                                                      style: GoogleFonts.plusJakartaSans(
-                                                        fontSize: 11,
-                                                        color: Colors.grey.shade500,
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      "•",
-                                                      style: TextStyle(color: Colors.grey.shade400),
-                                                    ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      progressPercent == 1.0 ? "Completed" : "In Progress",
-                                                      style: GoogleFonts.plusJakartaSans(
-                                                        fontSize: 11,
-                                                        color: progressPercent == 1.0 ? const Color(0xFF10B981) : const Color(0xFF4F46E5),
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
+                                                Text(
+                                                  "${subject.topics.length} Chapters • ${progressPercent == 1.0 ? 'Completed' : 'In Progress'}",
+                                                  style: GoogleFonts.plusJakartaSans(
+                                                    fontSize: 11,
+                                                    color: progressPercent == 1.0 ? const Color(0xFF10B981) : Colors.grey.shade500,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                                 const SizedBox(height: 8),
                                                 // Linear progress bar
@@ -4255,6 +4253,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     color: Colors.grey.shade500,
                                                     fontWeight: FontWeight.w500,
                                                   ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ],
                                             ),
@@ -4706,21 +4706,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(icon, color: iconColor, size: 16),
               ),
               const SizedBox(height: 10),
-              Text(
-                value,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1A1C1E),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1A1C1E),
+                  ),
                 ),
               ),
               const SizedBox(height: 3),
-              Text(
-                label,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF8D7072),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF8D7072),
+                  ),
                 ),
               ),
             ],
@@ -5090,32 +5096,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time_rounded, color: Color(0xFF006A63), size: 18),
-                          const SizedBox(width: 10),
-                          Text(
-                            "${window.startTime} - ${window.endTime}",
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1A1C1E),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.access_time_rounded, color: Color(0xFF006A63), size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                "${window.startTime} - ${window.endTime}",
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1A1C1E),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit_rounded, color: Color(0xFF006A63), size: 18),
-                            onPressed: () => _showAddEditWindowDialog(context, actualIdx, window),
+                          GestureDetector(
+                            onTap: () => _showAddEditWindowDialog(context, actualIdx, window),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.edit_rounded, color: Color(0xFF006A63), size: 18),
+                            ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
-                            onPressed: () {
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
                               StudyStateManager.instance.deleteAvailabilityWindow(actualIdx);
                               setState(() {});
                             },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                            ),
                           ),
                         ],
                       ),
