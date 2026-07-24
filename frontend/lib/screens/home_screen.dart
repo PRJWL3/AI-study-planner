@@ -1593,7 +1593,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // LAYER 2: Middle Layer (2nd Layer) - 3D Character Mascot (Dynamic based on selected profile mascot)
             Positioned(
               right: -20,
-              top: mascotTop + 35.0, // Shifted down to place under the translucent Quick Actions glass card
+              top: mascotTop + 65.0, // Shifted lower to increase overlap with the translucent Quick Actions glass card
               child: AnimatedBuilder(
                 animation: _scrollController,
                 builder: (context, child) {

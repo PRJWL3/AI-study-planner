@@ -171,9 +171,23 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
               ),
             );
           }
-          // TEMPORARY: Bypassing session check to test the login screen
-          debugPrint("APP_START: Route selection: temporarily forcing LoginScreen");
-          return const LoginScreen();
+          final state = StudyStateManager.instance;
+          final bool isLoggedIn = state.isLoggedIn;
+          final bool isProfileSetup = state.isProfileSetup;
+          debugPrint("APP_START: Route selection: isLoggedIn = $isLoggedIn, isProfileSetup = $isProfileSetup");
+
+          if (isLoggedIn) {
+            if (isProfileSetup) {
+              debugPrint("APP_START: Returning HomeScreen");
+              return const HomeScreen();
+            } else {
+              debugPrint("APP_START: Returning ProfileSetupScreen");
+              return const ProfileSetupScreen();
+            }
+          } else {
+            debugPrint("APP_START: Returning LoginScreen");
+            return const LoginScreen();
+          }
         },
       ),
     );
