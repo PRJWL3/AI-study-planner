@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:video_player/video_player.dart';
 import 'home_screen.dart';
 import 'profile_setup_screen.dart';
 import '../services/study_state_manager.dart';
@@ -17,6 +18,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  VideoPlayerController? _videoController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVideoPlayer();
+  }
+
+  void _initVideoPlayer() {
+    _videoController = VideoPlayerController.asset(
+      'assets/videos/3d_character_login.mp4',
+    );
+    _videoController!.initialize().then((_) {
+      if (mounted) {
+        setState(() {
+          _videoController!.setVolume(0.0); // Muted
+          _videoController!.setLooping(false); // Play only once when opened
+          _videoController!.play(); // Autoplay
+        });
+      }
+    }).catchError((error) {
+      debugPrint("Error initializing video player: $error");
+    });
+  }
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
@@ -47,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
@@ -117,37 +143,57 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Mascot Image Card with drop shadow (matching mockup)
-                  Container(
-                    width: 250,
-                    height: 250,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 28,
-                          offset: const Offset(0, 14),
+                  // Mascot Video Card with drop shadow (matching mockup)
+                  Builder(
+                    builder: (context) {
+                      final double screenHeight = MediaQuery.of(context).size.height;
+                      // Keep it within 25-30% of screen height (clamped between 200 and 260 for standard viewports)
+                      final double targetHeight = (screenHeight * 0.28).clamp(200.0, 260.0);
+                      
+                      return Container(
+                        width: targetHeight,
+                        height: targetHeight,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 28,
+                              offset: const Offset(0, 14),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: Container(
-                        color: const Color(0xFF006A63),
-                        child: Image.asset(
-                          "assets/images/mascot_girl_login.png",
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.person_rounded,
-                              size: 100,
-                              color: Colors.white,
-                            );
-                          },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: Container(
+                            color: const Color(0xFF006A63),
+                            child: IgnorePointer(
+                              child: _videoController != null &&
+                                      _videoController!.value.isInitialized
+                                  ? FittedBox(
+                                      fit: BoxFit.contain,
+                                      child: SizedBox(
+                                        width: _videoController!.value.size.width,
+                                        height: _videoController!.value.size.height,
+                                        child: VideoPlayer(_videoController!),
+                                      ),
+                                    )
+                                  : Image.asset(
+                                      "assets/images/mascot_girl_login.png",
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.person_rounded,
+                                          size: 100,
+                                          color: Colors.white,
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 24),
