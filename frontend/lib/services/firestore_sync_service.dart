@@ -183,7 +183,7 @@ class FirestoreSyncService {
         if (state.userPhotoUrl.isEmpty) {
           state.userPhotoUrl = profileData["photoURL"] ?? "";
         }
-        state.userAge = profileData["user_age"] ?? state.userAge;
+        state.userAge = (profileData["user_age"] as num?)?.toInt() ?? state.userAge;
         state.userCourse = profileData["user_course"] ?? state.userCourse;
         state.userYear = profileData["user_year"] ?? state.userYear;
         state.onboardingStrategy = profileData["onboarding_strategy"] ?? state.onboardingStrategy;
@@ -246,11 +246,11 @@ class FirestoreSyncService {
         final statisticsDoc = await _db.collection("users").doc(uid).collection("statistics").doc("data").get();
         if (statisticsDoc.exists) {
           final data = statisticsDoc.data()!;
-          state.streakDays = data["streakDays"] ?? state.streakDays;
-          state.todayEnergyValue = data["todayEnergy"] ?? state.todayEnergyValue;
-          state.weeklyEnergyValue = data["weeklyEnergy"] ?? state.weeklyEnergyValue;
-          state.sessionsCompleted = data["sessionsCompleted"] ?? state.sessionsCompleted;
-          state.sessionsGoal = data["sessionsGoal"] ?? state.sessionsGoal;
+          state.streakDays = (data["streakDays"] as num?)?.toInt() ?? state.streakDays;
+          state.todayEnergyValue = (data["todayEnergy"] as num?)?.toInt() ?? state.todayEnergyValue;
+          state.weeklyEnergyValue = (data["weeklyEnergy"] as num?)?.toInt() ?? state.weeklyEnergyValue;
+          state.sessionsCompleted = (data["sessionsCompleted"] as num?)?.toInt() ?? state.sessionsCompleted;
+          state.sessionsGoal = (data["sessionsGoal"] as num?)?.toInt() ?? state.sessionsGoal;
           if (data["weeklyProgressHours"] != null) {
             final Map<String, dynamic> rawHours = data["weeklyProgressHours"];
             state.weeklyProgressHours = rawHours.map((k, v) => MapEntry(k, (v as num).toDouble()));
@@ -274,15 +274,15 @@ class FirestoreSyncService {
         final settingsDoc = await _db.collection("users").doc(uid).collection("settings").doc("data").get();
         if (settingsDoc.exists) {
           final data = settingsDoc.data()!;
-          state.plannerHoursPerDay = data["planner_hours_per_day"] ?? state.plannerHoursPerDay;
+          state.plannerHoursPerDay = (data["planner_hours_per_day"] as num?)?.toInt() ?? state.plannerHoursPerDay;
           state.plannerStudyStyle = data["planner_study_style"] ?? state.plannerStudyStyle;
-          state.plannerBreakDuration = data["planner_break_duration"] ?? state.plannerBreakDuration;
+          state.plannerBreakDuration = (data["planner_break_duration"] as num?)?.toInt() ?? state.plannerBreakDuration;
           state.plannerDifficultyPref = data["planner_difficulty_pref"] ?? state.plannerDifficultyPref;
           state.plannerPreferredTime = data["planner_preferred_time"] ?? state.plannerPreferredTime;
           if (data["examDate"] != null) state.selectedDate = DateTime.tryParse(data["examDate"]);
           state.selectedDifficulty = data["difficulty"] ?? state.selectedDifficulty;
           state.studyRoomSelectedSubject = data["sr_selected_subject"] ?? state.studyRoomSelectedSubject;
-          state.studyRoomDurationMinutes = data["sr_duration_minutes"] ?? state.studyRoomDurationMinutes;
+          state.studyRoomDurationMinutes = (data["sr_duration_minutes"] as num?)?.toInt() ?? state.studyRoomDurationMinutes;
           state.studyRoomActiveTopic = data["sr_active_topic"] ?? state.studyRoomActiveTopic;
 
           final plannerBox = PersistenceService.instance.getBox('planner_settings');
@@ -311,7 +311,7 @@ class FirestoreSyncService {
               state.onboarded = true;
             }
             if (state.userPhotoUrl.isEmpty) state.userPhotoUrl = profile["photoURL"] ?? "";
-            state.userAge = profile["user_age"] ?? state.userAge;
+            state.userAge = (profile["user_age"] as num?)?.toInt() ?? state.userAge;
             state.userCourse = profile["user_course"] ?? state.userCourse;
             state.userYear = profile["user_year"] ?? state.userYear;
             state.onboardingStrategy = profile["onboarding_strategy"] ?? state.onboardingStrategy;
@@ -358,11 +358,11 @@ class FirestoreSyncService {
           // Restore Statistics
           if (data["statistics"] != null) {
             final stats = data["statistics"] as Map<String, dynamic>;
-            state.streakDays = stats["streakDays"] ?? state.streakDays;
-            state.todayEnergyValue = stats["todayEnergy"] ?? state.todayEnergyValue;
-            state.weeklyEnergyValue = stats["weeklyEnergy"] ?? state.weeklyEnergyValue;
-            state.sessionsCompleted = stats["sessionsCompleted"] ?? state.sessionsCompleted;
-            state.sessionsGoal = stats["sessionsGoal"] ?? state.sessionsGoal;
+            state.streakDays = (stats["streakDays"] as num?)?.toInt() ?? state.streakDays;
+            state.todayEnergyValue = (stats["todayEnergy"] as num?)?.toInt() ?? state.todayEnergyValue;
+            state.weeklyEnergyValue = (stats["weeklyEnergy"] as num?)?.toInt() ?? state.weeklyEnergyValue;
+            state.sessionsCompleted = (stats["sessionsCompleted"] as num?)?.toInt() ?? state.sessionsCompleted;
+            state.sessionsGoal = (stats["sessionsGoal"] as num?)?.toInt() ?? state.sessionsGoal;
             if (stats["weeklyProgressHours"] != null) {
               final Map<String, dynamic> rawHours = stats["weeklyProgressHours"];
               state.weeklyProgressHours = rawHours.map((k, v) => MapEntry(k, (v as num).toDouble()));
@@ -384,15 +384,15 @@ class FirestoreSyncService {
           // Restore Settings
           if (data["settings"] != null) {
             final settings = data["settings"] as Map<String, dynamic>;
-            state.plannerHoursPerDay = settings["planner_hours_per_day"] ?? state.plannerHoursPerDay;
+            state.plannerHoursPerDay = (settings["planner_hours_per_day"] as num?)?.toInt() ?? state.plannerHoursPerDay;
             state.plannerStudyStyle = settings["planner_study_style"] ?? state.plannerStudyStyle;
-            state.plannerBreakDuration = settings["planner_break_duration"] ?? state.plannerBreakDuration;
+            state.plannerBreakDuration = (settings["planner_break_duration"] as num?)?.toInt() ?? state.plannerBreakDuration;
             state.plannerDifficultyPref = settings["planner_difficulty_pref"] ?? state.plannerDifficultyPref;
             state.plannerPreferredTime = settings["planner_preferred_time"] ?? state.plannerPreferredTime;
             if (settings["examDate"] != null) state.selectedDate = DateTime.tryParse(settings["examDate"]);
             state.selectedDifficulty = settings["difficulty"] ?? state.selectedDifficulty;
             state.studyRoomSelectedSubject = settings["sr_selected_subject"] ?? state.studyRoomSelectedSubject;
-            state.studyRoomDurationMinutes = settings["sr_duration_minutes"] ?? state.studyRoomDurationMinutes;
+            state.studyRoomDurationMinutes = (settings["sr_duration_minutes"] as num?)?.toInt() ?? state.studyRoomDurationMinutes;
             state.studyRoomActiveTopic = settings["sr_active_topic"] ?? state.studyRoomActiveTopic;
 
             final plannerBox = PersistenceService.instance.getBox('planner_settings');
