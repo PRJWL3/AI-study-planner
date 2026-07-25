@@ -160,6 +160,8 @@ class FirestoreSyncService {
 
   /// Loads user data. Tries subcollections first, then falls back to the flat user document to bypass any strict Firestore rules.
   Future<void> loadUserData(String uid) async {
+    debugPrint("FirestoreSyncService: Bypassing loadUserData(uid: $uid) as requested.");
+    return;
     final state = StudyStateManager.instance;
     bool loadedFromSubcollections = false;
     bool loadedFromFlat = false;
