@@ -10,6 +10,7 @@ class FirestoreSyncService {
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   bool _isSyncing = false;
+  static final List<String> syncErrors = [];
 
   /// Saves the user state map to Firestore under both nested subcollections and a flat fallback map.
   Future<void> saveUserData(String uid) async {
@@ -107,6 +108,7 @@ class FirestoreSyncService {
         debugPrint("FirestoreSyncService: Nested subcollections saved successfully.");
       } catch (e) {
         debugPrint("FirestoreSyncService WARNING: Subcollection save failed (likely Firestore rules restriction): $e");
+        syncErrors.add("Subcollection save warning: $e");
       }
 
       // --- SAVE TO FLAT USER DOCUMENT (FAIL-SAFE FALLBACK) ---
@@ -128,6 +130,7 @@ class FirestoreSyncService {
         debugPrint("FirestoreSyncService: Flat fallback document saved successfully.");
       } catch (e) {
         debugPrint("FirestoreSyncService ERROR: Flat fallback document save failed: $e");
+        syncErrors.add("Flat save error: $e");
       }
     } catch (e) {
       debugPrint("FirestoreSyncService ERROR: Failed to prepare user data: $e");
@@ -188,6 +191,7 @@ class FirestoreSyncService {
       }
     } catch (e) {
       debugPrint("FirestoreSyncService WARNING: Subcollection read failed (likely rule restriction): $e");
+      syncErrors.add("Subcollection read warning: $e");
     }
 
     if (loadedFromSubcollections) {
@@ -401,6 +405,7 @@ class FirestoreSyncService {
         }
       } catch (e) {
         debugPrint("FirestoreSyncService ERROR: Failed to load user data from flat document fallback: $e");
+        syncErrors.add("Flat read error: $e");
       }
     }
 
