@@ -209,8 +209,8 @@ class StudyStateManager extends ChangeNotifier {
       if (currentUser != null) {
         userName = currentUser.displayName ?? "Lumina Scholar";
         userEmail = currentUser.email ?? "";
-        if (currentUser.photoURL != null && currentUser.photoURL!.isNotEmpty) {
-          userMascot = currentUser.photoURL!;
+        if (userMascot.isEmpty) {
+          userMascot = "assets/images/mascot_girl_login.png";
         }
         isLoggedIn = true;
         

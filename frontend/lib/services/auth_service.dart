@@ -61,9 +61,7 @@ class AuthService {
               final state = StudyStateManager.instance;
               state.userName = user.displayName ?? "Lumina Scholar";
               state.userEmail = user.email ?? "";
-              if (user.photoURL != null && user.photoURL!.isNotEmpty) {
-                state.userMascot = user.photoURL!;
-              } else {
+              if (state.userMascot.isEmpty) {
                 state.userMascot = "assets/images/mascot_girl_login.png";
               }
               if (user.email != null) {
