@@ -25,14 +25,20 @@ class AuthService {
           options: DefaultFirebaseOptions.currentPlatform,
         );
       }
-      // Initialize GoogleSignIn
-      await _googleSignIn.initialize();
+      // Initialize GoogleSignIn (requires clientId on Web)
+      if (kIsWeb) {
+        await _googleSignIn.initialize(
+          clientId: '937871361250-bfkmb9d0cqbendinr69285ep580p47sj.apps.googleusercontent.com',
+        );
+      } else {
+        await _googleSignIn.initialize();
+      }
       debugPrint("AuthService: Firebase and GoogleSignIn initialized successfully.");
-    } catch (e, stackTrace) {
+    } catch (e) {
       _isMockMode = true;
       debugPrint("AuthService WARNING: Firebase/GoogleSignIn initialization failed. Falling back to Mock Auth Mode.");
       try {
-        debugPrint("Error detail: " + e.toString());
+        debugPrint("Error detail: $e");
       } catch (_) {}
     }
   }
