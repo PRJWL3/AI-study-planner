@@ -38,7 +38,7 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
     return MaterialApp(
       scrollBehavior: const GlobalScrollBehavior(),
       debugShowCheckedModeBanner: false,
-      title: 'Lumina Study',
+      title: 'Lumina',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
