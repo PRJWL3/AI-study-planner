@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => state.isProfileSetup
+          builder: (context) => state.onboardingCompleted
               ? const HomeScreen()
               : const ProfileSetupScreen(),
         ),
@@ -81,10 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (mounted) {
-        // TEMPORARY: Force navigation to ProfileSetupScreen for testing
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
+          MaterialPageRoute(
+            builder: (context) => StudyStateManager.instance.onboardingCompleted
+                ? const HomeScreen()
+                : const ProfileSetupScreen(),
+          ),
         );
       }
     }
@@ -101,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => state.isProfileSetup
+            builder: (context) => state.onboardingCompleted
                 ? const HomeScreen()
                 : const ProfileSetupScreen(),
           ),

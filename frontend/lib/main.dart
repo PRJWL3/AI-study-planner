@@ -173,8 +173,8 @@ class _StudyPlannerAppState extends State<StudyPlannerApp> {
           }
           final state = StudyStateManager.instance;
           final bool isLoggedIn = state.isLoggedIn;
-          final bool isProfileSetup = state.isProfileSetup;
-          debugPrint("APP_START: Route selection: isLoggedIn = $isLoggedIn, isProfileSetup = $isProfileSetup");
+          final bool isProfileSetup = state.onboardingCompleted;
+          debugPrint("APP_START: Route selection: isLoggedIn = $isLoggedIn, onboardingCompleted = $isProfileSetup");
 
           if (isLoggedIn) {
             if (isProfileSetup) {

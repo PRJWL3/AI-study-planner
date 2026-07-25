@@ -33,6 +33,7 @@ class StudyStateManager extends ChangeNotifier {
   bool isLoggedIn = false;
   bool isProfileSetup = false;
   bool onboarded = false;
+  bool onboardingCompleted = false;
 
   // Subjects state
   List<Subject> subjects = [];
@@ -267,6 +268,7 @@ class StudyStateManager extends ChangeNotifier {
     isLoggedIn = _prefs!.getBool("is_logged_in") ?? false;
     isProfileSetup = _prefs!.getBool("is_profile_setup") ?? false;
     onboarded = _prefs!.getBool("onboarded") ?? false;
+    onboardingCompleted = _prefs!.getBool("onboarding_completed") ?? false;
 
     final subjectsData = _prefs!.getString("subjects");
     if (subjectsData != null) {
@@ -370,6 +372,7 @@ class StudyStateManager extends ChangeNotifier {
     await _prefs!.setBool("is_logged_in", isLoggedIn);
     await _prefs!.setBool("is_profile_setup", isProfileSetup);
     await _prefs!.setBool("onboarded", onboarded);
+    await _prefs!.setBool("onboarding_completed", onboardingCompleted);
 
     await _prefs!.setString("subjects", jsonEncode(subjects.map((e) => e.toJson()).toList()));
     await _prefs!.setStringList("studyPlan", studyPlan);
@@ -483,6 +486,7 @@ class StudyStateManager extends ChangeNotifier {
     userMascot = mascot;
     isProfileSetup = true;
     onboarded = true;
+    onboardingCompleted = true;
 
     // Trigger mascot animation
     EggyController.instance.userCourse = course;
