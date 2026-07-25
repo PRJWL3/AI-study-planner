@@ -28,9 +28,12 @@ class AuthService {
       // Initialize GoogleSignIn
       await _googleSignIn.initialize();
       debugPrint("AuthService: Firebase and GoogleSignIn initialized successfully.");
-    } catch (e) {
+    } catch (e, stackTrace) {
       _isMockMode = true;
-      debugPrint("AuthService WARNING: Firebase/GoogleSignIn initialization failed ($e). Falling back to Mock Auth Mode.");
+      debugPrint("AuthService WARNING: Firebase/GoogleSignIn initialization failed. Falling back to Mock Auth Mode.");
+      try {
+        debugPrint("Error detail: " + e.toString());
+      } catch (_) {}
     }
   }
 
