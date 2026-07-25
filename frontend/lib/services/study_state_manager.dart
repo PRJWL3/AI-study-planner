@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/subject.dart';
@@ -12,6 +11,7 @@ import 'planner_service.dart';
 import 'statistics_service.dart';
 import 'crystal_progress_service.dart';
 import 'schedule_service.dart';
+import 'auth_service.dart';
 
 class StudyStateManager extends ChangeNotifier {
   static final StudyStateManager instance = StudyStateManager._internal();
@@ -22,6 +22,7 @@ class StudyStateManager extends ChangeNotifier {
 
   // Onboarding / Profile state
   String userName = "";
+  String userEmail = "";
   int userAge = 18;
   String userCourse = "";
   String userYear = "";
@@ -154,6 +155,11 @@ class StudyStateManager extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     debugPrint("APP_START: SharedPreferences fetched");
 
+    // Initialize Firebase Authentication / AuthService
+    debugPrint("APP_START: Initializing AuthService...");
+    await AuthService.instance.initialize();
+    debugPrint("APP_START: AuthService initialized");
+
     // Copy / migrate data from SharedPreferences to Hive if not already present
     final statisticsBox = PersistenceService.instance.getBox('study_statistics');
     if (!statisticsBox.containsKey('streakDays')) {
@@ -195,6 +201,21 @@ class StudyStateManager extends ChangeNotifier {
     
     debugPrint("APP_START: Loading from prefs...");
     _loadFromPrefs();
+
+    // Sync current authenticated Firebase user if not in mock mode
+    if (!AuthService.instance.isMockMode) {
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null) {
+        userName = currentUser.displayName ?? "Lumina Scholar";
+        userEmail = currentUser.email ?? "";
+        if (currentUser.photoURL != null && currentUser.photoURL!.isNotEmpty) {
+          userMascot = currentUser.photoURL!;
+        }
+        isLoggedIn = true;
+      } else {
+        isLoggedIn = false;
+      }
+    }
     debugPrint("APP_START: Refreshing crystal progress...");
     await _refreshCrystalProgress();
     
@@ -227,6 +248,7 @@ class StudyStateManager extends ChangeNotifier {
     if (_prefs == null) return;
 
     userName = _prefs!.getString("user_name") ?? "";
+    userEmail = _prefs!.getString("user_email") ?? "";
     userAge = _prefs!.getInt("user_age") ?? 18;
     userCourse = _prefs!.getString("user_course") ?? "";
     userYear = _prefs!.getString("user_year") ?? "";
@@ -328,6 +350,7 @@ class StudyStateManager extends ChangeNotifier {
     if (_prefs == null) return;
 
     await _prefs!.setString("user_name", userName);
+    await _prefs!.setString("user_email", userEmail);
     await _prefs!.setInt("user_age", userAge);
     await _prefs!.setString("user_course", userCourse);
     await _prefs!.setString("user_year", userYear);

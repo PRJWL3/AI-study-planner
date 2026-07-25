@@ -12,6 +12,7 @@ import 'edit_profile_screen.dart';
 import 'login_screen.dart';
 import '../models/study_statistics.dart';
 import '../services/study_state_manager.dart';
+import '../services/auth_service.dart';
 import 'tasks_tab_screen.dart';
 import '../widgets/global_eggy.dart';
 import 'energy_chamber_screen.dart';
@@ -1913,19 +1914,31 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: SizedBox(
                                 width: finalMascotWidth,
                                 height: finalMascotHeight,
-                                child: Image.asset(
-                                  userMascot.isNotEmpty
-                                      ? userMascot
-                                      : "assets/images/mascot_boy.png",
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person_rounded,
-                                      size: 100,
-                                      color: Color(0xFF006A63),
-                                    );
-                                  },
-                                ),
+                                child: userMascot.startsWith("http")
+                                    ? Image.network(
+                                        userMascot,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(
+                                            Icons.person_rounded,
+                                            size: 100,
+                                            color: Color(0xFF006A63),
+                                          );
+                                        },
+                                      )
+                                    : Image.asset(
+                                        userMascot.isNotEmpty
+                                            ? userMascot
+                                            : "assets/images/mascot_boy.png",
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(
+                                            Icons.person_rounded,
+                                            size: 100,
+                                            color: Color(0xFF006A63),
+                                          );
+                                        },
+                                      ),
                               ),
                             ),
                           ),
@@ -3228,11 +3241,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: Colors.transparent,
-                      backgroundImage: AssetImage(
-                        userMascot.isNotEmpty
-                            ? userMascot
-                            : "assets/images/mascot_boy.png",
-                      ),
+                      backgroundImage: userMascot.startsWith("http")
+                          ? NetworkImage(userMascot) as ImageProvider
+                          : AssetImage(
+                              userMascot.isNotEmpty
+                                  ? userMascot
+                                  : "assets/images/mascot_boy.png",
+                            ),
                     ),
                   ),
                 ),
@@ -3416,11 +3431,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 2,
                   ),
                   image: DecorationImage(
-                    image: AssetImage(
-                      userMascot.isNotEmpty
-                          ? userMascot
-                          : "assets/images/mascot_boy.png",
-                    ),
+                    image: userMascot.startsWith("http")
+                        ? NetworkImage(userMascot) as ImageProvider
+                        : AssetImage(
+                            userMascot.isNotEmpty
+                                ? userMascot
+                                : "assets/images/mascot_boy.png",
+                          ),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -3667,7 +3684,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleLogout() async {
-    await StudyStateManager.instance.logout();
+    await AuthService.instance.signOut();
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),

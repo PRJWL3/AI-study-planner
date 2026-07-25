@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 import 'home_screen.dart';
 import 'profile_setup_screen.dart';
 import '../services/study_state_manager.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   VideoPlayerController? _videoController;
 
   @override
@@ -64,6 +66,42 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
         );
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isGoogleLoading = true;
+    });
+    try {
+      await AuthService.instance.signInWithGoogle();
+      if (mounted) {
+        final state = StudyStateManager.instance;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => state.isProfileSetup
+                ? const HomeScreen()
+                : const ProfileSetupScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Google Sign-In failed: $e"),
+            backgroundColor: Colors.red.shade800,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
       }
     }
   }
@@ -472,14 +510,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: double.infinity,
                             height: 52,
                             child: OutlinedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("Google authentication flow triggered"),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
+                              onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
@@ -489,25 +520,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Color(0xFFE2E2E5),
                                 ),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.g_mobiledata_rounded,
-                                    size: 24,
-                                    color: Color(0xFF1A1C1E),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    "Sign in with Google",
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF1A1C1E),
+                              child: _isGoogleLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Color(0xFF006A63),
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.g_mobiledata_rounded,
+                                          size: 24,
+                                          color: Color(0xFF1A1C1E),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          "Sign in with Google",
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1A1C1E),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         ],
