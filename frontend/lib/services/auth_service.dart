@@ -27,19 +27,15 @@ class AuthService {
           options: DefaultFirebaseOptions.currentPlatform,
         );
       }
-      try {
-        if (kIsWeb) {
-          FirebaseFirestore.instance.settings = const Settings(
-            persistenceEnabled: false,
-          );
-        } else {
+      if (!kIsWeb) {
+        try {
           FirebaseFirestore.instance.settings = const Settings(
             persistenceEnabled: true,
             cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
           );
+        } catch (e) {
+          debugPrint("AuthService WARNING: Failed to set Firestore settings: $e");
         }
-      } catch (e) {
-        debugPrint("AuthService WARNING: Failed to set Firestore settings: $e");
       }
       _auth = FirebaseAuth.instance;
       _googleSignIn = GoogleSignIn.instance;
