@@ -9,8 +9,8 @@ class AuthService {
   AuthService._privateConstructor();
   static final AuthService instance = AuthService._privateConstructor();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  late final FirebaseAuth _auth;
+  late final GoogleSignIn _googleSignIn;
 
   bool _isMockMode = false;
   bool get isMockMode => _isMockMode;
@@ -25,6 +25,8 @@ class AuthService {
           options: DefaultFirebaseOptions.currentPlatform,
         );
       }
+      _auth = FirebaseAuth.instance;
+      _googleSignIn = GoogleSignIn.instance;
       // Initialize GoogleSignIn (requires clientId on Web)
       if (kIsWeb) {
         await _googleSignIn.initialize(
