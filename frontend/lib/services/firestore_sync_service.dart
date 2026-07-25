@@ -159,150 +159,251 @@ class FirestoreSyncService {
 
   /// Loads user data. Tries subcollections first, then falls back to the flat user document to bypass any strict Firestore rules.
   Future<void> loadUserData(String uid) async {
-    debugPrint("FirestoreSyncService: loadUserData bypassed by request.");
-    return;
-
     final state = StudyStateManager.instance;
     bool loadedFromSubcollections = false;
     bool loadedFromFlat = false;
 
+    // Binary search control flags: toggle these to isolate blocks
+    const bool enableProfile = true;
+    const bool enableMascot = true;
+    const bool enableSubjects = true;
+    const bool enableSchedules = true;
+    const bool enableSessions = true;
+    const bool enableAchievements = true;
+    const bool enableStatistics = true;
+    const bool enableSettings = true;
+
     // --- TRY NESTED SUBCOLLECTIONS ---
     try {
-      debugPrint("FirestoreSyncService: Fetching profile details from users/$uid/profile/details...");
-      final detailsDoc = await _db.collection("users").doc(uid).collection("profile").doc("details").get();
-      
-      if (detailsDoc.exists) {
-        final profileData = detailsDoc.data() as Map<String, dynamic>;
-        state.userName = profileData["displayName"] ?? state.userName;
-        state.userEmail = profileData["email"] ?? state.userEmail;
-        state.onboardingCompleted = profileData["onboardingCompleted"] ?? false;
+      if (enableProfile) {
+        debugPrint("INVESTIGATION: Loading Profile Details from users/$uid/profile/details...");
+        final detailsDoc = await _db.collection("users").doc(uid).collection("profile").doc("details").get();
+        debugPrint("INVESTIGATION: Profile details document exists: ${detailsDoc.exists}");
         
-        if (state.onboardingCompleted) {
-          state.isProfileSetup = true;
-          state.onboarded = true;
+        if (detailsDoc.exists) {
+          final profileData = detailsDoc.data() as Map<String, dynamic>;
+          debugPrint("INVESTIGATION: Profile Details keys: ${profileData.keys}");
+          profileData.forEach((key, value) {
+            debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+          });
+
+          state.userName = profileData["displayName"] ?? state.userName;
+          state.userEmail = profileData["email"] ?? state.userEmail;
+          state.onboardingCompleted = profileData["onboardingCompleted"] ?? false;
+          
+          if (state.onboardingCompleted) {
+            state.isProfileSetup = true;
+            state.onboarded = true;
+          }
+          if (state.userPhotoUrl.isEmpty) {
+            state.userPhotoUrl = profileData["photoURL"] ?? "";
+          }
+          state.userAge = (profileData["user_age"] as num?)?.toInt() ?? state.userAge;
+          state.userCourse = profileData["user_course"] ?? state.userCourse;
+          state.userYear = profileData["user_year"] ?? state.userYear;
+          state.onboardingStrategy = profileData["onboarding_strategy"] ?? state.onboardingStrategy;
+          
+          loadedFromSubcollections = true;
+          debugPrint("INVESTIGATION: Loaded Profile Details successfully.");
         }
-        if (state.userPhotoUrl.isEmpty) {
-          state.userPhotoUrl = profileData["photoURL"] ?? "";
-        }
-        state.userAge = (profileData["user_age"] as num?)?.toInt() ?? state.userAge;
-        state.userCourse = profileData["user_course"] ?? state.userCourse;
-        state.userYear = profileData["user_year"] ?? state.userYear;
-        state.onboardingStrategy = profileData["onboarding_strategy"] ?? state.onboardingStrategy;
-        
-        loadedFromSubcollections = true;
-        debugPrint("FirestoreSyncService: Loaded profile successfully from subcollections.");
       }
     } catch (e, stack) {
-      debugPrint("FirestoreSyncService WARNING: Subcollection read failed (likely rule restriction): $e\n$stack");
-      syncErrors.add("Subcollection read warning: $e\n$stack");
+      debugPrint("FirestoreSyncService WARNING: Subcollection Profile read failed: $e\n$stack");
+      syncErrors.add("Subcollection Profile read warning: $e\n$stack");
     }
 
     if (loadedFromSubcollections) {
-      try {
-        final mascotDoc = await _db.collection("users").doc(uid).collection("profile").doc("selectedMascot").get();
-        if (mascotDoc.exists) {
-          state.userMascot = mascotDoc.data()?["selectedMascot"] ?? state.userMascot;
-        }
-      } catch (_) {}
-
-      try {
-        final subjectsDoc = await _db.collection("users").doc(uid).collection("subjects").doc("data").get();
-        if (subjectsDoc.exists && subjectsDoc.data()?["subjects"] != null) {
-          final List<dynamic> subsJson = subjectsDoc.data()!["subjects"];
-          state.subjects = subsJson.map((e) => Subject.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-        }
-      } catch (_) {}
-
-      try {
-        final schedulesDoc = await _db.collection("users").doc(uid).collection("schedules").doc("data").get();
-        if (schedulesDoc.exists) {
-          final data = schedulesDoc.data()!;
-          if (data["studyPlan"] != null) state.studyPlan = List<String>.from(data["studyPlan"]);
-          if (data["completedTasks"] != null) state.completedTasks = List<bool>.from(data["completedTasks"]);
-          if (data["availability"] != null) {
-            final availabilityBox = PersistenceService.instance.getBox('study_availability');
-            await availabilityBox.put('windows', data["availability"]);
+      if (enableMascot) {
+        try {
+          debugPrint("INVESTIGATION: Loading Mascot from users/$uid/profile/selectedMascot...");
+          final mascotDoc = await _db.collection("users").doc(uid).collection("profile").doc("selectedMascot").get();
+          debugPrint("INVESTIGATION: Mascot document exists: ${mascotDoc.exists}");
+          if (mascotDoc.exists) {
+            final data = mascotDoc.data()!;
+            debugPrint("INVESTIGATION: Mascot keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            state.userMascot = data["selectedMascot"] ?? state.userMascot;
+            debugPrint("INVESTIGATION: Loaded Mascot successfully.");
           }
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Mascot read failed: $e\n$stack");
         }
-      } catch (_) {}
+      }
 
-      try {
-        final sessionsDoc = await _db.collection("users").doc(uid).collection("studySessions").doc("data").get();
-        if (sessionsDoc.exists && sessionsDoc.data()?["sessions"] != null) {
-          final sessionsBox = PersistenceService.instance.getBox('study_sessions');
-          await sessionsBox.put('sessions', sessionsDoc.data()!["sessions"]);
-        }
-      } catch (_) {}
-
-      try {
-        final achievementsDoc = await _db.collection("users").doc(uid).collection("achievements").doc("data").get();
-        if (achievementsDoc.exists && achievementsDoc.data()?["studyEvents"] != null) {
-          state.studyEvents = List<Map<String, dynamic>>.from(
-            (achievementsDoc.data()!["studyEvents"] as List).map((e) => Map<String, dynamic>.from(e as Map))
-          );
-        }
-      } catch (_) {}
-
-      try {
-        final statisticsDoc = await _db.collection("users").doc(uid).collection("statistics").doc("data").get();
-        if (statisticsDoc.exists) {
-          final data = statisticsDoc.data()!;
-          state.streakDays = (data["streakDays"] as num?)?.toInt() ?? state.streakDays;
-          state.todayEnergyValue = (data["todayEnergy"] as num?)?.toInt() ?? state.todayEnergyValue;
-          state.weeklyEnergyValue = (data["weeklyEnergy"] as num?)?.toInt() ?? state.weeklyEnergyValue;
-          state.sessionsCompleted = (data["sessionsCompleted"] as num?)?.toInt() ?? state.sessionsCompleted;
-          state.sessionsGoal = (data["sessionsGoal"] as num?)?.toInt() ?? state.sessionsGoal;
-          if (data["weeklyProgressHours"] != null) {
-            final Map<String, dynamic> rawHours = data["weeklyProgressHours"];
-            state.weeklyProgressHours = rawHours.map((k, v) => MapEntry(k, (v as num).toDouble()));
+      if (enableSubjects) {
+        try {
+          debugPrint("INVESTIGATION: Loading Subjects from users/$uid/subjects/data...");
+          final subjectsDoc = await _db.collection("users").doc(uid).collection("subjects").doc("data").get();
+          debugPrint("INVESTIGATION: Subjects document exists: ${subjectsDoc.exists}");
+          if (subjectsDoc.exists && subjectsDoc.data()?["subjects"] != null) {
+            final data = subjectsDoc.data()!;
+            debugPrint("INVESTIGATION: Subjects keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            final List<dynamic> subsJson = data["subjects"];
+            state.subjects = subsJson.map((e) => Subject.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+            debugPrint("INVESTIGATION: Loaded Subjects successfully.");
           }
-          final crystalBox = PersistenceService.instance.getBox('crystal_progress');
-          await crystalBox.put('focusProgress', (data["crystal_focus_progress"] as num?)?.toDouble() ?? 0.0);
-          await crystalBox.put('wisdomProgress', (data["crystal_wisdom_progress"] as num?)?.toDouble() ?? 0.0);
-          await crystalBox.put('masteryProgress', (data["crystal_mastery_progress"] as num?)?.toDouble() ?? 0.0);
-
-          final statisticsBox = PersistenceService.instance.getBox('study_statistics');
-          await statisticsBox.put('streakDays', state.streakDays);
-          await statisticsBox.put('todayEnergy', state.todayEnergyValue);
-          await statisticsBox.put('weeklyEnergy', state.weeklyEnergyValue);
-          await statisticsBox.put('sessionsCompleted', state.sessionsCompleted);
-          await statisticsBox.put('sessionsGoal', state.sessionsGoal);
-          await statisticsBox.put('weeklyProgress', state.weeklyProgressHours);
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Subjects read failed: $e\n$stack");
         }
-      } catch (_) {}
+      }
 
-      try {
-        final settingsDoc = await _db.collection("users").doc(uid).collection("settings").doc("data").get();
-        if (settingsDoc.exists) {
-          final data = settingsDoc.data()!;
-          state.plannerHoursPerDay = (data["planner_hours_per_day"] as num?)?.toInt() ?? state.plannerHoursPerDay;
-          state.plannerStudyStyle = data["planner_study_style"] ?? state.plannerStudyStyle;
-          state.plannerBreakDuration = (data["planner_break_duration"] as num?)?.toInt() ?? state.plannerBreakDuration;
-          state.plannerDifficultyPref = data["planner_difficulty_pref"] ?? state.plannerDifficultyPref;
-          state.plannerPreferredTime = data["planner_preferred_time"] ?? state.plannerPreferredTime;
-          if (data["examDate"] != null) state.selectedDate = DateTime.tryParse(data["examDate"]);
-          state.selectedDifficulty = data["difficulty"] ?? state.selectedDifficulty;
-          state.studyRoomSelectedSubject = data["sr_selected_subject"] ?? state.studyRoomSelectedSubject;
-          state.studyRoomDurationMinutes = (data["sr_duration_minutes"] as num?)?.toInt() ?? state.studyRoomDurationMinutes;
-          state.studyRoomActiveTopic = data["sr_active_topic"] ?? state.studyRoomActiveTopic;
-
-          final plannerBox = PersistenceService.instance.getBox('planner_settings');
-          await plannerBox.put('breakDuration', state.plannerBreakDuration);
-          await plannerBox.put('studyStyle', state.plannerStudyStyle);
-          await plannerBox.put('difficultyPref', state.plannerDifficultyPref);
-          if (state.selectedDate != null) await plannerBox.put('examDate', state.selectedDate!.toIso8601String());
+      if (enableSchedules) {
+        try {
+          debugPrint("INVESTIGATION: Loading Schedules from users/$uid/schedules/data...");
+          final schedulesDoc = await _db.collection("users").doc(uid).collection("schedules").doc("data").get();
+          debugPrint("INVESTIGATION: Schedules document exists: ${schedulesDoc.exists}");
+          if (schedulesDoc.exists) {
+            final data = schedulesDoc.data()!;
+            debugPrint("INVESTIGATION: Schedules keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            if (data["studyPlan"] != null) state.studyPlan = List<String>.from(data["studyPlan"]);
+            if (data["completedTasks"] != null) state.completedTasks = List<bool>.from(data["completedTasks"]);
+            if (data["availability"] != null) {
+              final availabilityBox = PersistenceService.instance.getBox('study_availability');
+              await availabilityBox.put('windows', data["availability"]);
+            }
+            debugPrint("INVESTIGATION: Loaded Schedules successfully.");
+          }
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Schedules read failed: $e\n$stack");
         }
-      } catch (_) {}
+      }
+
+      if (enableSessions) {
+        try {
+          debugPrint("INVESTIGATION: Loading Sessions from users/$uid/studySessions/data...");
+          final sessionsDoc = await _db.collection("users").doc(uid).collection("studySessions").doc("data").get();
+          debugPrint("INVESTIGATION: Sessions document exists: ${sessionsDoc.exists}");
+          if (sessionsDoc.exists && sessionsDoc.data()?["sessions"] != null) {
+            final data = sessionsDoc.data()!;
+            debugPrint("INVESTIGATION: Sessions keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            final sessionsBox = PersistenceService.instance.getBox('study_sessions');
+            await sessionsBox.put('sessions', data["sessions"]);
+            debugPrint("INVESTIGATION: Loaded Sessions successfully.");
+          }
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Sessions read failed: $e\n$stack");
+        }
+      }
+
+      if (enableAchievements) {
+        try {
+          debugPrint("INVESTIGATION: Loading Achievements from users/$uid/achievements/data...");
+          final achievementsDoc = await _db.collection("users").doc(uid).collection("achievements").doc("data").get();
+          debugPrint("INVESTIGATION: Achievements document exists: ${achievementsDoc.exists}");
+          if (achievementsDoc.exists && achievementsDoc.data()?["studyEvents"] != null) {
+            final data = achievementsDoc.data()!;
+            debugPrint("INVESTIGATION: Achievements keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            state.studyEvents = List<Map<String, dynamic>>.from(
+              (data["studyEvents"] as List).map((e) => Map<String, dynamic>.from(e as Map))
+            );
+            debugPrint("INVESTIGATION: Loaded Achievements successfully.");
+          }
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Achievements read failed: $e\n$stack");
+        }
+      }
+
+      if (enableStatistics) {
+        try {
+          debugPrint("INVESTIGATION: Loading Statistics from users/$uid/statistics/data...");
+          final statisticsDoc = await _db.collection("users").doc(uid).collection("statistics").doc("data").get();
+          debugPrint("INVESTIGATION: Statistics document exists: ${statisticsDoc.exists}");
+          if (statisticsDoc.exists) {
+            final data = statisticsDoc.data()!;
+            debugPrint("INVESTIGATION: Statistics keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            state.streakDays = (data["streakDays"] as num?)?.toInt() ?? state.streakDays;
+            state.todayEnergyValue = (data["todayEnergy"] as num?)?.toInt() ?? state.todayEnergyValue;
+            state.weeklyEnergyValue = (data["weeklyEnergy"] as num?)?.toInt() ?? state.weeklyEnergyValue;
+            state.sessionsCompleted = (data["sessionsCompleted"] as num?)?.toInt() ?? state.sessionsCompleted;
+            state.sessionsGoal = (data["sessionsGoal"] as num?)?.toInt() ?? state.sessionsGoal;
+            if (data["weeklyProgressHours"] != null) {
+              final Map<String, dynamic> rawHours = data["weeklyProgressHours"];
+              state.weeklyProgressHours = rawHours.map((k, v) => MapEntry(k, (v as num).toDouble()));
+            }
+            final crystalBox = PersistenceService.instance.getBox('crystal_progress');
+            await crystalBox.put('focusProgress', (data["crystal_focus_progress"] as num?)?.toDouble() ?? 0.0);
+            await crystalBox.put('wisdomProgress', (data["crystal_wisdom_progress"] as num?)?.toDouble() ?? 0.0);
+            await crystalBox.put('masteryProgress', (data["crystal_mastery_progress"] as num?)?.toDouble() ?? 0.0);
+
+            final statisticsBox = PersistenceService.instance.getBox('study_statistics');
+            await statisticsBox.put('streakDays', state.streakDays);
+            await statisticsBox.put('todayEnergy', state.todayEnergyValue);
+            await statisticsBox.put('weeklyEnergy', state.weeklyEnergyValue);
+            await statisticsBox.put('sessionsCompleted', state.sessionsCompleted);
+            await statisticsBox.put('sessionsGoal', state.sessionsGoal);
+            await statisticsBox.put('weeklyProgress', state.weeklyProgressHours);
+            debugPrint("INVESTIGATION: Loaded Statistics successfully.");
+          }
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Statistics read failed: $e\n$stack");
+        }
+      }
+
+      if (enableSettings) {
+        try {
+          debugPrint("INVESTIGATION: Loading Settings from users/$uid/settings/data...");
+          final settingsDoc = await _db.collection("users").doc(uid).collection("settings").doc("data").get();
+          debugPrint("INVESTIGATION: Settings document exists: ${settingsDoc.exists}");
+          if (settingsDoc.exists) {
+            final data = settingsDoc.data()!;
+            debugPrint("INVESTIGATION: Settings keys: ${data.keys}");
+            data.forEach((key, value) {
+              debugPrint("INVESTIGATION: Field '$key' -> value: $value, runtimeType: ${value.runtimeType}");
+            });
+            state.plannerHoursPerDay = (data["planner_hours_per_day"] as num?)?.toInt() ?? state.plannerHoursPerDay;
+            state.plannerStudyStyle = data["planner_study_style"] ?? state.plannerStudyStyle;
+            state.plannerBreakDuration = (data["planner_break_duration"] as num?)?.toInt() ?? state.plannerBreakDuration;
+            state.plannerDifficultyPref = data["planner_difficulty_pref"] ?? state.plannerDifficultyPref;
+            state.plannerPreferredTime = data["planner_preferred_time"] ?? state.plannerPreferredTime;
+            if (data["examDate"] != null) state.selectedDate = DateTime.tryParse(data["examDate"]);
+            state.selectedDifficulty = data["difficulty"] ?? state.selectedDifficulty;
+            state.studyRoomSelectedSubject = data["sr_selected_subject"] ?? state.studyRoomSelectedSubject;
+            state.studyRoomDurationMinutes = (data["sr_duration_minutes"] as num?)?.toInt() ?? state.studyRoomDurationMinutes;
+            state.studyRoomActiveTopic = data["sr_active_topic"] ?? state.studyRoomActiveTopic;
+
+            final plannerBox = PersistenceService.instance.getBox('planner_settings');
+            await plannerBox.put('breakDuration', state.plannerBreakDuration);
+            await plannerBox.put('studyStyle', state.plannerStudyStyle);
+            await plannerBox.put('difficultyPref', state.plannerDifficultyPref);
+            if (state.selectedDate != null) await plannerBox.put('examDate', state.selectedDate!.toIso8601String());
+            debugPrint("INVESTIGATION: Loaded Settings successfully.");
+          }
+        } catch (e, stack) {
+          debugPrint("INVESTIGATION ERROR: Settings read failed: $e\n$stack");
+        }
+      }
     } else {
       // --- TRY FLAT FALLBACK DOCUMENT ---
       try {
-        debugPrint("FirestoreSyncService: Falling back to fetch flat root document users/$uid...");
+        debugPrint("INVESTIGATION: Falling back to fetch flat root document users/$uid...");
         final doc = await _db.collection("users").doc(uid).get();
+        debugPrint("INVESTIGATION: Flat document exists: ${doc.exists}");
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
+          debugPrint("INVESTIGATION: Flat document keys: ${data.keys}");
+          data.forEach((key, value) {
+            debugPrint("INVESTIGATION: Field '$key' -> runtimeType: ${value.runtimeType}");
+          });
 
           // Restore Profile details
-          if (data["profile"] != null) {
+          if (enableProfile && data["profile"] != null) {
             final profile = data["profile"] as Map<String, dynamic>;
             state.userName = profile["displayName"] ?? state.userName;
             state.userEmail = profile["email"] ?? state.userEmail;
@@ -316,24 +417,23 @@ class FirestoreSyncService {
             state.userCourse = profile["user_course"] ?? state.userCourse;
             state.userYear = profile["user_year"] ?? state.userYear;
             state.onboardingStrategy = profile["onboarding_strategy"] ?? state.onboardingStrategy;
-          } else {
-            state.onboardingCompleted = data["onboardingCompleted"] ?? false;
-            if (state.onboardingCompleted) {
-              state.isProfileSetup = true;
-              state.onboarded = true;
-            }
+            debugPrint("INVESTIGATION: Restored Profile details from flat document.");
           }
 
-          state.userMascot = data["selectedMascot"] ?? state.userMascot;
+          if (enableMascot) {
+            state.userMascot = data["selectedMascot"] ?? state.userMascot;
+            debugPrint("INVESTIGATION: Restored Mascot from flat document.");
+          }
 
           // Restore Subjects
-          if (data["subjects"] != null && data["subjects"]["subjects"] != null) {
+          if (enableSubjects && data["subjects"] != null && data["subjects"]["subjects"] != null) {
             final List<dynamic> subsJson = data["subjects"]["subjects"];
             state.subjects = subsJson.map((e) => Subject.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+            debugPrint("INVESTIGATION: Restored Subjects from flat document.");
           }
 
           // Restore Schedules
-          if (data["schedules"] != null) {
+          if (enableSchedules && data["schedules"] != null) {
             final schedules = data["schedules"] as Map<String, dynamic>;
             if (schedules["studyPlan"] != null) state.studyPlan = List<String>.from(schedules["studyPlan"]);
             if (schedules["completedTasks"] != null) state.completedTasks = List<bool>.from(schedules["completedTasks"]);
@@ -341,23 +441,26 @@ class FirestoreSyncService {
               final availabilityBox = PersistenceService.instance.getBox('study_availability');
               await availabilityBox.put('windows', schedules["availability"]);
             }
+            debugPrint("INVESTIGATION: Restored Schedules from flat document.");
           }
 
           // Restore Sessions
-          if (data["studySessions"] != null && data["studySessions"]["sessions"] != null) {
+          if (enableSessions && data["studySessions"] != null && data["studySessions"]["sessions"] != null) {
             final sessionsBox = PersistenceService.instance.getBox('study_sessions');
             await sessionsBox.put('sessions', data["studySessions"]["sessions"]);
+            debugPrint("INVESTIGATION: Restored Sessions from flat document.");
           }
 
           // Restore Achievements
-          if (data["achievements"] != null && data["achievements"]["studyEvents"] != null) {
+          if (enableAchievements && data["achievements"] != null && data["achievements"]["studyEvents"] != null) {
             state.studyEvents = List<Map<String, dynamic>>.from(
               (data["achievements"]["studyEvents"] as List).map((e) => Map<String, dynamic>.from(e as Map))
             );
+            debugPrint("INVESTIGATION: Restored Achievements from flat document.");
           }
 
           // Restore Statistics
-          if (data["statistics"] != null) {
+          if (enableStatistics && data["statistics"] != null) {
             final stats = data["statistics"] as Map<String, dynamic>;
             state.streakDays = (stats["streakDays"] as num?)?.toInt() ?? state.streakDays;
             state.todayEnergyValue = (stats["todayEnergy"] as num?)?.toInt() ?? state.todayEnergyValue;
@@ -380,10 +483,11 @@ class FirestoreSyncService {
             await statisticsBox.put('sessionsCompleted', state.sessionsCompleted);
             await statisticsBox.put('sessionsGoal', state.sessionsGoal);
             await statisticsBox.put('weeklyProgress', state.weeklyProgressHours);
+            debugPrint("INVESTIGATION: Restored Statistics from flat document.");
           }
 
           // Restore Settings
-          if (data["settings"] != null) {
+          if (enableSettings && data["settings"] != null) {
             final settings = data["settings"] as Map<String, dynamic>;
             state.plannerHoursPerDay = (settings["planner_hours_per_day"] as num?)?.toInt() ?? state.plannerHoursPerDay;
             state.plannerStudyStyle = settings["planner_study_style"] ?? state.plannerStudyStyle;
@@ -401,6 +505,7 @@ class FirestoreSyncService {
             await plannerBox.put('studyStyle', state.plannerStudyStyle);
             await plannerBox.put('difficultyPref', state.plannerDifficultyPref);
             if (state.selectedDate != null) await plannerBox.put('examDate', state.selectedDate!.toIso8601String());
+            debugPrint("INVESTIGATION: Restored Settings from flat document.");
           }
 
           loadedFromFlat = true;
