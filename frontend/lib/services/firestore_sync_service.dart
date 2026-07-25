@@ -25,6 +25,12 @@ class FirestoreSyncService {
       final double wisdomProgress = (crystalBox.get('wisdomProgress') as num?)?.toDouble() ?? 0.0;
       final double masteryProgress = (crystalBox.get('masteryProgress') as num?)?.toDouble() ?? 0.0;
 
+      final availabilityBox = PersistenceService.instance.getBox('study_availability');
+      final List<dynamic> availabilityList = availabilityBox.get('windows') ?? [];
+
+      final sessionsBox = PersistenceService.instance.getBox('study_sessions');
+      final List<dynamic> sessionsList = sessionsBox.get('sessions') ?? [];
+
       // Store profile and study parameters in users/{uid} document.
       // We do NOT save selectedMascot in the main document since it goes under users/{uid}/profile/selectedMascot.
       final Map<String, dynamic> mainData = {
@@ -60,6 +66,8 @@ class FirestoreSyncService {
         "crystal_focus_progress": focusProgress,
         "crystal_wisdom_progress": wisdomProgress,
         "crystal_mastery_progress": masteryProgress,
+        "availability": availabilityList,
+        "sessions": sessionsList,
         "updatedAt": FieldValue.serverTimestamp(),
       };
 
@@ -187,6 +195,15 @@ class FirestoreSyncService {
       await plannerBox.put('difficultyPref', state.plannerDifficultyPref);
       if (state.selectedDate != null) {
         await plannerBox.put('examDate', state.selectedDate!.toIso8601String());
+      }
+
+      if (data["availability"] != null) {
+        final availabilityBox = PersistenceService.instance.getBox('study_availability');
+        await availabilityBox.put('windows', data["availability"]);
+      }
+      if (data["sessions"] != null) {
+        final sessionsBox = PersistenceService.instance.getBox('study_sessions');
+        await sessionsBox.put('sessions', data["sessions"]);
       }
 
       // Load mascot separately from users/{uid}/profile/selectedMascot.

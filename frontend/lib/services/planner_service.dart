@@ -1,6 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/study_availability.dart';
 import 'persistence_service.dart';
+import 'auth_service.dart';
+import 'firestore_sync_service.dart';
 
 class PlannerService {
   static final PlannerService instance = PlannerService._();
@@ -39,6 +41,14 @@ class PlannerService {
   Future<void> saveAvailability(List<StudyAvailability> windows) async {
     final box = PersistenceService.instance.getBox('study_availability');
     await box.put('windows', windows.map((w) => w.toJson()).toList());
+    
+    // Sync to Firestore if logged in
+    if (!AuthService.instance.isMockMode) {
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null) {
+        FirestoreSyncService.instance.saveUserData(currentUser.uid);
+      }
+    }
   }
 
   Future<void> addWindow(StudyAvailability window) async {

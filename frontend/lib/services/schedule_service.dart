@@ -1,6 +1,8 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/study_session.dart';
 import 'persistence_service.dart';
+import 'auth_service.dart';
+import 'firestore_sync_service.dart';
 
 class ScheduleService {
   static final ScheduleService instance = ScheduleService._();
@@ -39,6 +41,14 @@ class ScheduleService {
 
   Future<void> saveSessions(List<StudySession> sessions) async {
     await _box.put('sessions', sessions.map((s) => s.toJson()).toList());
+    
+    // Sync to Firestore if logged in
+    if (!AuthService.instance.isMockMode) {
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null) {
+        FirestoreSyncService.instance.saveUserData(currentUser.uid);
+      }
+    }
   }
 
   Future<void> toggleSessionCompletion(String id, bool completed) async {

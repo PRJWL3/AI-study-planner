@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'study_state_manager.dart';
 import '../firebase_options.dart';
 import 'firestore_sync_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   AuthService._privateConstructor();
@@ -26,6 +27,10 @@ class AuthService {
           options: DefaultFirebaseOptions.currentPlatform,
         );
       }
+      FirebaseFirestore.instance.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
       _auth = FirebaseAuth.instance;
       _googleSignIn = GoogleSignIn.instance;
       // Initialize GoogleSignIn (requires clientId on Web)
