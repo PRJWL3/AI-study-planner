@@ -429,10 +429,10 @@ class StudyStateManager extends ChangeNotifier {
   Future<void> saveData() async {
     await saveDataLocalOnly();
 
-    // Sync to Firestore if authenticated, not in mock mode, and logged in
+    // Sync to Firestore if authenticated, not in mock mode, logged in, and onboarding completed
     if (!AuthService.instance.isMockMode) {
       final currentUser = AuthService.instance.currentUser;
-      if (currentUser != null && isLoggedIn) {
+      if (currentUser != null && isLoggedIn && onboardingCompleted) {
         // Run Firestore save asynchronously without blocking the UI thread
         FirestoreSyncService.instance.saveUserData(currentUser.uid);
       }
@@ -443,7 +443,7 @@ class StudyStateManager extends ChangeNotifier {
 
   Future<void> login(bool loggedIn) async {
     isLoggedIn = loggedIn;
-    await saveData();
+    await saveDataLocalOnly();
     notifyListeners();
   }
 

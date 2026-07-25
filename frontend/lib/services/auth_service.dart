@@ -64,17 +64,19 @@ class AuthService {
 
             if (user != null) {
               final state = StudyStateManager.instance;
-              state.userName = user.displayName ?? "Lumina Scholar";
-              state.userEmail = user.email ?? "";
-              state.userPhotoUrl = user.photoURL ?? "";
-              if (state.userMascot.isEmpty) {
-                state.userMascot = "assets/images/mascot_girl_login.png";
+              if (!state.isLoggedIn) {
+                state.userName = user.displayName ?? "Lumina Scholar";
+                state.userEmail = user.email ?? "";
+                state.userPhotoUrl = user.photoURL ?? "";
+                if (state.userMascot.isEmpty) {
+                  state.userMascot = "assets/images/mascot_girl_login.png";
+                }
+                if (user.uid.isNotEmpty) {
+                  debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
+                  await FirestoreSyncService.instance.loadUserData(user.uid);
+                }
+                await state.login(true);
               }
-              if (user.uid.isNotEmpty) {
-                debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
-                await FirestoreSyncService.instance.loadUserData(user.uid);
-              }
-              await state.login(true);
             }
           } catch (e) {
             debugPrint("AuthService ERROR: Failed to sign in to Firebase after Google auth event: $e");
@@ -147,17 +149,19 @@ class AuthService {
       if (user != null) {
         // Sync user details to StudyStateManager
         final state = StudyStateManager.instance;
-        state.userName = user.displayName ?? "Lumina Scholar";
-        state.userEmail = user.email ?? "";
-        state.userPhotoUrl = user.photoURL ?? "";
-        if (state.userMascot.isEmpty) {
-          state.userMascot = "assets/images/mascot_girl_login.png";
+        if (!state.isLoggedIn) {
+          state.userName = user.displayName ?? "Lumina Scholar";
+          state.userEmail = user.email ?? "";
+          state.userPhotoUrl = user.photoURL ?? "";
+          if (state.userMascot.isEmpty) {
+            state.userMascot = "assets/images/mascot_girl_login.png";
+          }
+          if (user.uid.isNotEmpty) {
+            debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
+            await FirestoreSyncService.instance.loadUserData(user.uid);
+          }
+          await state.login(true);
         }
-        if (user.uid.isNotEmpty) {
-          debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
-          await FirestoreSyncService.instance.loadUserData(user.uid);
-        }
-        await state.login(true);
       }
 
       return userCredential;
