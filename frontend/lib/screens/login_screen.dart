@@ -32,12 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     StudyStateManager.instance.addListener(_onStateChanged);
   }
 
-  @override
-  void dispose() {
-    StudyStateManager.instance.removeListener(_onStateChanged);
-    _videoController?.dispose();
-    super.dispose();
-  }
+
 
   void _onStateChanged() {
     final state = StudyStateManager.instance;
@@ -133,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    StudyStateManager.instance.removeListener(_onStateChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _videoController?.dispose();
