@@ -29,6 +29,28 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _initVideoPlayer();
+    StudyStateManager.instance.addListener(_onStateChanged);
+  }
+
+  @override
+  void dispose() {
+    StudyStateManager.instance.removeListener(_onStateChanged);
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  void _onStateChanged() {
+    final state = StudyStateManager.instance;
+    if (state.isLoggedIn && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => state.isProfileSetup
+              ? const HomeScreen()
+              : const ProfileSetupScreen(),
+        ),
+      );
+    }
   }
 
   void _initVideoPlayer() {
@@ -551,6 +573,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ),
                                           ),
                                         ],
+                                      ),
                               ),
                             ),
                           ),
