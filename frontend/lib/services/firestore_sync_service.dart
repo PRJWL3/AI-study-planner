@@ -33,6 +33,8 @@ class FirestoreSyncService {
       final List<dynamic> sessionsList = sessionsBox.get('sessions') ?? [];
 
       // 1. Prepare data segments
+      final String nowStr = DateTime.now().toIso8601String();
+
       final Map<String, dynamic> profileDetails = {
         "displayName": state.userName,
         "email": state.userEmail,
@@ -42,29 +44,29 @@ class FirestoreSyncService {
         "user_course": state.userCourse,
         "user_year": state.userYear,
         "onboarding_strategy": state.onboardingStrategy,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       final Map<String, dynamic> subjectsData = {
         "subjects": state.subjects.map((e) => e.toJson()).toList(),
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       final Map<String, dynamic> schedulesData = {
         "studyPlan": state.studyPlan,
         "completedTasks": state.completedTasks,
         "availability": availabilityList,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       final Map<String, dynamic> sessionsData = {
         "sessions": sessionsList,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       final Map<String, dynamic> achievementsData = {
         "studyEvents": state.studyEvents,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       final Map<String, dynamic> statisticsData = {
@@ -77,7 +79,7 @@ class FirestoreSyncService {
         "crystal_focus_progress": focusProgress,
         "crystal_wisdom_progress": wisdomProgress,
         "crystal_mastery_progress": masteryProgress,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       final Map<String, dynamic> settingsData = {
@@ -91,7 +93,7 @@ class FirestoreSyncService {
         "sr_selected_subject": state.studyRoomSelectedSubject,
         "sr_duration_minutes": state.studyRoomDurationMinutes,
         "sr_active_topic": state.studyRoomActiveTopic,
-        "updatedAt": FieldValue.serverTimestamp(),
+        "updatedAt": nowStr,
       };
 
       // --- SAVE TO NESTED SUBCOLLECTIONS ---
@@ -124,7 +126,7 @@ class FirestoreSyncService {
           "statistics": statisticsData,
           "settings": settingsData,
           "onboardingCompleted": state.onboardingCompleted,
-          "updatedAt": FieldValue.serverTimestamp(),
+          "updatedAt": nowStr,
         };
         await _db.collection("users").doc(uid).set(flatData, SetOptions(merge: true));
         debugPrint("FirestoreSyncService: Flat fallback document saved successfully.");
