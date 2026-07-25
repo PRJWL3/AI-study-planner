@@ -427,4 +427,22 @@ class FirestoreSyncService {
       debugPrint("FirestoreSyncService ERROR: Failed to save cached local copy: $e");
     }
   }
+
+  /// Force deletes/resets all documents under users/{uid} to clear old corrupted FieldValue.serverTimestamp() objects.
+  Future<void> forceResetCloudData(String uid) async {
+    if (uid.isEmpty) return;
+    debugPrint("FirestoreSyncService: Performing force reset of cloud data for $uid...");
+    // 1. Delete nested subcollection documents
+    await _db.collection("users").doc(uid).collection("profile").doc("details").delete();
+    await _db.collection("users").doc(uid).collection("profile").doc("selectedMascot").delete();
+    await _db.collection("users").doc(uid).collection("subjects").doc("data").delete();
+    await _db.collection("users").doc(uid).collection("schedules").doc("data").delete();
+    await _db.collection("users").doc(uid).collection("studySessions").doc("data").delete();
+    await _db.collection("users").doc(uid).collection("achievements").doc("data").delete();
+    await _db.collection("users").doc(uid).collection("statistics").doc("data").delete();
+    await _db.collection("users").doc(uid).collection("settings").doc("data").delete();
+    // 2. Delete the flat root document
+    await _db.collection("users").doc(uid).delete();
+    debugPrint("FirestoreSyncService: Force reset completed successfully.");
+  }
 }

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
 import '../services/study_state_manager.dart';
 import '../services/firestore_sync_service.dart';
+import '../services/auth_service.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -433,6 +434,51 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                     ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          if (FirestoreSyncService.syncErrors.isNotEmpty)
+                            SizedBox(
+                              width: double.infinity,
+                              child: TextButton.icon(
+                                onPressed: _isLoading ? null : () async {
+                                  final currentUser = AuthService.instance.currentUser;
+                                  if (currentUser != null) {
+                                    setState(() { _isLoading = true; });
+                                    try {
+                                      await FirestoreSyncService.instance.forceResetCloudData(currentUser.uid);
+                                      FirestoreSyncService.syncErrors.clear();
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("Cloud database cleaned! Please complete your profile now."),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text("Error resetting: $e"),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    } finally {
+                                      setState(() { _isLoading = false; });
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.refresh_rounded, color: Colors.red),
+                                label: Text(
+                                  "Reset Corrupted Cloud Database",
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
