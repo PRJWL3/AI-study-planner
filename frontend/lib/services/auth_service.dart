@@ -35,6 +35,44 @@ class AuthService {
       } else {
         await _googleSignIn.initialize();
       }
+
+      // Listen to sign-in events (critical for Web GSI button sign-in)
+      _googleSignIn.authenticationEvents.listen((GoogleSignInAuthenticationEvent event) async {
+        if (event is GoogleSignInAuthenticationEventSignIn) {
+          final googleUser = event.user;
+          debugPrint("AuthService: authenticationEvent emitted user: ${googleUser.email}");
+          try {
+            final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+            final googleAuthorization = await googleUser.authorizationClient.authorizationForScopes([
+              'email',
+              'profile',
+            ]);
+
+            final AuthCredential credential = GoogleAuthProvider.credential(
+              accessToken: googleAuthorization?.accessToken,
+              idToken: googleAuth.idToken,
+            );
+
+            final UserCredential userCredential = await _auth.signInWithCredential(credential);
+            final User? user = userCredential.user;
+
+            if (user != null) {
+              final state = StudyStateManager.instance;
+              state.userName = user.displayName ?? "Lumina Scholar";
+              state.userEmail = user.email ?? "";
+              if (user.photoURL != null && user.photoURL!.isNotEmpty) {
+                state.userMascot = user.photoURL!;
+              } else {
+                state.userMascot = "assets/images/mascot_girl_login.png";
+              }
+              await state.login(true);
+            }
+          } catch (e) {
+            debugPrint("AuthService ERROR: Failed to sign in to Firebase after Google auth event: $e");
+          }
+        }
+      });
+
       debugPrint("AuthService: Firebase and GoogleSignIn initialized successfully.");
     } catch (e) {
       _isMockMode = true;
@@ -70,7 +108,13 @@ class AuthService {
     }
 
     try {
-      // Trigger the Google Sign-In flow (authenticate for v7.0.0+)
+      if (kIsWeb) {
+        // Web sign-in is handled reactively via the Google GSI button (renderButton)
+        debugPrint("AuthService: Programmatic sign-in called on Web. GSI button handles flow.");
+        return null;
+      }
+
+      // Trigger the Google Sign-In flow (authenticate for native v7.0.0+)
       final googleUser = await _googleSignIn.authenticate();
 
       // Obtain authentication and authorization details

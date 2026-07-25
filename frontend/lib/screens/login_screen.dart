@@ -5,6 +5,9 @@ import 'home_screen.dart';
 import 'profile_setup_screen.dart';
 import '../services/study_state_manager.dart';
 import '../services/auth_service.dart';
+import '../widgets/google_sign_in_button_stub.dart'
+    if (dart.library.html) '../widgets/google_sign_in_button_web.dart'
+    if (dart.library.io) '../widgets/google_sign_in_button_mobile.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -509,45 +512,46 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(
                             width: double.infinity,
                             height: 52,
-                            child: OutlinedButton(
-                              onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                            child: buildGoogleSignInButton(
+                              child: OutlinedButton(
+                                onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  side: const BorderSide(
+                                    color: Color(0xFFE2E2E5),
+                                  ),
                                 ),
-                                side: const BorderSide(
-                                  color: Color(0xFFE2E2E5),
-                                ),
-                              ),
-                              child: _isGoogleLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        color: Color(0xFF006A63),
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.g_mobiledata_rounded,
-                                          size: 24,
-                                          color: Color(0xFF1A1C1E),
+                                child: _isGoogleLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Color(0xFF006A63),
+                                          strokeWidth: 2,
                                         ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          "Sign in with Google",
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
+                                      )
+                                    : Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.g_mobiledata_rounded,
+                                            size: 24,
                                             color: Color(0xFF1A1C1E),
                                           ),
-                                        ),
-                                      ],
-                                    ),
+                                          const SizedBox(width: 12),
+                                          Text(
+                                            "Sign in with Google",
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1A1C1E),
+                                            ),
+                                          ),
+                                        ],
+                              ),
                             ),
                           ),
                         ],
