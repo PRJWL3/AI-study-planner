@@ -191,9 +191,9 @@ class FirestoreSyncService {
         loadedFromSubcollections = true;
         debugPrint("FirestoreSyncService: Loaded profile successfully from subcollections.");
       }
-    } catch (e) {
-      debugPrint("FirestoreSyncService WARNING: Subcollection read failed (likely rule restriction): $e");
-      syncErrors.add("Subcollection read warning: $e");
+    } catch (e, stack) {
+      debugPrint("FirestoreSyncService WARNING: Subcollection read failed (likely rule restriction): $e\n$stack");
+      syncErrors.add("Subcollection read warning: $e\n$stack");
     }
 
     if (loadedFromSubcollections) {
@@ -405,9 +405,9 @@ class FirestoreSyncService {
           loadedFromFlat = true;
           debugPrint("FirestoreSyncService: Loaded user data from flat fallback successfully.");
         }
-      } catch (e) {
-        debugPrint("FirestoreSyncService ERROR: Failed to load user data from flat document fallback: $e");
-        syncErrors.add("Flat read error: $e");
+      } catch (e, stack) {
+        debugPrint("FirestoreSyncService ERROR: Failed to load user data from flat document fallback: $e\n$stack");
+        syncErrors.add("Flat read error: $e\n$stack");
       }
     }
 

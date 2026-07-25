@@ -605,13 +605,24 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            ...FirestoreSyncService.syncErrors.map((err) => Text(
-                              err,
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white70,
-                                fontSize: 10,
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 180),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: FirestoreSyncService.syncErrors.map((err) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Text(
+                                      err,
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.white70,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  )).toList(),
+                                ),
                               ),
-                            )),
+                            ),
                           ],
                         ),
                       ),
