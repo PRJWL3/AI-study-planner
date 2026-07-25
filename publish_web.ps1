@@ -1,7 +1,7 @@
 # publish_web.ps1
 Write-Host "Building web version..." -ForegroundColor Cyan
 cd frontend
-flutter build web --base-href "/AI-study-planner/"
+flutter build web --base-href "/AI-study-planner/" -O0
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Flutter web build failed!"
