@@ -454,12 +454,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                           ),
                                         );
                                       }
-                                    } catch (e) {
+                                    } catch (e, stack) {
+                                      debugPrint("Error detail: $e\n$stack");
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text("Error resetting: $e"),
-                                            backgroundColor: Colors.red,
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: const Text("Reset Error Diagnostics"),
+                                            content: SizedBox(
+                                              width: double.maxFinite,
+                                              child: SingleChildScrollView(
+                                                child: Text(
+                                                  "$e\n\nStack Trace:\n$stack",
+                                                  style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                                                ),
+                                              ),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text("OK"),
+                                              ),
+                                            ],
                                           ),
                                         );
                                       }
