@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'study_state_manager.dart';
+import '../firebase_options.dart';
 
 class AuthService {
   AuthService._privateConstructor();
@@ -19,8 +20,10 @@ class AuthService {
     try {
       // Check if Firebase is already initialized by checking the apps list.
       if (Firebase.apps.isEmpty) {
-        // This will throw if not configured, allowing us to fall back to mock mode.
-        await Firebase.initializeApp();
+        // Initialize with default platform options configured via FlutterFire
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
       // Initialize GoogleSignIn
       await _googleSignIn.initialize();
@@ -58,10 +61,6 @@ class AuthService {
     try {
       // Trigger the Google Sign-In flow (authenticate for v7.0.0+)
       final googleUser = await _googleSignIn.authenticate();
-      if (googleUser == null) {
-        debugPrint("AuthService: Google Sign-In cancelled by user.");
-        return null;
-      }
 
       // Obtain authentication and authorization details
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
