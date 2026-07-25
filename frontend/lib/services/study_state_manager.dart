@@ -207,7 +207,7 @@ class StudyStateManager extends ChangeNotifier {
 
     // Sync current authenticated Firebase user if not in mock mode
     if (!AuthService.instance.isMockMode) {
-      final currentUser = AuthService.instance.currentUser;
+      final currentUser = await AuthService.instance.getOrAwaitCurrentUser();
       if (currentUser != null) {
         userName = currentUser.displayName ?? "Lumina Scholar";
         userEmail = currentUser.email ?? "";

@@ -94,10 +94,24 @@ class AuthService {
     }
   }
 
-  /// Check if user is currently signed in.
   User? get currentUser {
     if (_isMockMode) return null;
     return _auth.currentUser;
+  }
+
+  /// Awaits the first Firebase Auth state event (critical for restoring session on page reload).
+  Future<User?> getOrAwaitCurrentUser() async {
+    if (_isMockMode) return null;
+    if (_auth.currentUser != null) {
+      return _auth.currentUser;
+    }
+    try {
+      return await _auth.authStateChanges().first.timeout(
+        const Duration(milliseconds: 1500),
+      );
+    } catch (_) {
+      return _auth.currentUser;
+    }
   }
 
   /// Sign in with Google.
