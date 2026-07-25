@@ -2,16 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'widgets/global_eggy.dart';
 import 'services/study_state_manager.dart';
 
-void main() {
+void main() async {
   debugPrint("APP_START: main() called");
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint("APP_START: WidgetsFlutterBinding initialized");
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint("APP_START: Firebase initialized in main()");
+  } catch (e) {
+    debugPrint("APP_START ERROR: Failed to initialize Firebase in main(): $e");
+  }
   runApp(const StudyPlannerApp());
 }
 

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'study_state_manager.dart';
 import 'persistence_service.dart';
@@ -176,6 +177,23 @@ class FirestoreSyncService {
     // --- TRY NESTED SUBCOLLECTIONS ---
     try {
       if (enableProfile) {
+        debugPrint("INVESTIGATION: Firebase.apps = ${Firebase.apps.map((a) => a.name).toList()}");
+        if (Firebase.apps.isNotEmpty) {
+          debugPrint("INVESTIGATION: Firebase.app().name = ${Firebase.app().name}");
+          debugPrint("INVESTIGATION: Firebase.app().options.projectId = ${Firebase.app().options.projectId}");
+          debugPrint("INVESTIGATION: Firebase.app().options.apiKey = ${Firebase.app().options.apiKey}");
+        }
+        debugPrint("INVESTIGATION: Current authenticated UID = $uid");
+        debugPrint("INVESTIGATION: Firestore instance identity = ${_db.hashCode}");
+
+        debugPrint("INVESTIGATION: Performing minimal reproduction test (ping query)...");
+        try {
+          final pingDoc = await _db.collection("test").doc("ping").get();
+          debugPrint("INVESTIGATION: Ping document exists: ${pingDoc.exists}");
+        } catch (pingErr, pingStack) {
+          debugPrint("INVESTIGATION ERROR: Ping query failed: $pingErr\n$pingStack");
+        }
+
         debugPrint("INVESTIGATION: Loading Profile Details from users/$uid/profile/details...");
         final detailsDoc = await _db.collection("users").doc(uid).collection("profile").doc("details").get();
         debugPrint("INVESTIGATION: Profile details document exists: ${detailsDoc.exists}");

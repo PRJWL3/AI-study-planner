@@ -8,6 +8,16 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+$mainJsPath = "build/web/main.dart.js"
+if (Test-Path $mainJsPath) {
+    Write-Host "Patching main.dart.js to support Int64 accessors on Web..." -ForegroundColor Cyan
+    $content = Get-Content -Raw -Path $mainJsPath
+    $content = $content.Replace('R_(a,b,c){throw A.f(A.aR("Int64 accessor not supported by dart2js."))}', 'R_(a,b,c){return Number(a.getBigInt64(b,c))}')
+    $content = $content.Replace('RA(a,b,c,d){throw A.f(A.aR("Int64 accessor not supported by dart2js."))}', 'RA(a,b,c,d){a.setBigInt64(b,BigInt(c),d)}')
+    Set-Content -Path $mainJsPath -Value $content -NoNewline
+    Write-Host "Patching completed!" -ForegroundColor Green
+}
+
 Write-Host "Deploying to GitHub Pages..." -ForegroundColor Cyan
 cd build/web
 
