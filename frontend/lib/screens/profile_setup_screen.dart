@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
 import '../services/study_state_manager.dart';
+import '../services/firestore_sync_service.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -441,6 +442,41 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
             ),
           ),
+          if (FirestoreSyncService.syncErrors.isNotEmpty)
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade900.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "DEBUG Firestore Sync Diagnostics (Rules/Connection Check):",
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ...FirestoreSyncService.syncErrors.map((err) => Text(
+                      err,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white70,
+                        fontSize: 10,
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
