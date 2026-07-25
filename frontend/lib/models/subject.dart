@@ -54,7 +54,7 @@ class Subject {
       name: json["name"],
       difficulty: json["difficulty"],
       topics: topicsList != null
-          ? topicsList.map((t) => Topic.fromJson(t)).toList()
+          ? topicsList.map((t) => Topic.fromJson(Map<String, dynamic>.from(t as Map))).toList()
           : [],
       aiSuggestions: json["aiSuggestions"] ?? "",
     );

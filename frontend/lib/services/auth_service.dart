@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'study_state_manager.dart';
 import '../firebase_options.dart';
+import 'firestore_sync_service.dart';
 
 class AuthService {
   AuthService._privateConstructor();
@@ -64,6 +65,10 @@ class AuthService {
                 state.userMascot = user.photoURL!;
               } else {
                 state.userMascot = "assets/images/mascot_girl_login.png";
+              }
+              if (user.email != null) {
+                debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
+                await FirestoreSyncService.instance.loadUserData(user.email!);
               }
               await state.login(true);
             }

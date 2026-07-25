@@ -12,6 +12,7 @@ import 'statistics_service.dart';
 import 'crystal_progress_service.dart';
 import 'schedule_service.dart';
 import 'auth_service.dart';
+import 'firestore_sync_service.dart';
 
 class StudyStateManager extends ChangeNotifier {
   static final StudyStateManager instance = StudyStateManager._internal();
@@ -212,6 +213,12 @@ class StudyStateManager extends ChangeNotifier {
           userMascot = currentUser.photoURL!;
         }
         isLoggedIn = true;
+        
+        // Load latest synced data from Cloud Firestore for this Google Account
+        if (currentUser.email != null) {
+          debugPrint("APP_START: Syncing data from Cloud Firestore for ${currentUser.email}...");
+          await FirestoreSyncService.instance.loadUserData(currentUser.email!);
+        }
       } else {
         isLoggedIn = false;
       }
@@ -346,7 +353,7 @@ class StudyStateManager extends ChangeNotifier {
     });
   }
 
-  Future<void> saveData() async {
+  Future<void> saveDataLocalOnly() async {
     if (_prefs == null) return;
 
     await _prefs!.setString("user_name", userName);
@@ -410,6 +417,19 @@ class StudyStateManager extends ChangeNotifier {
       EggyController.instance.userCourse = userCourse;
       EggyController.instance.userMascot = userMascot;
     });
+  }
+
+  Future<void> saveData() async {
+    await saveDataLocalOnly();
+
+    // Sync to Firestore if authenticated, not in mock mode, and logged in
+    if (!AuthService.instance.isMockMode) {
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null && currentUser.email != null && isLoggedIn) {
+        // Run Firestore save asynchronously without blocking the UI thread
+        FirestoreSyncService.instance.saveUserData(currentUser.email!);
+      }
+    }
   }
 
   // Mutators
