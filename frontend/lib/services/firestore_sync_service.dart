@@ -8,7 +8,7 @@ class FirestoreSyncService {
   FirestoreSyncService._privateConstructor();
   static final FirestoreSyncService instance = FirestoreSyncService._privateConstructor();
 
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  FirebaseFirestore get _db => FirebaseFirestore.instance;
   bool _isSyncing = false;
   static final List<String> syncErrors = [];
 
