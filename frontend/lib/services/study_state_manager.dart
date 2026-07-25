@@ -28,6 +28,7 @@ class StudyStateManager extends ChangeNotifier {
   String userCourse = "";
   String userYear = "";
   String userMascot = "assets/images/mascot_boy.png";
+  String userPhotoUrl = "";
   String onboardingStrategy = "";
   bool isLoggedIn = false;
   bool isProfileSetup = false;
@@ -209,15 +210,16 @@ class StudyStateManager extends ChangeNotifier {
       if (currentUser != null) {
         userName = currentUser.displayName ?? "Lumina Scholar";
         userEmail = currentUser.email ?? "";
+        userPhotoUrl = currentUser.photoURL ?? "";
         if (userMascot.isEmpty) {
           userMascot = "assets/images/mascot_girl_login.png";
         }
         isLoggedIn = true;
         
         // Load latest synced data from Cloud Firestore for this Google Account
-        if (currentUser.email != null) {
-          debugPrint("APP_START: Syncing data from Cloud Firestore for ${currentUser.email}...");
-          await FirestoreSyncService.instance.loadUserData(currentUser.email!);
+        if (currentUser.uid.isNotEmpty) {
+          debugPrint("APP_START: Syncing data from Cloud Firestore for ${currentUser.uid}...");
+          await FirestoreSyncService.instance.loadUserData(currentUser.uid);
         }
       } else {
         isLoggedIn = false;
@@ -260,6 +262,7 @@ class StudyStateManager extends ChangeNotifier {
     userCourse = _prefs!.getString("user_course") ?? "";
     userYear = _prefs!.getString("user_year") ?? "";
     userMascot = _prefs!.getString("user_mascot") ?? "assets/images/mascot_boy.png";
+    userPhotoUrl = _prefs!.getString("user_photo_url") ?? "";
     onboardingStrategy = _prefs!.getString("onboarding_strategy") ?? "";
     isLoggedIn = _prefs!.getBool("is_logged_in") ?? false;
     isProfileSetup = _prefs!.getBool("is_profile_setup") ?? false;
@@ -362,6 +365,7 @@ class StudyStateManager extends ChangeNotifier {
     await _prefs!.setString("user_course", userCourse);
     await _prefs!.setString("user_year", userYear);
     await _prefs!.setString("user_mascot", userMascot);
+    await _prefs!.setString("user_photo_url", userPhotoUrl);
     await _prefs!.setString("onboarding_strategy", onboardingStrategy);
     await _prefs!.setBool("is_logged_in", isLoggedIn);
     await _prefs!.setBool("is_profile_setup", isProfileSetup);
@@ -425,9 +429,9 @@ class StudyStateManager extends ChangeNotifier {
     // Sync to Firestore if authenticated, not in mock mode, and logged in
     if (!AuthService.instance.isMockMode) {
       final currentUser = AuthService.instance.currentUser;
-      if (currentUser != null && currentUser.email != null && isLoggedIn) {
+      if (currentUser != null && isLoggedIn) {
         // Run Firestore save asynchronously without blocking the UI thread
-        FirestoreSyncService.instance.saveUserData(currentUser.email!);
+        FirestoreSyncService.instance.saveUserData(currentUser.uid);
       }
     }
   }

@@ -11,9 +11,9 @@ class FirestoreSyncService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   bool _isSyncing = false;
 
-  /// Saves the user state map to Firestore.
-  Future<void> saveUserData(String email) async {
-    if (email.isEmpty) return;
+  /// Saves the user state map to Firestore under users/{uid}.
+  Future<void> saveUserData(String uid) async {
+    if (uid.isEmpty) return;
     if (_isSyncing) return;
 
     try {
@@ -25,13 +25,15 @@ class FirestoreSyncService {
       final double wisdomProgress = (crystalBox.get('wisdomProgress') as num?)?.toDouble() ?? 0.0;
       final double masteryProgress = (crystalBox.get('masteryProgress') as num?)?.toDouble() ?? 0.0;
 
-      final Map<String, dynamic> data = {
-        "user_name": state.userName,
-        "user_email": state.userEmail,
+      // Store profile and study parameters in users/{uid} document.
+      // We do NOT save selectedMascot in the main document since it goes under users/{uid}/profile/selectedMascot.
+      final Map<String, dynamic> mainData = {
+        "displayName": state.userName,
+        "email": state.userEmail,
+        "photoURL": state.userPhotoUrl,
         "user_age": state.userAge,
         "user_course": state.userCourse,
         "user_year": state.userYear,
-        "user_mascot": state.userMascot,
         "onboarding_strategy": state.onboardingStrategy,
         "is_profile_setup": state.isProfileSetup,
         "onboarded": state.onboarded,
@@ -61,8 +63,15 @@ class FirestoreSyncService {
         "updatedAt": FieldValue.serverTimestamp(),
       };
 
-      debugPrint("FirestoreSyncService: Saving user data to users/$email...");
-      await _db.collection("users").doc(email).set(data, SetOptions(merge: true));
+      debugPrint("FirestoreSyncService: Saving user main document to users/$uid...");
+      await _db.collection("users").doc(uid).set(mainData, SetOptions(merge: true));
+
+      // Store the selected mascot separately under users/{uid}/profile/selectedMascot.
+      debugPrint("FirestoreSyncService: Saving selectedMascot to users/$uid/profile/selectedMascot...");
+      await _db.collection("users").doc(uid).collection("profile").doc("selectedMascot").set({
+        "selectedMascot": state.userMascot,
+      }, SetOptions(merge: true));
+
       debugPrint("FirestoreSyncService: User data saved successfully.");
     } catch (e) {
       debugPrint("FirestoreSyncService ERROR: Failed to save user data: $e");
@@ -71,29 +80,48 @@ class FirestoreSyncService {
     }
   }
 
-  /// Loads the user state map from Firestore and updates all local states.
-  Future<void> loadUserData(String email) async {
-    if (email.isEmpty) return;
+  /// Updates only the selectedMascot field in Firestore without modifying any profile or photoURL.
+  Future<void> saveMascot(String uid, String mascot) async {
+    if (uid.isEmpty) return;
+    try {
+      debugPrint("FirestoreSyncService: Updating only selectedMascot in users/$uid/profile/selectedMascot...");
+      await _db.collection("users").doc(uid).collection("profile").doc("selectedMascot").set({
+        "selectedMascot": mascot,
+      }, SetOptions(merge: true));
+      debugPrint("FirestoreSyncService: Mascot updated successfully.");
+    } catch (e) {
+      debugPrint("FirestoreSyncService ERROR: Failed to update mascot: $e");
+    }
+  }
+
+  /// Loads the user state map and mascot from Firestore and updates all local states.
+  Future<void> loadUserData(String uid) async {
+    if (uid.isEmpty) return;
 
     try {
-      debugPrint("FirestoreSyncService: Fetching user data from users/$email...");
-      final doc = await _db.collection("users").doc(email).get();
+      debugPrint("FirestoreSyncService: Fetching user document from users/$uid...");
+      final doc = await _db.collection("users").doc(uid).get();
+      final state = StudyStateManager.instance;
 
       if (!doc.exists) {
-        debugPrint("FirestoreSyncService: No user document found for $email. Initializing with defaults...");
-        await saveUserData(email);
+        debugPrint("FirestoreSyncService: No user document found for $uid. Creating with current local state...");
+        await saveUserData(uid);
         return;
       }
 
       final data = doc.data() as Map<String, dynamic>;
-      final state = StudyStateManager.instance;
 
-      state.userName = data["user_name"] ?? state.userName;
-      state.userEmail = data["user_email"] ?? state.userEmail;
+      state.userName = data["displayName"] ?? state.userName;
+      state.userEmail = data["email"] ?? state.userEmail;
+      
+      // Load photoURL only if not already loaded from Firebase Auth
+      if (state.userPhotoUrl.isEmpty) {
+        state.userPhotoUrl = data["photoURL"] ?? "";
+      }
+
       state.userAge = data["user_age"] ?? state.userAge;
       state.userCourse = data["user_course"] ?? state.userCourse;
       state.userYear = data["user_year"] ?? state.userYear;
-      state.userMascot = data["user_mascot"] ?? state.userMascot;
       state.onboardingStrategy = data["onboarding_strategy"] ?? state.onboardingStrategy;
       state.isProfileSetup = data["is_profile_setup"] ?? state.isProfileSetup;
       state.onboarded = data["onboarded"] ?? state.onboarded;
@@ -161,7 +189,15 @@ class FirestoreSyncService {
         await plannerBox.put('examDate', state.selectedDate!.toIso8601String());
       }
 
-      // Save locally to SharedPreferences so the device has the cached offline copy
+      // Load mascot separately from users/{uid}/profile/selectedMascot.
+      debugPrint("FirestoreSyncService: Fetching selectedMascot from users/$uid/profile/selectedMascot...");
+      final mascotDoc = await _db.collection("users").doc(uid).collection("profile").doc("selectedMascot").get();
+      if (mascotDoc.exists) {
+        final mascotData = mascotDoc.data() as Map<String, dynamic>;
+        state.userMascot = mascotData["selectedMascot"] ?? state.userMascot;
+      }
+
+      // Save locally to SharedPreferences so the device has the cached offline copy.
       await state.saveDataLocalOnly();
       debugPrint("FirestoreSyncService: User data loaded and synced successfully.");
     } catch (e) {

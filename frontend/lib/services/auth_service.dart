@@ -61,12 +61,13 @@ class AuthService {
               final state = StudyStateManager.instance;
               state.userName = user.displayName ?? "Lumina Scholar";
               state.userEmail = user.email ?? "";
+              state.userPhotoUrl = user.photoURL ?? "";
               if (state.userMascot.isEmpty) {
                 state.userMascot = "assets/images/mascot_girl_login.png";
               }
-              if (user.email != null) {
+              if (user.uid.isNotEmpty) {
                 debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
-                await FirestoreSyncService.instance.loadUserData(user.email!);
+                await FirestoreSyncService.instance.loadUserData(user.uid);
               }
               await state.login(true);
             }
@@ -103,6 +104,7 @@ class AuthService {
       final state = StudyStateManager.instance;
       state.userName = "Lumina Scholar";
       state.userEmail = "scholar@lumina.ai";
+      state.userPhotoUrl = "";
       // Use the premium green mascot as default profile photo
       state.userMascot = "assets/images/mascot_girl_login.png";
       await state.login(true);
@@ -142,10 +144,13 @@ class AuthService {
         final state = StudyStateManager.instance;
         state.userName = user.displayName ?? "Lumina Scholar";
         state.userEmail = user.email ?? "";
-        if (user.photoURL != null && user.photoURL!.isNotEmpty) {
-          state.userMascot = user.photoURL!;
-        } else {
+        state.userPhotoUrl = user.photoURL ?? "";
+        if (state.userMascot.isEmpty) {
           state.userMascot = "assets/images/mascot_girl_login.png";
+        }
+        if (user.uid.isNotEmpty) {
+          debugPrint("AuthService: Loading synced user data from Cloud Firestore on login...");
+          await FirestoreSyncService.instance.loadUserData(user.uid);
         }
         await state.login(true);
       }

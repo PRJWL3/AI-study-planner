@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String onboardingStrategy = "";
   String userName = "";
   String userMascot = "assets/images/mascot_boy.png";
+  String userPhotoUrl = "";
 
   // Pomodoro Focus Timer states
   bool isTimerRunning = false;
@@ -139,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
       userCourse = state.userCourse;
       userYear = state.userYear;
       userMascot = state.userMascot;
+      userPhotoUrl = state.userPhotoUrl;
       onboardingStrategy = state.onboardingStrategy;
       hoursController.text = state.plannerHoursPerDay.toString();
       _plannerHoursPerDay = state.plannerHoursPerDay;
@@ -3241,13 +3243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: Colors.transparent,
-                      backgroundImage: userMascot.startsWith("http")
-                          ? NetworkImage(userMascot) as ImageProvider
-                          : AssetImage(
-                              userMascot.isNotEmpty
-                                  ? userMascot
-                                  : "assets/images/mascot_boy.png",
-                            ),
+                      backgroundImage: userPhotoUrl.startsWith("http")
+                          ? NetworkImage(userPhotoUrl) as ImageProvider
+                          : const AssetImage("assets/images/mascot_girl_login.png"),
                     ),
                   ),
                 ),
@@ -3431,13 +3429,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 2,
                   ),
                   image: DecorationImage(
-                    image: userMascot.startsWith("http")
-                        ? NetworkImage(userMascot) as ImageProvider
-                        : AssetImage(
-                            userMascot.isNotEmpty
-                                ? userMascot
-                                : "assets/images/mascot_boy.png",
-                          ),
+                    image: userPhotoUrl.startsWith("http")
+                        ? NetworkImage(userPhotoUrl) as ImageProvider
+                        : const AssetImage("assets/images/mascot_girl_login.png"),
                     fit: BoxFit.cover,
                   ),
                 ),
