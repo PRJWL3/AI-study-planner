@@ -7583,36 +7583,36 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: _buildFloatingNavItem(
                             0,
-                            Icons.dashboard_rounded,
+                            Icons.space_dashboard_rounded,
                             "Dashboard",
                           ),
                         ),
                         Expanded(
                           child: _buildFloatingNavItem(
                             1,
-                            Icons.assignment_rounded,
+                            Icons.checklist_rounded,
                             "Tasks",
                           ),
                         ),
                         Expanded(
                           child: _buildFloatingNavItem(
                             2,
-                            Icons.book_rounded,
+                            Icons.menu_book_rounded,
                             "Subjects",
                           ),
                         ),
                         Expanded(
                           child: _buildFloatingNavItem(
                             3,
-                            Icons.hourglass_empty_rounded,
+                            Icons.timer_rounded,
                             "Study Room",
                           ),
                         ),
                         Expanded(
                           child: _buildFloatingNavItem(
                             4,
-                            Icons.settings_suggest_rounded,
-                            "Setup",
+                            Icons.auto_awesome_rounded,
+                            "AI Planner",
                           ),
                         ),
                       ],
@@ -7704,7 +7704,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 3),
               AnimatedOpacity(
-                opacity: isSelected ? 1.0 : 0.0,
+                opacity: isSelected ? 1.0 : 0.6,
                 duration: const Duration(milliseconds: 200),
                 child: Text(
                   label,
