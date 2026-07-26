@@ -241,16 +241,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                         child: VideoPlayer(_videoController!),
                                       ),
                                     )
-                                  : Image.asset(
-                                      "assets/images/mascot_girl_login.png",
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.person_rounded,
-                                          size: 100,
-                                          color: Colors.white,
-                                        );
-                                      },
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            const Color(0xFF004D40), // Deep teal matching the app theme
+                                            const Color(0xFF1E2130).withOpacity(0.95), // Premium dark slate
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      ),
                                     ),
                             ),
                           ),
